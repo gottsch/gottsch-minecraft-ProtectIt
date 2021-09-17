@@ -19,19 +19,15 @@
  */
 package com.someguyssoftware.protectit;
 
-import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
+import net.minecraft.util.Direction;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.BlockToolInteractEvent;
@@ -39,17 +35,12 @@ import net.minecraftforge.event.world.BlockEvent.EntityMultiPlaceEvent;
 import net.minecraftforge.event.world.BlockEvent.EntityPlaceEvent;
 import net.minecraftforge.event.world.ExplosionEvent;
 import net.minecraftforge.event.world.PistonEvent;
+import net.minecraftforge.event.world.PistonEvent.PistonMoveType;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.InterModComms;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
-import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 /**
  * 
@@ -87,7 +78,6 @@ public class ProtectIt {
 	
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(WorldEvent.Load event) {
-		LOGGER.info("HELLO from World Load");
 		/*
 		 * On load of dimension 0 (overworld), initialize the loot table's context and other static loot tables
 		 */
@@ -97,19 +87,6 @@ public class ProtectIt {
 		}
 	}
 
-	// You can use EventBusSubscriber to automatically subscribe events on the
-	// contained class (this is subscribing to the MOD
-	// Event bus for receiving Registry Events)
-//	@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
-//	public static class RegistryEvents {
-//		@SubscribeEvent
-//		public static void onBlocksRegistry(final RegistryEvent.Register<Block> blockRegistryEvent) {
-//			// register a new block here
-//			LOGGER.info("HELLO from Register Block");
-//		}
-//	}
-
-	// TODO allow Creative to By-pass all these rules
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
 		// prevent protected blocks from breaking
@@ -152,10 +129,51 @@ public class ProtectIt {
 
 	@SubscribeEvent
 	public void onPiston(final PistonEvent.Pre event) {
-		// TODO calculate the pos of piston plus direction or look at the list of affected blocks
-		// prevent protected blocks from breaking
+		if (event.getDirection() == Direction.UP || event.getDirection() == Direction.DOWN) {
+			return;
+		}
+		// check if piston itself is inside protected area - if so, exit ie. allow movement
 		if (ProtectionRegistry.isProtected(event.getPos())) {
-			event.setCanceled(true);
+			return;
+		}
+
+		if (event.getPistonMoveType() == PistonMoveType.EXTEND) {
+			for (int count = 1; count <=12; count++) {
+				int xOffset = 0;
+				int zOffset = 0;
+				int xPush = 0;				
+				int zPush = 0;
+				switch(event.getDirection()) {
+				case NORTH:
+					zOffset = -count;
+					zPush = -1;
+					break;
+				case SOUTH:
+					zOffset = count;
+					zPush = +1;
+					break;
+				case WEST:
+					xOffset = -count;
+					xPush = -1;
+					break;
+				case EAST:
+					xOffset = count;
+					xPush = 1;
+					break;
+				}
+				
+				if (event.getWorld().getBlockState(event.getPos().offset(xOffset, 0, zOffset)).getMaterial().isSolid()) {
+					// prevent protected blocks from breaking
+					if (ProtectionRegistry.isProtected(event.getPos().offset(xOffset, 0, zOffset)) || 
+							ProtectionRegistry.isProtected(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush))) {
+						event.setCanceled(true);
+						return;
+					}
+				}
+				else {
+					return;
+				}
+			}
 		}
 	}
 

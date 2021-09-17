@@ -44,7 +44,7 @@ Base API for all my mods.
 '''
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.treasure2]] #optional
+[[dependencies.protectit]] #optional
     # the modid of the dependency
     modId="forge" #mandatory
     # Does this dependency have to exist - if not, ordering below must be specified
@@ -55,21 +55,10 @@ Base API for all my mods.
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="BOTH"
-[[dependencies.treasure2]]
+[[dependencies.protectit]]
     modId="minecraft"
     mandatory=true
     versionRange="[1.16.5]"
     ordering="NONE"
-    side="BOTH"
-   [[dependencies.treasure2]] #optional
-    # the modid of the dependency
-    modId="gottschcore" #mandatory
-    # Does this dependency have to exist - if not, ordering below must be specified
-    mandatory=true #mandatory
-    # The version range of the dependency
-    versionRange="[1.4,)" #mandatory
-    # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
-    ordering="BEFORE"
-    # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="BOTH"
 

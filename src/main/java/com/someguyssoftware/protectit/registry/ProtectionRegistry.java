@@ -18,9 +18,12 @@
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */package com.someguyssoftware.protectit.registry;
 
- import java.util.HashMap;
+ import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.IntNBT;
@@ -387,4 +390,12 @@ import net.minecraft.util.math.BlockPos;
 		 nbt.put(REGISTRY_NAME, xaxisRegistry);
 		 return nbt;
 	 }
+
+	public static List<String> list() {
+		List<String> protections = new ArrayList<>();
+		REGISTRY.getRegistry().forEach((x, zaxis) -> {			
+			protections.add(String.format("[%s] -> [%s]", x, zaxis.getRegistry().stream().map(z -> z.toString()).collect(Collectors.joining(", "))));
+		});
+		return protections;
+	}
  }

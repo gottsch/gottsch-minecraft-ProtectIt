@@ -36,5 +36,6 @@ public class ProtectItCommands {
 	public static void onServerStarting(RegisterCommandsEvent event) {
 		ProtectCommand.register(event.getDispatcher());
 		UnprotectCommand.register(event.getDispatcher());
+		ProtectionsCommand.register(event.getDispatcher());
 	}
 }
