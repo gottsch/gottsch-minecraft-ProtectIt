@@ -17,25 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.command;
-
-import com.someguyssoftware.protectit.ProtectIt;
-
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+package com.someguyssoftware.protectit.registry;
 
 /**
  * 
- * @author Mark Gottschling on Sep 16, 2021
+ * @author Mark Gottschling on Oct 5, 2021
  *
  */
-@Mod.EventBusSubscriber(modid = ProtectIt.MODID)
-public class ProtectItCommands {
-	@SubscribeEvent
-	public static void onServerStarting(RegisterCommandsEvent event) {
-		ProtectCommand.register(event.getDispatcher());
-//		UnprotectCommand.register(event.getDispatcher());
-//		ProtectionsCommand.register(event.getDispatcher());
+public class ProtectionRegistries {
+	// single for now, change to map if required
+	private static final IBlockProtectionRegistry REGISTRY = new ProtectionRegistry2();
+	
+	// use a getter instead of directly accessing static property because the backing may change
+	public static IBlockProtectionRegistry getRegistry() {
+		return REGISTRY;
 	}
 }

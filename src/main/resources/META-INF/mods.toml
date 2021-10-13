@@ -17,7 +17,7 @@ issueTrackerURL="https://github.com/gottsch/gottsch-minecraft-ProtectIt/issues" 
 modId="protectit" #mandatory
 
 # The version number of the mod - there's a few well known ${} variables useable here or just hardcode it
-version="1.0.0" #mandatory
+version="1.1.0" #mandatory
 
  # A display name for the mod
 displayName="Protect It" #mandatory
@@ -61,4 +61,14 @@ Base API for all my mods.
     versionRange="[1.16.5]"
     ordering="NONE"
     side="BOTH"
-
+ [[dependencies.scoreit]]
+    # the modid of the dependency
+    modId="gottschcore" #mandatory
+    # Does this dependency have to exist - if not, ordering below must be specified
+    mandatory=true #mandatory
+    # The version range of the dependency
+    versionRange="[1.4,)" #mandatory
+    # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
+    ordering="BEFORE"
+    # Side this dependency is applied on - BOTH, CLIENT or SERVER
+    side="BOTH"    

@@ -22,13 +22,22 @@ package com.someguyssoftware.protectit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BlockItem;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.BlockToolInteractEvent;
 import net.minecraftforge.event.world.BlockEvent.EntityMultiPlaceEvent;
@@ -40,7 +49,6 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 
 /**
  * 
@@ -55,7 +63,7 @@ public class ProtectIt {
 	// constants
 	public static final String MODID = "protectit";
 	public static final String NAME = "Protect It";
-	protected static final String VERSION = "1.0.0";
+	protected static final String VERSION = "1.1.0";
 
 	public static ProtectIt instance;
 
@@ -69,19 +77,21 @@ public class ProtectIt {
 		MinecraftForge.EVENT_BUS.register(this);
 	}
 
-	// you can use SubscribeEvent and let the Event Bus discover methods to call
-	@SubscribeEvent
-	public void onServerStarting(FMLServerStartingEvent event) {
-		// do something when the server starts
-		LOGGER.info("HELLO from server starting");
+	/**
+	 * 
+	 * @param player
+	 */
+	private void sendProtectedMessage(PlayerEntity player) {
+		player.sendMessage((new TranslationTextComponent("message.protectit.block_protected").withStyle(new TextFormatting[]{TextFormatting.GRAY, TextFormatting.ITALIC})), player.getUUID());
 	}
-	
+
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(WorldEvent.Load event) {
 		/*
 		 * On load of dimension 0 (overworld), initialize the loot table's context and other static loot tables
 		 */
 		if (!event.getWorld().isClientSide()) {
+			LOGGER.info("loading Protect It data...");
 			ServerWorld world = (ServerWorld) event.getWorld();
 			ProtectItSavedData.get(world);
 		}
@@ -90,15 +100,22 @@ public class ProtectIt {
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistry.isProtected(event.getPos())) {
+		if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
+			sendProtectedMessage(event.getPlayer());
 		}
 	}
 
 	@SubscribeEvent
 	public void onBlockPlace(final EntityPlaceEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistry.isProtected(event.getPos())) {
+		if (event.getEntity() instanceof PlayerEntity) {
+			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
+				event.setCanceled(true);
+				sendProtectedMessage((PlayerEntity) event.getEntity());
+			}
+		}
+		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -106,24 +123,56 @@ public class ProtectIt {
 	@SubscribeEvent
 	public void onMutliBlockPlace(final EntityMultiPlaceEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistry.isProtected(event.getPos())) {
-			event.setCanceled(true);
+		if (event.getEntity() instanceof PlayerEntity) {
+			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
+				event.setCanceled(true);
+				sendProtectedMessage((PlayerEntity) event.getEntity());
+			}
 		}
+		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+			event.setCanceled(true);
+		}		
 	}
 
 	@SubscribeEvent
 	public void onToolInteract(final BlockToolInteractEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistry.isProtected(event.getPos())) {
+		if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
+			sendProtectedMessage(event.getPlayer());
 		}
 	}
 
 	@SubscribeEvent
+	public void onPlayerInteract(final PlayerInteractEvent.RightClickBlock event) {
+		ProtectIt.LOGGER.info("player interact event");
+		// ensure to check entity, because mobs like Enderman can pickup/place blocks
+		if (event.getEntity() instanceof PlayerEntity) {
+			// get the item in the player's hand
+			if (event.getHand() == Hand.MAIN_HAND && event.getItemStack().getItem() instanceof BlockItem) {
+				ProtectIt.LOGGER.info("held item is a block!");
+				if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+					event.setCanceled(true);
+					sendProtectedMessage((PlayerEntity) event.getEntity());
+				}
+			}
+		}
+		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+			event.setCanceled(true);
+		}
+	}
+	
+	@SubscribeEvent
 	public void onLivingDestroyBlock(final LivingDestroyBlockEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistry.isProtected(event.getPos())) {
-			event.setCanceled(true);
+		if (event.getEntity() instanceof PlayerEntity) {
+			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
+				event.setCanceled(true);
+				sendProtectedMessage((PlayerEntity) event.getEntity());
+			}
+			else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+				event.setCanceled(true);
+			}
 		}
 	}
 
@@ -133,7 +182,7 @@ public class ProtectIt {
 			return;
 		}
 		// check if piston itself is inside protected area - if so, exit ie. allow movement
-		if (ProtectionRegistry.isProtected(event.getPos())) {
+		if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
 			return;
 		}
 
@@ -144,6 +193,7 @@ public class ProtectIt {
 				int xPush = 0;				
 				int zPush = 0;
 				switch(event.getDirection()) {
+				default:
 				case NORTH:
 					zOffset = -count;
 					zPush = -1;
@@ -161,11 +211,11 @@ public class ProtectIt {
 					xPush = 1;
 					break;
 				}
-				
+
 				if (event.getWorld().getBlockState(event.getPos().offset(xOffset, 0, zOffset)).getMaterial().isSolid()) {
 					// prevent protected blocks from breaking
-					if (ProtectionRegistry.isProtected(event.getPos().offset(xOffset, 0, zOffset)) || 
-							ProtectionRegistry.isProtected(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush))) {
+					if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos().offset(xOffset, 0, zOffset))) || 
+							ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush)))) {
 						event.setCanceled(true);
 						return;
 					}
@@ -182,7 +232,7 @@ public class ProtectIt {
 		// remove any affected blocks that are protected
 		event.getAffectedBlocks().removeIf(block -> {
 			// prevent protected blocks from breaking
-			return ProtectionRegistry.isProtected(block.getX(), block.getZ());
+			return ProtectionRegistries.getRegistry().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
 		});
 	}
 

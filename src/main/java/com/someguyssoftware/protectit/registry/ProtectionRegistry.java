@@ -31,10 +31,11 @@ import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.math.BlockPos;
 
  /**
-  * 
+  * A static wrapper for the block protection registry
   * @author Mark Gottschling on Sep 15, 2021
   *
   */
+@Deprecated
  public class ProtectionRegistry {
 
 	 private static final String REGISTRY_NAME = "registry";

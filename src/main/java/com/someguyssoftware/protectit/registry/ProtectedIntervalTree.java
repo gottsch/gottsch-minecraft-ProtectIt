@@ -1,0 +1,318 @@
+/*
+ * This file is part of  Protect It.
+ * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * 
+ * All rights reserved.
+ *
+ * Protect It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Protect It is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
+package com.someguyssoftware.protectit.registry;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.someguyssoftware.protectit.ProtectIt;
+
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+
+// NOTE this is currently not a balanced Binary Search Tree
+public class ProtectedIntervalTree {
+	private Interval root;
+
+	public Interval insert(Interval interval) {
+		root = insert(root, interval);
+		return root;
+	}
+
+	/**
+	 * 
+	 * @param interval
+	 * @param newInterval
+	 * @return
+	 */
+	private Interval insert(Interval interval, Interval newInterval) {
+		if (interval == null) {
+			interval = newInterval;
+			return interval;
+		}
+
+		if (interval.getMax() == null ||  newInterval.getEnd() > interval.getMax()) {
+			interval.setMax(newInterval.getEnd());
+		}
+        if (interval.getMin() == null || newInterval.getStart() < interval.getMin()) {
+        	interval.setMin(newInterval.getStart());
+        }
+        
+		if (interval.compareTo(newInterval) <= 0) {
+
+			if (interval.getRight() == null) {
+				interval.setRight(newInterval);
+			}
+			else {
+				insert(interval.getRight(), newInterval);
+			}
+		}
+		else {
+			if (interval.getLeft() == null) {
+				interval.setLeft(newInterval);
+			}
+			else {
+				insert(interval.getLeft(), newInterval);
+			}
+		}
+		return interval;
+	}
+
+	/**
+	 * Requires and extact match of intervals.
+	 * @param target
+	 * @return
+	 */
+	public Interval delete(Interval target) {
+		root = delete(root, target);
+		return root;
+	}
+
+	/**
+	 * 
+	 * @param interval
+	 * @param target
+	 * @return
+	 */
+	private Interval delete(Interval interval, Interval target) {
+		if (interval == null) {
+			return interval;
+		}
+
+		if (interval.compareTo(target) < 0) {
+			interval.setRight(delete(interval.getRight(), target));
+		}
+		else if (interval.compareTo(target) > 0) {
+			interval.setLeft(delete(interval.getLeft(), target));
+		}
+		else {
+			// node with no leaf nodes
+			if (interval.getLeft() == null && interval.getRight() == null) {
+				return null;
+			}
+			else if (interval.getLeft() == null) {
+				return interval.getRight();
+			}
+			else if (interval.getRight() == null) {
+				return interval.getLeft();
+			}
+			else {
+				// insert right tree into left tree
+				insert(interval.getLeft(), interval.getRight());
+				// return the left tree
+				return interval.getLeft();
+			}
+		}
+		return interval;
+	}
+
+	/**
+	 * 
+	 * @param target
+	 * @param uuid
+	 */
+	public void delete(Interval target, String uuid) {
+		List<Interval> list = getOverlapping(getRoot(), target, false);
+		list.forEach(i -> {
+			if (i.getData() != null && i.getData().getUuid().equalsIgnoreCase(uuid)) {
+				delete(getRoot(), i);
+			}
+		});
+	}
+	
+	/**
+	 * 
+	 * @param interval
+	 * @param predicate
+	 */
+	public Interval delete(Interval interval, Predicate<Interval> predicate) {
+		if (interval == null) {
+			return interval;
+		}
+		
+		if (predicate.test(interval)) {
+			return delete(interval);
+		}
+		
+		Interval deletedInterval = null;		
+		deletedInterval = this.delete(interval.getLeft(), predicate);
+
+		if (deletedInterval == null) {
+			deletedInterval = this.delete(interval.getRight(), predicate);
+		}		
+		return deletedInterval;
+	}
+	
+	/**
+	 * 
+	 * @param interval
+	 */
+	public void list(Interval interval, List<String> display) {
+		if (interval == null) {
+			return;
+		}
+
+		if (interval.getLeft() != null) {
+			list(interval.getLeft(), display);
+		}
+
+		display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", interval.getCoords1().toShortString(), interval.getCoords2().toShortString(), interval.getData().getPlayerName(), interval.getData().getUuid()));
+
+		if (interval.getRight() != null) {
+			list(interval.getRight(), display);
+		}
+	}
+	
+	public void find(Interval interval, Predicate<Interval> predicate, List<Interval> intervals) {
+		find(interval, predicate, intervals, true);
+	}
+	
+	/**
+	 * 
+	 * @param interval
+	 * @param predicate
+	 * @param intervals
+	 * @param findFirst find first occurrence only
+	 * @return whether an overlap was found in this subtree
+	 */
+	public boolean find(Interval interval, Predicate<Interval> predicate, List<Interval> intervals, boolean findFirst) {
+		boolean isFound = false;
+		
+		if (interval == null) {
+			return false;
+		}
+
+		// check first to optimize findFirst search
+		// add the interval to list
+		if (predicate.test(interval)) {
+			intervals.add(interval);
+			if (findFirst) {
+				return true;
+			}
+		}
+		
+		if (interval.getLeft() != null) {
+			isFound = find(interval.getLeft(), predicate, intervals, findFirst);
+			if (isFound && findFirst) {
+				return true;
+			}
+		}
+
+		if (interval.getRight() != null) {
+			isFound = find(interval.getRight(), predicate, intervals, findFirst);
+			if (isFound && findFirst) {
+				return true;
+			}
+		}
+		return isFound;
+	}
+
+	/**
+	 * public wrapper to ensure that the return value is non-null
+	 * @param interval
+	 * @param testInterval
+	 */
+	public List<Interval> getOverlapping(Interval interval, Interval testInterval, boolean findFast) {
+		List<Interval> results = new ArrayList<>();
+		checkOverlap(interval, testInterval, results, findFast);
+		return results;
+	}
+
+
+	/**
+	 * 
+	 * @param interval
+	 * @param testInterval
+	 * @param results
+	 * @param findFirst find first occurrence only
+	 * @return whether an overlap was found in this subtree
+	 */
+	private boolean checkOverlap(Interval interval, Interval testInterval, List<Interval> results, boolean findFast) {
+		if (interval == null) {
+			return false;
+		}
+
+        if(testInterval.getStart() > interval.getMax() || testInterval.getEnd() < interval.getMin()) {
+        	return false;
+        }
+        
+		if (!((interval.getStart() > testInterval.getEnd()) || (interval.getEnd() < testInterval.getStart()))) {
+			// x-axis overlaps, check z-axis
+			if (!((interval.getStartZ() > testInterval.getEndZ()) || (interval.getEndZ() < testInterval.getStartZ()))) {
+				results.add(interval);
+				if (findFast) {
+					return true;
+				}
+			}
+		}
+
+		if ((interval.getLeft() != null) && (interval.getLeft().getMax() >= testInterval.getStart())) {
+			if (this.checkOverlap(interval.getLeft(), testInterval, results, findFast) && findFast) {
+				return true;
+			}
+		}
+
+		if (this.checkOverlap(interval.getRight(), testInterval, results, findFast) && findFast) {
+			return true;
+		}
+		
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param nbt
+	 * @param interval
+	 * @return
+	 */
+	public CompoundNBT save(CompoundNBT nbt) {
+		if (getRoot() == null) {
+			return nbt;
+		}
+		getRoot().save(nbt);	        	        
+		return nbt;
+	}
+
+	/**
+	 * 
+	 * @param nbt
+	 */
+	public void load(CompoundNBT nbt) {
+		Interval root = Interval.load(nbt);
+		if (!root.equals(Interval.EMPTY)) {
+			setRoot(root);
+		}
+	}
+
+	public void clear() {
+		setRoot(null);
+	}
+
+	public Interval getRoot() {
+		return root;
+	}
+
+	public void setRoot(Interval root) {
+		this.root = root;
+	}
+}
