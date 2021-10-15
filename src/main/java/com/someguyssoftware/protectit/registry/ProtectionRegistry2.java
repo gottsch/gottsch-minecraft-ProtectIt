@@ -25,7 +25,6 @@ import java.util.function.Predicate;
 
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.command.data.PlayerData;
 
 import net.minecraft.nbt.CompoundNBT;
 
@@ -78,7 +77,7 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 		Interval interval = null;
 		do {
 			interval = tree.delete(tree.getRoot(), p -> p.getData().getUuid().equalsIgnoreCase(uuid));
-			ProtectIt.LOGGER.info("remove by uuid interval -> {}", interval);
+			ProtectIt.LOGGER.debug("remove by uuid interval -> {}", interval);
 		} while (interval != null);
 	}
 
@@ -142,19 +141,17 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 	 */
 	@Override
 	public boolean isProtectedAgainst(ICoords coords1, ICoords coords2, String uuid) {
-		ProtectIt.LOGGER.info("testing protection @ {} : {} -> {}", coords1, coords2);
-		ProtectIt.LOGGER.info("my uuid -> {}", uuid);
 		List<Interval> protections = getProtections(coords1, coords2, true);
 		if (protections.isEmpty()) {
-			ProtectIt.LOGGER.info("empty protections - not protected");
+//			ProtectIt.LOGGER.debug("empty protections - not protected");
 			return false;
 		}
 		else {
 			// interrogate each interval to determine if the uuid is the owner
 			for (Interval p : protections) {
-				ProtectIt.LOGGER.info("protection -> {}", p);
+//				ProtectIt.LOGGER.debug("protection -> {}", p);
 				if (p.getData().getUuid() == null || !p.getData().getUuid().equals(uuid)) {
-					ProtectIt.LOGGER.info("protected against me!");
+//					ProtectIt.LOGGER.debug("protected against me!");
 					return true;
 				}
 			}
@@ -162,12 +159,9 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 		return false;
 	}
 
-	/**
-	 * Walk the tree and output user-friendly string display of protection areas
-	 */
 	@Override
-	public List<String> list() {
-		List<String> protections = new ArrayList<>();
+	public List<Interval> list() {
+		List<Interval> protections = new ArrayList<>();
 		tree.list(tree.getRoot(), protections);
 		return protections;
 	}
@@ -176,6 +170,15 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 	public List<Interval> find(Predicate<Interval> predicate) {
 		List<Interval> protections = new ArrayList<>();
 		tree.find(tree.getRoot(), predicate, protections);
+		return protections;
+	}
+	
+	/**
+	 * Walk the tree and output user-friendly string display of protection areas
+	 */
+	@Override
+	public List<String> toStringList() {
+		List<String> protections = tree.toStringList(tree.getRoot());
 		return protections;
 	}
 	

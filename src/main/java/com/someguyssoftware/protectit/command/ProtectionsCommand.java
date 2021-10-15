@@ -72,7 +72,7 @@ public class ProtectionsCommand {
 	 * @return
 	 */
 	private static int list(CommandSource source) {
-		List<String> list = ProtectionRegistries.getRegistry().list();
+		List<String> list = ProtectionRegistries.getRegistry().toStringList();
 		list.forEach(element -> {
 			source.sendSuccess(new StringTextComponent(element), true);
 		});

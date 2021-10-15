@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.protectit.command.data.PlayerData;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.CompoundNBT;
@@ -64,11 +63,11 @@ public interface IBlockProtectionRegistry {
 	public void load(CompoundNBT nbt);	
 	public CompoundNBT save(CompoundNBT nbt);
 
-	public List<String> list();
+
 
 	public void clear();
-
+	public List<Interval> list();
 	public List<Interval> find(Predicate<Interval> predicate);
 	
-	
+	public List<String> toStringList();
 }

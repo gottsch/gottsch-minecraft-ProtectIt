@@ -22,6 +22,7 @@ package com.someguyssoftware.protectit.command;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,8 +34,10 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.command.data.PlayerData;
+import com.someguyssoftware.protectit.network.ProtectItNetworking;
+import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import net.minecraft.command.CommandSource;
@@ -50,6 +53,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 /**
  * 
@@ -234,21 +238,34 @@ public class ProtectCommand {
 
 			// determine the player uuid
 			String uuid = "";
-			String name = "";
+			AtomicReference<String> name = new AtomicReference<>("");
 			if (players != null) {
 				ServerPlayerEntity player = players.iterator().next();
 				ProtectIt.LOGGER.debug("player entity -> {}", player.getDisplayName().getString());
 				uuid = player.getStringUUID();
-				name = player.getName().getString();
+				name.set(player.getName().getString());
 			}
 
-			ProtectionRegistries.getRegistry().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name));
+			// add protection on server
+			ProtectionRegistries.getRegistry().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name.get()));
+			
 			// save world data
 			ServerWorld world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
+			
+			// send message to add protection on all clients
+			RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
+					RegistryMutatorMessageToClient.BLOCK_TYPE, 
+					RegistryMutatorMessageToClient.ADD_ACTION, 
+					uuid).with($ -> {
+				$.coords1 = validCoords.get().getA();
+				$.coords2 = validCoords.get().getB();
+				$.playerName = name.get();
+			}).build();
+			ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
@@ -288,6 +305,10 @@ public class ProtectCommand {
 		if (savedData != null) {
 			savedData.setDirty();
 		}
+		sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
+				validCoords.get().getA(), 
+				validCoords.get().getB(), 
+				RegistryMutatorMessageToClient.NULL_UUID);
 		return 1;
 	}
 
@@ -311,6 +332,13 @@ public class ProtectCommand {
 			uuid = parseNameUuid(uuid);
 
 			ProtectionRegistries.getRegistry().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
+			// save world data
+			ServerWorld world = source.getLevel();
+			ProtectItSavedData savedData = ProtectItSavedData.get(world);
+			if (savedData != null) {
+				savedData.setDirty();
+			}
+			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, validCoords.get().getA(), validCoords.get().getB(), uuid);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on remove uuid -> ", e);
@@ -329,26 +357,18 @@ public class ProtectCommand {
 			// parse out the uuid
 			uuid = parseNameUuid(uuid);
 			ProtectionRegistries.getRegistry().removeProtection(uuid);
+			// save world data
+			ServerWorld world = source.getLevel();
+			ProtectItSavedData savedData = ProtectItSavedData.get(world);
+			if (savedData != null) {
+				savedData.setDirty();
+			}
+			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on remove uuid -> ", e);
 		}
 		return 1;
-	}
-
-	private static String parseNameUuid(String uuid) {
-		String output = "";
-		// parse out the uuid
-		if (uuid.contains("[")) {
-			// find between square brackets
-			Pattern p = Pattern.compile("\\[([^\"]*)\\]");
-			Matcher m = p.matcher(uuid);
-			// get first occurence
-			if (m.find()) {
-				output = m.group(1);
-			}
-		}
-		return output;
 	}
 
 	/**
@@ -366,6 +386,14 @@ public class ProtectCommand {
 			uuid = player.getStringUUID();				
 		}
 		ProtectionRegistries.getRegistry().removeProtection(uuid);
+		// save world data
+		ServerWorld world = source.getLevel();
+		ProtectItSavedData savedData = ProtectItSavedData.get(world);
+		if (savedData != null) {
+			savedData.setDirty();
+		}
+		sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
+		
 		return 1;
 	}
 
@@ -400,6 +428,11 @@ public class ProtectCommand {
 			if (savedData != null) {
 				savedData.setDirty();
 			}
+			
+			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
+					validCoords.get().getA(), 
+					validCoords.get().getB(), 
+					uuid);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on remove -> ", e);
@@ -409,12 +442,55 @@ public class ProtectCommand {
 
 	/**
 	 * 
+	 * @param uuid
+	 * @return
+	 */
+	private static String parseNameUuid(String uuid) {
+		String output = "";
+		// parse out the uuid
+		if (uuid.contains("[")) {
+			// find between square brackets
+			Pattern p = Pattern.compile("\\[([^\"]*)\\]");
+			Matcher m = p.matcher(uuid);
+			// get first occurence
+			if (m.find()) {
+				output = m.group(1);
+			}
+		}
+		return output;
+	}
+	
+	/**
+	 * 
+	 * @param coords1
+	 * @param coords2
+	 * @param uuid
+	 */
+	private static void sendRemoveMessage(String type, @Nullable ICoords coords1, @Nullable ICoords coords2, String uuid) {
+		if (uuid == null) {
+			uuid = RegistryMutatorMessageToClient.NULL_UUID;
+		}
+		
+		// send message to add protection on all clients
+		RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
+				type,
+				RegistryMutatorMessageToClient.REMOVE_ACTION, 
+				uuid).with($ -> {
+			$.coords1 = coords1;
+			$.coords2 = coords2;
+			$.playerName = "";
+		}).build();
+		ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+	}
+	
+	/**
+	 * 
 	 * @param source
 	 * @param pos
 	 * @return
 	 */
 	private static int list(CommandSource source) {
-		List<String> list = ProtectionRegistries.getRegistry().list();
+		List<String> list = ProtectionRegistries.getRegistry().toStringList();
 		list.forEach(element -> {
 			source.sendSuccess(new StringTextComponent(element), true);
 		});
@@ -431,11 +507,19 @@ public class ProtectCommand {
 	 */
 	private static int clear(CommandSource source) {
 		ProtectionRegistries.getRegistry().clear();
+		
 		ServerWorld world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();
 		}
+		
+		// send message to add protection on all clients
+		RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
+				RegistryMutatorMessageToClient.BLOCK_TYPE, 
+				RegistryMutatorMessageToClient.CLEAR_ACTION, 
+				RegistryMutatorMessageToClient.NULL_UUID).build();
+		ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
 		return 1;
 	}
 }

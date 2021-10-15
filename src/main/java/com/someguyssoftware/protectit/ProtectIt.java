@@ -23,20 +23,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.someguyssoftware.gottschcore.spatial.Coords;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.someguyssoftware.protectit.network.ProtectItNetworking;
+import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
+import com.someguyssoftware.protectit.network.RegistryLoadMessageToServer;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.IWorld;
+import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.BlockToolInteractEvent;
@@ -47,8 +52,11 @@ import net.minecraftforge.event.world.PistonEvent;
 import net.minecraftforge.event.world.PistonEvent.PistonMoveType;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 /**
  * 
@@ -75,26 +83,42 @@ public class ProtectIt {
 
 		// Register ourselves for server and other game events we are interested in
 		MinecraftForge.EVENT_BUS.register(this);
+
+		// Register the setup method for modloading
+		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+		// regular register
+		eventBus.addListener(ProtectItNetworking::common);
 	}
 
 	/**
 	 * 
+	 * @param world 
 	 * @param player
 	 */
-	private void sendProtectedMessage(PlayerEntity player) {
-		player.sendMessage((new TranslationTextComponent("message.protectit.block_protected").withStyle(new TextFormatting[]{TextFormatting.GRAY, TextFormatting.ITALIC})), player.getUUID());
+	private void sendProtectedMessage(IWorld world, PlayerEntity player) {
+		if (!world.isClientSide()) {
+			player.sendMessage((new TranslationTextComponent("message.protectit.block_protected").withStyle(new TextFormatting[]{TextFormatting.GRAY, TextFormatting.ITALIC})), player.getUUID());
+		}
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(WorldEvent.Load event) {
-		/*
-		 * On load of dimension 0 (overworld), initialize the loot table's context and other static loot tables
-		 */
 		if (!event.getWorld().isClientSide()) {
-			LOGGER.info("loading Protect It data...");
-			ServerWorld world = (ServerWorld) event.getWorld();
-			ProtectItSavedData.get(world);
+			World world = (World) event.getWorld();
+			ProtectIt.LOGGER.debug("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
+			if (WorldInfo.isSurfaceWorld(world)) {
+				LOGGER.debug("loading Protect It data...");
+				ProtectItSavedData.get(world);
+			}
 		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public void onWorldLoad(PlayerLoggedInEvent event) {
+		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
+		RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.getRegistry().list());
+		ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
 	}
 
 	@SubscribeEvent
@@ -102,7 +126,7 @@ public class ProtectIt {
 		// prevent protected blocks from breaking
 		if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
-			sendProtectedMessage(event.getPlayer());
+			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
 	}
 
@@ -112,7 +136,7 @@ public class ProtectIt {
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
-				sendProtectedMessage((PlayerEntity) event.getEntity());
+				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 			}
 		}
 		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
@@ -126,7 +150,7 @@ public class ProtectIt {
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
-				sendProtectedMessage((PlayerEntity) event.getEntity());
+				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 			}
 		}
 		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
@@ -139,21 +163,19 @@ public class ProtectIt {
 		// prevent protected blocks from breaking
 		if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
-			sendProtectedMessage(event.getPlayer());
+			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
 	}
 
 	@SubscribeEvent
 	public void onPlayerInteract(final PlayerInteractEvent.RightClickBlock event) {
-		ProtectIt.LOGGER.info("player interact event");
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
 		if (event.getEntity() instanceof PlayerEntity) {
 			// get the item in the player's hand
 			if (event.getHand() == Hand.MAIN_HAND && event.getItemStack().getItem() instanceof BlockItem) {
-				ProtectIt.LOGGER.info("held item is a block!");
 				if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 					event.setCanceled(true);
-					sendProtectedMessage((PlayerEntity) event.getEntity());
+					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 				}
 			}
 		}
@@ -161,18 +183,19 @@ public class ProtectIt {
 			event.setCanceled(true);
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onLivingDestroyBlock(final LivingDestroyBlockEvent event) {
-		// prevent protected blocks from breaking
-		if (event.getEntity() instanceof PlayerEntity) {
-			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
-				event.setCanceled(true);
-				sendProtectedMessage((PlayerEntity) event.getEntity());
-			}
-			else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
-				event.setCanceled(true);
-			}
+		// prevent protected blocks from breaking from mob action
+		//		if (event.getEntity() instanceof PlayerEntity) {
+		//			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
+		//				event.setCanceled(true);
+		//				sendProtectedMessage((PlayerEntity) event.getEntity());
+		//			}	
+		//		}
+		//		else
+		if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+			event.setCanceled(true);
 		}
 	}
 

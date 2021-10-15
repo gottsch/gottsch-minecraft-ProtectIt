@@ -167,19 +167,50 @@ public class ProtectedIntervalTree {
 	 * 
 	 * @param interval
 	 */
-	public void list(Interval interval, List<String> display) {
+	public List<String> toStringList(Interval interval) {
+//		if (interval == null) {
+//			return;
+//		}
+//
+//		if (interval.getLeft() != null) {
+//			toStringList(interval.getLeft(), display);
+//		}
+//
+//		display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", interval.getCoords1().toShortString(), interval.getCoords2().toShortString(), interval.getData().getPlayerName(), interval.getData().getUuid()));
+//
+//		if (interval.getRight() != null) {
+//			toStringList(interval.getRight(), display);
+//		}
+		
+		List<Interval> list = new ArrayList<>();
+		list(interval, list);
+		
+		List<String> display = new ArrayList<>();
+		list.forEach(element -> {
+			display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", element.getCoords1().toShortString(), element.getCoords2().toShortString(), element.getData().getPlayerName(), interval.getData().getUuid()));
+		});
+		
+		return display;
+	}
+	
+	/**
+	 * 
+	 * @param interval
+	 * @param intervals
+	 */
+	public void list(Interval interval, List<Interval> intervals) {
 		if (interval == null) {
 			return;
 		}
 
 		if (interval.getLeft() != null) {
-			list(interval.getLeft(), display);
+			list(interval.getLeft(), intervals);
 		}
 
-		display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", interval.getCoords1().toShortString(), interval.getCoords2().toShortString(), interval.getData().getPlayerName(), interval.getData().getUuid()));
-
+		intervals.add(interval);
+		
 		if (interval.getRight() != null) {
-			list(interval.getRight(), display);
+			list(interval.getRight(), intervals);
 		}
 	}
 	
