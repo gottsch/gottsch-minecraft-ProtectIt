@@ -22,14 +22,17 @@ package com.someguyssoftware.protectit.command;
 import java.util.List;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.server.ServerWorld;
 
 /**
- * 
+ * TODO need to make UUID in list highlightable or clickable???
  * @author Mark Gottschling on Sep 16, 2021
  *
  */
@@ -43,11 +46,22 @@ public class ProtectionsCommand {
 		dispatcher
 		.register(Commands.literal("protections")
 				.requires(source -> {
-					return source.hasPermission(2);
+					return source.hasPermission(0);
 				})
-				.executes(source -> {
-					return protections(source.getSource());
-				})
+				//				.executes(source -> {
+				//					return protections(source.getSource());
+				//				})
+				.then(Commands.literal("list")
+						.executes(source -> {
+							return list(source.getSource());
+						})
+						)
+				.then(Commands.literal("clear")
+						.executes(source -> {
+							return clear(source.getSource());
+						})
+						)
+
 				);
 	}
 
@@ -57,11 +71,21 @@ public class ProtectionsCommand {
 	 * @param pos
 	 * @return
 	 */
-	private static int protections(CommandSource source) {
-		List<String> list = ProtectionRegistry.list();
+	private static int list(CommandSource source) {
+		List<String> list = ProtectionRegistries.getRegistry().toStringList();
 		list.forEach(element -> {
-	         source.sendSuccess(new StringTextComponent(element), true);
+			source.sendSuccess(new StringTextComponent(element), true);
 		});
+		return 1;
+	}
+
+	private static int clear(CommandSource source) {
+		ProtectionRegistries.getRegistry().clear();
+		ServerWorld world = source.getLevel();
+		ProtectItSavedData savedData = ProtectItSavedData.get(world);
+		if (savedData != null) {
+			savedData.setDirty();
+		}
 		return 1;
 	}
 }
