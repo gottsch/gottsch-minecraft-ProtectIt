@@ -23,8 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.registry.bst.Interval;
+import com.someguyssoftware.protectit.registry.bst.ProtectedIntervalTree;
 
 import net.minecraft.nbt.CompoundNBT;
 
@@ -53,7 +56,9 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 	
 	@Override
 	public void addProtection(ICoords coords1, ICoords coords2, PlayerData data) {
+		ProtectIt.LOGGER.info("adding protection -> {} to {}", coords1.toShortString(), coords2.toShortString());
 		tree.insert(new Interval(coords1, coords2, new Interval.Data(data.getUuid(), data.getName())));
+		ProtectIt.LOGGER.info("size of tree -> {}", getProtections(coords1, coords2).size());
 	}
 
 	@Override
@@ -86,16 +91,21 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 	 * (else something went wrong)
 	 */
 	@Override
-	public List<Interval> getProtections(ICoords coords) {
+	public List<Box> getProtections(ICoords coords) {
 		return getProtections(coords, coords);
 	}
 
 	@Override
-	public List<Interval> getProtections(ICoords coords1, ICoords coords2) {
+	public List<Box> getProtections(ICoords coords1, ICoords coords2) {
 		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), false);
-		return protections;
+		List<Box> boxes = new ArrayList<>();
+		protections.forEach(p -> {
+			boxes.add(p.toBox());
+		});
+		return boxes;
 	}
 
+	@Override
 	public List<Interval> getProtections(ICoords coords1, ICoords coords2, boolean findFast) {
 		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), findFast);
 		return protections;
@@ -188,6 +198,7 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 	 * @return
 	 */
 	public CompoundNBT save(CompoundNBT nbt) {
+		ProtectIt.LOGGER.info("saving tree...");
 		tree.save(nbt);
 		return nbt;
 	}
@@ -196,6 +207,7 @@ public class ProtectionRegistry2 implements IBlockProtectionRegistry {
 	 * 
 	 */
 	public void load(CompoundNBT nbt) {
+		ProtectIt.LOGGER.info("loading tree...");
 		clear();
 		tree.load(nbt);
 	}

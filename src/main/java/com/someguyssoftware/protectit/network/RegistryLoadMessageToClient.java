@@ -27,8 +27,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.registry.Interval;
-import com.someguyssoftware.protectit.registry.Interval.Data;
+import com.someguyssoftware.protectit.registry.bst.Interval;
+import com.someguyssoftware.protectit.registry.bst.Interval.Data;
 
 import net.minecraft.network.PacketBuffer;
 

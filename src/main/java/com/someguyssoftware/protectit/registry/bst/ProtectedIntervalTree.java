@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.registry;
+package com.someguyssoftware.protectit.registry.bst;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ import net.minecraft.nbt.CompoundNBT;
 public class ProtectedIntervalTree {
 	private Interval root;
 
-	public Interval insert(Interval interval) {
+	public synchronized Interval insert(Interval interval) {
 		root = insert(root, interval);
 		return root;
 	}
@@ -83,7 +83,7 @@ public class ProtectedIntervalTree {
 	 * @param target
 	 * @return
 	 */
-	public Interval delete(Interval target) {
+	public synchronized Interval delete(Interval target) {
 		root = delete(root, target);
 		return root;
 	}
@@ -131,7 +131,7 @@ public class ProtectedIntervalTree {
 	 * @param target
 	 * @param uuid
 	 */
-	public void delete(Interval target, String uuid) {
+	public synchronized void delete(Interval target, String uuid) {
 		List<Interval> list = getOverlapping(getRoot(), target, false);
 		list.forEach(i -> {
 			if (i.getData() != null && i.getData().getUuid().equalsIgnoreCase(uuid)) {
@@ -145,7 +145,7 @@ public class ProtectedIntervalTree {
 	 * @param interval
 	 * @param predicate
 	 */
-	public Interval delete(Interval interval, Predicate<Interval> predicate) {
+	public synchronized Interval delete(Interval interval, Predicate<Interval> predicate) {
 		if (interval == null) {
 			return interval;
 		}
@@ -168,20 +168,6 @@ public class ProtectedIntervalTree {
 	 * @param interval
 	 */
 	public List<String> toStringList(Interval interval) {
-//		if (interval == null) {
-//			return;
-//		}
-//
-//		if (interval.getLeft() != null) {
-//			toStringList(interval.getLeft(), display);
-//		}
-//
-//		display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", interval.getCoords1().toShortString(), interval.getCoords2().toShortString(), interval.getData().getPlayerName(), interval.getData().getUuid()));
-//
-//		if (interval.getRight() != null) {
-//			toStringList(interval.getRight(), display);
-//		}
-		
 		List<Interval> list = new ArrayList<>();
 		list(interval, list);
 		
@@ -198,7 +184,7 @@ public class ProtectedIntervalTree {
 	 * @param interval
 	 * @param intervals
 	 */
-	public void list(Interval interval, List<Interval> intervals) {
+	public synchronized void list(Interval interval, List<Interval> intervals) {
 		if (interval == null) {
 			return;
 		}
@@ -214,7 +200,13 @@ public class ProtectedIntervalTree {
 		}
 	}
 	
-	public void find(Interval interval, Predicate<Interval> predicate, List<Interval> intervals) {
+	/**
+	 * 
+	 * @param interval
+	 * @param predicate
+	 * @param intervals
+	 */
+	public synchronized void find(Interval interval, Predicate<Interval> predicate, List<Interval> intervals) {
 		find(interval, predicate, intervals, true);
 	}
 	
@@ -226,7 +218,7 @@ public class ProtectedIntervalTree {
 	 * @param findFirst find first occurrence only
 	 * @return whether an overlap was found in this subtree
 	 */
-	public boolean find(Interval interval, Predicate<Interval> predicate, List<Interval> intervals, boolean findFirst) {
+	public synchronized boolean find(Interval interval, Predicate<Interval> predicate, List<Interval> intervals, boolean findFirst) {
 		boolean isFound = false;
 		
 		if (interval == null) {
@@ -263,7 +255,7 @@ public class ProtectedIntervalTree {
 	 * @param interval
 	 * @param testInterval
 	 */
-	public List<Interval> getOverlapping(Interval interval, Interval testInterval, boolean findFast) {
+	public synchronized List<Interval> getOverlapping(Interval interval, Interval testInterval, boolean findFast) {
 		List<Interval> results = new ArrayList<>();
 		checkOverlap(interval, testInterval, results, findFast);
 		return results;
@@ -290,9 +282,14 @@ public class ProtectedIntervalTree {
 		if (!((interval.getStart() > testInterval.getEnd()) || (interval.getEnd() < testInterval.getStart()))) {
 			// x-axis overlaps, check z-axis
 			if (!((interval.getStartZ() > testInterval.getEndZ()) || (interval.getEndZ() < testInterval.getStartZ()))) {
-				results.add(interval);
-				if (findFast) {
-					return true;
+				// z-axis overlaps, check y-axis
+				if (!((interval.getStartY() > testInterval.getEndY()) || (interval.getEndY() < testInterval.getStartY()))) {
+				
+					results.add(interval);
+					if (findFast) {
+						return true;
+					}
+				
 				}
 			}
 		}
@@ -316,7 +313,7 @@ public class ProtectedIntervalTree {
 	 * @param interval
 	 * @return
 	 */
-	public CompoundNBT save(CompoundNBT nbt) {
+	public synchronized CompoundNBT save(CompoundNBT nbt) {
 		if (getRoot() == null) {
 			return nbt;
 		}
@@ -328,7 +325,7 @@ public class ProtectedIntervalTree {
 	 * 
 	 * @param nbt
 	 */
-	public void load(CompoundNBT nbt) {
+	public synchronized void load(CompoundNBT nbt) {
 		Interval root = Interval.load(nbt);
 		if (!root.equals(Interval.EMPTY)) {
 			setRoot(root);
@@ -339,11 +336,11 @@ public class ProtectedIntervalTree {
 		setRoot(null);
 	}
 
-	public Interval getRoot() {
+	public synchronized Interval getRoot() {
 		return root;
 	}
 
-	public void setRoot(Interval root) {
+	public synchronized void setRoot(Interval root) {
 		this.root = root;
 	}
 }

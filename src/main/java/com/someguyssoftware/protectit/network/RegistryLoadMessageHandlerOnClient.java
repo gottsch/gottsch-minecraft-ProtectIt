@@ -24,9 +24,9 @@ import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
-import com.someguyssoftware.protectit.registry.Interval;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
+import com.someguyssoftware.protectit.registry.bst.Interval;
 
 import net.minecraft.client.world.ClientWorld;
 import net.minecraftforge.fml.LogicalSide;

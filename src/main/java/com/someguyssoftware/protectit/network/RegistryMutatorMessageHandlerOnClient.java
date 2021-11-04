@@ -82,7 +82,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 	 * @param message
 	 */
 	private static void processMessage(ClientWorld worldClient, RegistryMutatorMessageToClient message) {
-		ProtectIt.LOGGER.debug("received registry mutator message -> {}", message);
+		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
 			switch(message.getType()) {

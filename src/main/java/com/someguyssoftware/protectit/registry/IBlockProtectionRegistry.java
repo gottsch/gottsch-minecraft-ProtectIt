@@ -1,13 +1,13 @@
 package com.someguyssoftware.protectit.registry;
 
-import java.util.Collection;
+
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.someguyssoftware.protectit.registry.bst.Interval;
 
-import net.minecraft.entity.Entity;
 import net.minecraft.nbt.CompoundNBT;
 
 /**
@@ -57,8 +57,9 @@ public interface IBlockProtectionRegistry {
 	boolean isProtectedAgainst(ICoords coords, String uuid);
 	boolean isProtectedAgainst(ICoords coords1, ICoords coords2, String uuid);
 	
-	public List<Interval> getProtections(ICoords coords);
-	public List<Interval> getProtections(ICoords coords1, ICoords coords2);
+	public List<Box> getProtections(ICoords coords);
+	public List<Box> getProtections(ICoords coords1, ICoords coords2);
+	public List<Interval> getProtections(ICoords coords1, ICoords coords2, boolean findFast);
 	
 	public void load(CompoundNBT nbt);	
 	public CompoundNBT save(CompoundNBT nbt);
@@ -70,4 +71,5 @@ public interface IBlockProtectionRegistry {
 	public List<Interval> find(Predicate<Interval> predicate);
 	
 	public List<String> toStringList();
+
 }

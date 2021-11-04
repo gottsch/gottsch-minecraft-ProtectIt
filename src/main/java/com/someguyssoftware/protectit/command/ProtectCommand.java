@@ -77,7 +77,6 @@ public class ProtectCommand {
 	};
 
 	/*
-	 * TODO all commands should roll under "protect" or "protectit"
 	 * protect [block|pvp] [add|remove|list|whitelist*|unwhitelist*] [uuid|pos] [pos2] [uuid|entity]
 	 */
 	public static void register(CommandDispatcher<CommandSource> dispatcher) {
@@ -198,7 +197,7 @@ public class ProtectCommand {
 		source.sendSuccess(new TranslationTextComponent("message.protectit.option_unavailable"), true);
 		return 1;
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -248,24 +247,26 @@ public class ProtectCommand {
 
 			// add protection on server
 			ProtectionRegistries.getRegistry().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name.get()));
-			
+
 			// save world data
 			ServerWorld world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			
+
 			// send message to add protection on all clients
-			RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
-					RegistryMutatorMessageToClient.BLOCK_TYPE, 
-					RegistryMutatorMessageToClient.ADD_ACTION, 
-					uuid).with($ -> {
-				$.coords1 = validCoords.get().getA();
-				$.coords2 = validCoords.get().getB();
-				$.playerName = name.get();
-			}).build();
-			ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
+						RegistryMutatorMessageToClient.BLOCK_TYPE, 
+						RegistryMutatorMessageToClient.ADD_ACTION, 
+						uuid).with($ -> {
+							$.coords1 = validCoords.get().getA();
+							$.coords2 = validCoords.get().getB();
+							$.playerName = name.get();
+						}).build();
+				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+			}
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
@@ -305,10 +306,12 @@ public class ProtectCommand {
 		if (savedData != null) {
 			savedData.setDirty();
 		}
-		sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
-				validCoords.get().getA(), 
-				validCoords.get().getB(), 
-				RegistryMutatorMessageToClient.NULL_UUID);
+		if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
+					validCoords.get().getA(), 
+					validCoords.get().getB(), 
+					RegistryMutatorMessageToClient.NULL_UUID);
+		}
 		return 1;
 	}
 
@@ -338,7 +341,9 @@ public class ProtectCommand {
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, validCoords.get().getA(), validCoords.get().getB(), uuid);
+			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, validCoords.get().getA(), validCoords.get().getB(), uuid);
+			}
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on remove uuid -> ", e);
@@ -363,7 +368,9 @@ public class ProtectCommand {
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
+			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
+			}
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on remove uuid -> ", e);
@@ -392,8 +399,10 @@ public class ProtectCommand {
 		if (savedData != null) {
 			savedData.setDirty();
 		}
-		sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
-		
+		if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
+		}
+
 		return 1;
 	}
 
@@ -428,11 +437,12 @@ public class ProtectCommand {
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			
-			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
-					validCoords.get().getA(), 
-					validCoords.get().getB(), 
-					uuid);
+			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
+						validCoords.get().getA(), 
+						validCoords.get().getB(), 
+						uuid);
+			}
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on remove -> ", e);
@@ -459,7 +469,7 @@ public class ProtectCommand {
 		}
 		return output;
 	}
-	
+
 	/**
 	 * 
 	 * @param coords1
@@ -470,19 +480,19 @@ public class ProtectCommand {
 		if (uuid == null) {
 			uuid = RegistryMutatorMessageToClient.NULL_UUID;
 		}
-		
+
 		// send message to add protection on all clients
 		RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 				type,
 				RegistryMutatorMessageToClient.REMOVE_ACTION, 
 				uuid).with($ -> {
-			$.coords1 = coords1;
-			$.coords2 = coords2;
-			$.playerName = "";
-		}).build();
+					$.coords1 = coords1;
+					$.coords2 = coords2;
+					$.playerName = "";
+				}).build();
 		ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -507,19 +517,21 @@ public class ProtectCommand {
 	 */
 	private static int clear(CommandSource source) {
 		ProtectionRegistries.getRegistry().clear();
-		
+
 		ServerWorld world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();
 		}
-		
-		// send message to add protection on all clients
-		RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
-				RegistryMutatorMessageToClient.BLOCK_TYPE, 
-				RegistryMutatorMessageToClient.CLEAR_ACTION, 
-				RegistryMutatorMessageToClient.NULL_UUID).build();
-		ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+
+		if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			// send message to add protection on all clients
+			RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
+					RegistryMutatorMessageToClient.BLOCK_TYPE, 
+					RegistryMutatorMessageToClient.CLEAR_ACTION, 
+					RegistryMutatorMessageToClient.NULL_UUID).build();
+			ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+		}
 		return 1;
 	}
 }

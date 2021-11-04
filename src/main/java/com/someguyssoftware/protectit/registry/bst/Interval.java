@@ -17,8 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.registry;
+package com.someguyssoftware.protectit.registry.bst;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
@@ -90,6 +91,14 @@ public class Interval implements Comparable<Interval> {
 		this.data = data;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public Box toBox() {
+		return new Box(getCoords1(), getCoords2());
+	}
+	
 	@Override
 	public int compareTo(Interval interval) {
 		if (this.getStart() < interval.getStart()) {

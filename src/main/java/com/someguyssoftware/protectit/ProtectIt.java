@@ -22,11 +22,16 @@ package com.someguyssoftware.protectit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.someguyssoftware.gottschcore.annotation.Credits;
+import com.someguyssoftware.gottschcore.annotation.ModInfo;
+import com.someguyssoftware.gottschcore.config.IConfig;
+import com.someguyssoftware.gottschcore.mod.IMod;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.init.ProtectItSetup;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
-import com.someguyssoftware.protectit.network.RegistryLoadMessageToServer;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -54,8 +59,11 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.network.PacketDistributor;
 
 /**
@@ -64,23 +72,39 @@ import net.minecraftforge.fml.network.PacketDistributor;
  *
  */
 @Mod(value = ProtectIt.MODID)
-public class ProtectIt {
+@ModInfo(
+		modid =  ProtectIt.MODID, 
+		name =  ProtectIt.NAME, 
+		version =  ProtectIt.VERSION, 
+		minecraftVersion = "1.16.5", 
+		forgeVersion = "36.2.0",
+		updateJsonUrl = "")
+@Credits(values = { "ProtectIt was first developed by Mark Gottschling on Sep 15, 2021."})
+public class ProtectIt implements IMod {
 	// logger
 	public static Logger LOGGER = LogManager.getLogger(ProtectIt.NAME);
 
 	// constants
 	public static final String MODID = "protectit";
 	public static final String NAME = "Protect It";
-	protected static final String VERSION = "1.1.0";
+	protected static final String VERSION = "2.0.0";
 
 	public static ProtectIt instance;
-
+	private static Config config;
+	
 	/**
 	 * 
 	 */
 	public ProtectIt() {
 		ProtectIt.instance = this;
-
+		ProtectIt.config = new Config(this);
+		
+		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
+		ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
+		
+		Config.loadConfig(Config.COMMON_CONFIG, FMLPaths.CONFIGDIR.get().resolve("protectit-common.toml"));
+		Config.loadConfig(Config.SERVER_CONFIG, FMLPaths.CONFIGDIR.get().resolve("protectit-server.toml"));
+		
 		// Register ourselves for server and other game events we are interested in
 		MinecraftForge.EVENT_BUS.register(this);
 
@@ -88,6 +112,7 @@ public class ProtectIt {
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
 		// regular register
+		eventBus.addListener(ProtectItSetup::common);
 		eventBus.addListener(ProtectItNetworking::common);
 	}
 
@@ -117,8 +142,10 @@ public class ProtectIt {
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(PlayerLoggedInEvent event) {
 		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
-		RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.getRegistry().list());
-		ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
+		if(player.getServer().isDedicatedServer()) {
+			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.getRegistry().list());
+			ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
+		}
 	}
 
 	@SubscribeEvent
@@ -259,4 +286,19 @@ public class ProtectIt {
 		});
 	}
 
+	@Override
+	public IMod getInstance() {
+		return ProtectIt.instance;
+	}
+
+	@Override
+	public String getId() {
+		return ProtectIt.MODID;
+	}
+
+	@Override
+	public IConfig getConfig() {
+		return ProtectIt.config;
+	}
+	
 }
