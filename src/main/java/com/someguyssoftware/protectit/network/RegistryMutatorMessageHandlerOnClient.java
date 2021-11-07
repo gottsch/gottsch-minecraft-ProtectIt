@@ -88,7 +88,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 			switch(message.getType()) {
 			default:
 			case RegistryMutatorMessageToClient.BLOCK_TYPE:
-				registry = ProtectionRegistries.getRegistry();
+				registry = ProtectionRegistries.block();
 				break;
 			case RegistryMutatorMessageToClient.PVP_TYPE:
 				// TODO

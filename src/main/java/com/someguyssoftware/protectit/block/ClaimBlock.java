@@ -144,7 +144,7 @@ public class ClaimBlock extends ModBlock {
 			((ClaimTileEntity) tileEntity).setOwnerUuid(placer.getStringUUID());
 			// save any overlaps to the TileEntity
 			Box box = getBox(tileEntity.getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.getRegistry().getProtections(box.getMinCoords(), box.getMaxCoords());
+			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords());
 //			ProtectIt.LOGGER.info("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
 				((ClaimTileEntity)tileEntity).getOverlaps().addAll(overlaps);
@@ -219,8 +219,8 @@ public class ClaimBlock extends ModBlock {
 			final Box box = getBox(pos);
 
 			// add area to protections registry if this is a dedicated server
-			if (!ProtectionRegistries.getRegistry().isProtected(box.getMinCoords(), box.getMaxCoords())) {
-				ProtectionRegistries.getRegistry().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords())) {
+				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
 				ProtectItSavedData savedData = ProtectItSavedData.get(world);
 				// mark data as dirty
 				if (savedData != null) {

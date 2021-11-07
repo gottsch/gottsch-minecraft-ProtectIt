@@ -72,8 +72,8 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<AbstractClaimTil
 		}
 				
 		// test if the player owns the tile entity
-		ProtectIt.LOGGER.info("owner uuid @ {} -> {}", pos.toShortString(), tileEntity.getOwnerUuid());
-		ProtectIt.LOGGER.info("minecraft player -> {}", Minecraft.getInstance().player.getStringUUID());
+//		ProtectIt.LOGGER.info("owner uuid @ {} -> {}", pos.toShortString(), tileEntity.getOwnerUuid());
+//		ProtectIt.LOGGER.info("minecraft player -> {}", Minecraft.getInstance().player.getStringUUID());
 		if (StringUtils.isBlank(tileEntity.getOwnerUuid()) ||
 				!tileEntity.getOwnerUuid().equalsIgnoreCase(Minecraft.getInstance().player.getStringUUID())) {
 			return;

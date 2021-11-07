@@ -28,7 +28,7 @@ import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.bst.Interval;
-import com.someguyssoftware.protectit.registry.bst.Interval.Data;
+import com.someguyssoftware.protectit.registry.bst.OwnershipData;
 
 import net.minecraft.network.PacketBuffer;
 
@@ -81,8 +81,8 @@ public class RegistryLoadMessageToClient {
 			else {
 				writeCoords(interval.getCoords2(), buf);
 			}
-			buf.writeUtf(StringUtils.defaultString(interval.getData().getUuid(), NULL_UUID));
-			buf.writeUtf(StringUtils.defaultString(interval.getData().getPlayerName(), ""));
+			buf.writeUtf(StringUtils.defaultString(interval.getData().getOwner().getUuid(), NULL_UUID));
+			buf.writeUtf(StringUtils.defaultString(interval.getData().getOwner().getName(), ""));
 
 		});
 	}
@@ -105,7 +105,7 @@ public class RegistryLoadMessageToClient {
 				ICoords coords2 = readCoords(buf);
 				String uuid = buf.readUtf();
 				String playerName = buf.readUtf();
-				intervals.add(new Interval(coords1, coords2, new Data(uuid, playerName)));
+				intervals.add(new Interval(coords1, coords2, new OwnershipData(uuid, playerName)));
 			}
 			message = new RegistryLoadMessageToClient(type, intervals);
 		}

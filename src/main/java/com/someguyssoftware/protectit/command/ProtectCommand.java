@@ -31,14 +31,19 @@ import javax.annotation.Nullable;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
+import com.someguyssoftware.protectit.network.RegistryWhitelistMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
+import com.someguyssoftware.protectit.registry.BlockProtectionRegistry;
+import com.someguyssoftware.protectit.registry.bst.Interval;
 
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
@@ -64,16 +69,22 @@ public class ProtectCommand {
 
 	private static final String POS = "pos";
 	private static final String POS2 = "pos2";
+	private static final String TARGET = "target";
 	private static final String TARGETS = "targets";
 	private static final String UUID = "uuid";
 
 	///// SUGGESTIONS /////
 	private static final SuggestionProvider<CommandSource> SUGGEST_UUID = (source, builder) -> {
 		// get all uuids from registry
-		return ISuggestionProvider.suggest(ProtectionRegistries.getRegistry().find(p -> !p.getData().getUuid().isEmpty()).stream()
+//		return ISuggestionProvider.suggest(ProtectionRegistries.block().find(p -> !p.getData().getOwner().getUuid().isEmpty()).stream()
+//				.map(i -> String.format("%s [%s]", 
+//						(i.getData().getOwner().getName() == null) ? "" : i.getData().getOwner().getName(),
+//								(i.getData().getOwner().getUuid() == null) ? "" : i.getData().getOwner().getUuid())), builder);
+		
+		return ISuggestionProvider.suggest(ProtectionRegistries.block().findByClaim(p -> !p.getOwner().getUuid().isEmpty()).stream()
 				.map(i -> String.format("%s [%s]", 
-						(i.getData().getPlayerName() == null) ? "" : i.getData().getPlayerName(),
-								(i.getData().getUuid() == null) ? "" : i.getData().getUuid())), builder);
+						(i.getOwner().getName() == null) ? "" : i.getOwner().getName(),
+								(i.getOwner().getUuid() == null) ? "" : i.getOwner().getUuid())), builder);
 	};
 
 	/*
@@ -83,7 +94,7 @@ public class ProtectCommand {
 		dispatcher
 		.register(Commands.literal("protect")
 				.requires(source -> {
-					return source.hasPermission(4);
+					return source.hasPermission(0); // everyone can use base command
 				})
 
 				///// BLOCK TOP-LEVEL OPTION /////
@@ -175,7 +186,58 @@ public class ProtectCommand {
 								.executes(source -> {
 									return clear(source.getSource());
 								})
-								)						
+								)
+						///// WHITELIST OPTION /////
+						.then(Commands.literal("whitelist")
+								.requires(source -> {
+									return source.hasPermission(0);
+								})
+								///// WHITELIST ADD /////
+								.then(Commands.literal("add")
+										.then(Commands.argument(POS, BlockPosArgument.blockPos())
+												.executes(source -> {
+													return addWhitelist(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS));
+												})
+												.then(Commands.argument(POS2, BlockPosArgument.blockPos())
+														.executes(source -> {
+															return addWhitelist(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2));
+														})
+														.then(Commands.argument(TARGET, EntityArgument.player())
+																.executes(source -> {
+																	return addWhitelist(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), EntityArgument.getPlayer(source, TARGET));							
+																})
+																)
+														)
+												)
+										)
+								///// WHITELIST REMOVE /////
+								.then(Commands.literal("remove")
+										// TODO
+										.executes(source -> {
+											return unavailable(source.getSource());
+										})
+										)
+								///// WHITELIST LIST /////
+								.then(Commands.literal("list")
+										.requires(source -> {
+											return source.hasPermission(0);
+										})
+										// TODO - needs pos1, pos2, entity
+										.executes(source -> {
+											return unavailable(source.getSource());
+										})
+										)
+								///// WHTIELIST CLEAR /////
+								.then(Commands.literal("clear")
+										.requires(source -> {
+											return source.hasPermission(4);
+										})
+										// TODO
+										.executes(source -> {
+											return unavailable(source.getSource());
+										})
+										)								
+								)							
 						)
 				///// PVP TOP-LEVEL OPTION /////
 				.then(Commands.literal("pvp")
@@ -229,7 +291,7 @@ public class ProtectCommand {
 			}
 
 			// second, check if any block in the area is already protected.
-			if (ProtectionRegistries.getRegistry().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
+			if (ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
 				// send message
 				source.sendSuccess(new TranslationTextComponent("message.protectit.block_region_protected"), true);
 				return 1;
@@ -245,9 +307,22 @@ public class ProtectCommand {
 				name.set(player.getName().getString());
 			}
 
+			// check if player already owns protections
+			List<Claim> claims = ProtectionRegistries.block().getProtections(uuid);
+			
+			// TODO check if the max # of claims has been reached (via config value)
+			
+			// create a claim
+			Claim claim = new Claim(
+					validCoords.get().getA(), 
+					new Box(validCoords.get().getA(), validCoords.get().getB()),
+					new PlayerData(uuid, name.get()),
+					String.valueOf(claims.size() + 1));
+			
 			// add protection on server
-			ProtectionRegistries.getRegistry().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name.get()));
-
+//			ProtectionRegistries.block().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name.get()));
+			ProtectionRegistries.block().addProtection(claim);
+			
 			// save world data
 			ServerWorld world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -299,7 +374,7 @@ public class ProtectCommand {
 			return 1;
 		}
 
-		ProtectionRegistries.getRegistry().removeProtection(validCoords.get().getA(), validCoords.get().getB());
+		ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB());
 		// save world data
 		ServerWorld world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -334,7 +409,7 @@ public class ProtectCommand {
 
 			uuid = parseNameUuid(uuid);
 
-			ProtectionRegistries.getRegistry().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
+			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
 			// save world data
 			ServerWorld world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -361,7 +436,7 @@ public class ProtectCommand {
 		try {
 			// parse out the uuid
 			uuid = parseNameUuid(uuid);
-			ProtectionRegistries.getRegistry().removeProtection(uuid);
+			ProtectionRegistries.block().removeProtection(uuid);
 			// save world data
 			ServerWorld world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -392,7 +467,7 @@ public class ProtectCommand {
 			PlayerEntity player = (PlayerEntity)entity;
 			uuid = player.getStringUUID();				
 		}
-		ProtectionRegistries.getRegistry().removeProtection(uuid);
+		ProtectionRegistries.block().removeProtection(uuid);
 		// save world data
 		ServerWorld world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -429,7 +504,7 @@ public class ProtectCommand {
 				PlayerEntity player = (PlayerEntity)entity;
 				uuid = player.getStringUUID();				
 			}
-			ProtectionRegistries.getRegistry().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
+			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
 
 			// save world data
 			ServerWorld world = source.getLevel();
@@ -496,11 +571,10 @@ public class ProtectCommand {
 	/**
 	 * 
 	 * @param source
-	 * @param pos
 	 * @return
 	 */
 	private static int list(CommandSource source) {
-		List<String> list = ProtectionRegistries.getRegistry().toStringList();
+		List<String> list = ProtectionRegistries.block().toStringList();
 		list.forEach(element -> {
 			source.sendSuccess(new StringTextComponent(element), true);
 		});
@@ -516,7 +590,7 @@ public class ProtectCommand {
 	 * @return
 	 */
 	private static int clear(CommandSource source) {
-		ProtectionRegistries.getRegistry().clear();
+		ProtectionRegistries.block().clear();
 
 		ServerWorld world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -532,6 +606,94 @@ public class ProtectCommand {
 					RegistryMutatorMessageToClient.NULL_UUID).build();
 			ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
 		}
+		return 1;
+	}
+	
+	
+	/**
+	 * 
+	 * @param source
+	 * @param pos
+	 * @return
+	 */
+	private static int addWhitelist(CommandSource source, BlockPos pos) {
+		return addWhitelist(source, pos, pos, null);
+	}
+
+	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2) {
+		return addWhitelist(source, pos, pos2, null);
+	}
+	/**
+	 * 
+	 * @param source
+	 * @param pos
+	 * @param pos2
+	 * @return
+	 */
+	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable ServerPlayerEntity player) {
+		ProtectIt.LOGGER.debug("Executing protect command...");
+
+		try {
+			// first, check that pos2 > pos1
+			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
+			if (!validCoords.isPresent()) {
+				source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+				return 1;
+			}
+
+			// second, check if the area is not protected.
+			if (!ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
+				// send message
+				source.sendSuccess(new TranslationTextComponent("message.protectit.block_region_not_protected_or_owner"), true);
+				return 1;
+			}
+
+			// determine the player uuid
+			String uuid = "";
+			AtomicReference<String> name = new AtomicReference<>("");
+			if (player != null) {
+				ProtectIt.LOGGER.debug("player entity -> {}", player.getDisplayName().getString());
+				uuid = player.getStringUUID();
+				name.set(player.getName().getString());
+			}
+			ServerPlayerEntity owner = source.getPlayerOrException();
+			
+			// TODO update
+			// add protection on server
+			List<Interval> whitelisted = ((BlockProtectionRegistry)ProtectionRegistries.block()).addWhitelist(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(owner.getStringUUID(), owner.getName().getString()), new PlayerData(uuid, name.get()));
+			if (whitelisted.isEmpty()) {
+				return 1;
+			}
+
+			// save world data
+			ServerWorld world = source.getLevel();
+			ProtectItSavedData savedData = ProtectItSavedData.get(world);
+			if (savedData != null) {
+				savedData.setDirty();
+			}
+
+			// send message to add protection on all clients
+			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				RegistryMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
+						RegistryMutatorMessageToClient.BLOCK_TYPE, 
+						RegistryWhitelistMutatorMessageToClient.WHITELIST_ADD_ACTION,
+						uuid).with($ -> {
+							$.coords1 = validCoords.get().getA();
+							$.coords2 = validCoords.get().getB();
+							$.playerName = name.get();
+						}).build();
+				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+			}
+		}
+		catch(Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
+		}
+		
+		// TODO check that you are the owner of said protection(s)
+		// TODO add targetEntity's uuid & name to whitelist of protection(s)
+		// TODO send update message
+		// TEMP
+		source.sendSuccess(new StringTextComponent("You attempted to whitelist someone"), true);
 		return 1;
 	}
 }

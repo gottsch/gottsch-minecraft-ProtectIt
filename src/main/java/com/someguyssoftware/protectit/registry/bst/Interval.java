@@ -22,6 +22,7 @@ package com.someguyssoftware.protectit.registry.bst;
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
 
 import net.minecraft.nbt.CompoundNBT;
@@ -49,7 +50,7 @@ public class Interval implements Comparable<Interval> {
 	private Interval right;
 
 	// extra mod specific data
-	private Data data;
+	private OwnershipData data;
 
 	/**
 	 * 
@@ -61,32 +62,16 @@ public class Interval implements Comparable<Interval> {
 		this.coords2 = coords2;
 		this.min = coords1.getX();
 		this.max = coords2.getX();
-//		this.uuid = "";
-		this.data = new Data("");
+		this.data = new OwnershipData();
 	}
-	
+
 	/**
 	 * 
 	 * @param coords1
 	 * @param coords2
-	 * @param uuid
+	 * @param data
 	 */
-//	@Deprecated
-//	public Interval(ICoords coords1, ICoords coords2, String uuid) {
-//		this.coords1 = coords1;
-//		this.coords2 = coords2;
-//		this.uuid = uuid;
-//	}
-//	
-//	@Deprecated
-//	public Interval(ICoords coords1, ICoords coords2, String uuid, String playerName) {
-//		this.coords1 = coords1;
-//		this.coords2 = coords2;
-//		this.uuid = uuid;
-//		this.playerName = playerName;
-//	}
-	
-	public Interval(ICoords coords1, ICoords coords2, Data data) {
+	public Interval(ICoords coords1, ICoords coords2, OwnershipData data) {
 		this(coords1, coords2);
 		this.data = data;
 	}
@@ -110,7 +95,19 @@ public class Interval implements Comparable<Interval> {
 					return -1;
 				} else if (getStartZ() == interval.getStartZ()) {
 					if (getEndZ() == interval.getEndZ()) {
-						return 0;
+//						return 0;
+						///////						
+						if (getStartY() < interval.getStartY()) {
+							
+						} else if (getStartY() == interval.getStartY()) {
+							if (getEndY() == interval.getEndY()) {
+								return 0;
+							}
+							return this.getEndY() < interval.getEndY() ? -1 : 1;
+						} else {
+							return 1;
+						}
+						//////////////
 					}
 					return this.getEndZ() < interval.getEndZ() ? -1 : 1;
 				} else {
@@ -134,9 +131,12 @@ public class Interval implements Comparable<Interval> {
 		CompoundNBT coordsNbt1 = new CompoundNBT();
 		CompoundNBT coordsNbt2 = new CompoundNBT();
 
-		coordsNbt1 = saveCoords(coords1);
-		coordsNbt2 = saveCoords(coords2);
+//		coordsNbt1 = saveCoords(coords1);
+//		coordsNbt2 = saveCoords(coords2);
 
+		coords1.save(coordsNbt1);
+		coords2.save(coordsNbt2);
+		
 		nbt.put("coords1", coordsNbt1);
 		nbt.put("coords2", coordsNbt2);
 
@@ -144,12 +144,10 @@ public class Interval implements Comparable<Interval> {
 		nbt.putInt(MAX_KEY, max);
 		
 		CompoundNBT dataNbt = new CompoundNBT();
-		dataNbt.putString("uuid", getData().getUuid());
-		dataNbt.putString("playerName", (getData().getPlayerName() == null) ? "" : getData().getPlayerName());		
+//		dataNbt.putString("uuid", getData().getOwner().getUuid());
+//		dataNbt.putString("playerName", (getData().getOwner().getName() == null) ? "" : getData().getOwner().getName());		
+		getData().save(dataNbt);
 		nbt.put(DATA_KEY, dataNbt);
-		
-//		nbt.putString("uuid", (uuid == null) ? "" : uuid);
-//		nbt.putString("playerName", (playerName == null) ? "" : playerName);
 		
 		if (getLeft() != null) {
 			CompoundNBT left = new CompoundNBT();
@@ -174,14 +172,16 @@ public class Interval implements Comparable<Interval> {
 		ICoords c1;
 		ICoords c2;
 		if (nbt.contains("coords1")) {
-			c1 = loadCoords(nbt, "coords1");
+//			c1 = loadCoords(nbt, "coords1");
+			c1 = WorldInfo.EMPTY_COORDS.load(nbt.getCompound("coords1"));
 		}
 		else {
 			return Interval.EMPTY;
 		}
 		
 		if (nbt.contains("coords2")) {
-			c2 = loadCoords(nbt, "coords2");
+//			c2 = loadCoords(nbt, "coords2");
+			c2 = WorldInfo.EMPTY_COORDS.load(nbt.getCompound("coords2"));
 		}
 		else {
 			return Interval.EMPTY;
@@ -197,27 +197,14 @@ public class Interval implements Comparable<Interval> {
 		
 		if (nbt.contains(DATA_KEY)) {
 			CompoundNBT dataNbt = (CompoundNBT) nbt.get(DATA_KEY);
-			if (dataNbt.contains("uuid")) {
-				interval.getData().setUuid(dataNbt.getString("uuid"));
-			}
-			if (dataNbt.contains("playerName")) {
-				interval.getData().setPlayerName(dataNbt.getString("playerName"));
-			}
+//			if (dataNbt.contains("uuid")) {
+//				interval.getData().getOwner().setUuid(dataNbt.getString("uuid"));
+//			}
+//			if (dataNbt.contains("playerName")) {
+//				interval.getData().getOwner().setName(dataNbt.getString("playerName"));
+//			}
+			interval.getData().load(dataNbt);
 		}
-		
-//		if (nbt.contains("uuid")) {
-//			interval.setUuid(nbt.getString("uuid"));
-//		}
-//		else {
-//			interval.setUuid("");
-//		}
-//		
-//		if (nbt.contains("playerName")) {
-//			interval.setPlayerName(nbt.getString("playerName"));
-//		}
-//		else {
-//			interval.setPlayerName("");
-//		}		
 		
 		if (nbt.contains(LEFT_KEY)) {
 			Interval left = Interval.load((CompoundNBT) nbt.get(LEFT_KEY));
@@ -235,33 +222,6 @@ public class Interval implements Comparable<Interval> {
 		
 		ProtectIt.LOGGER.debug("loaded -> {}", interval);
 		return interval;
-	}
-	
-	/**
-	 * 
-	 * @param coords
-	 * @return
-	 */
-	private static CompoundNBT saveCoords(ICoords coords) {
-		CompoundNBT nbt = new CompoundNBT();
-		nbt.putInt("x", coords.getX());
-		nbt.putInt("y", coords.getY());
-		nbt.putInt("z", coords.getZ());
-		return nbt;
-	}
-
-	/**
-	 * 
-	 * @param nbt
-	 * @param name
-	 * @return
-	 */
-	private static ICoords loadCoords(CompoundNBT nbt, String name) {
-		CompoundNBT coords = nbt.getCompound(name);
-		int x = coords.getInt("x");
-		int y = coords.getInt("y");
-		int z = coords.getInt("z");
-		return new Coords(x, y, z);
 	}
 
 	public int getStart() {
@@ -373,51 +333,52 @@ public class Interval implements Comparable<Interval> {
 		return true;
 	}
 
-	public Data getData() {
+	public OwnershipData getData() {
 		return data;
 	}
 
-	public void setData(Data data) {
+	public void setData(OwnershipData data) {
 		this.data = data;
 	}
 	
-	/**
-	 * 
-	 * @author Mark Gottschling on Oct 9, 2021
-	 *
-	 */
-	public static class Data {
-		private String uuid;
-		private String playerName;
-		
-		public Data(String uuid) {
-			this.uuid = (uuid == null) ? "" : uuid;
-		}
-		
-		public Data(String uuid, String name) {
-			this(uuid);
-			this.playerName = name;
-		}
-
-		public String getUuid() {
-			return uuid;
-		}
-
-		public void setUuid(String uuid) {
-			this.uuid = uuid;
-		}
-
-		public String getPlayerName() {
-			return playerName;
-		}
-
-		public void setPlayerName(String playerName) {
-			this.playerName = playerName;
-		}
-
-		@Override
-		public String toString() {
-			return "Data [uuid=" + uuid + ", playerName=" + playerName + "]";
-		}
-	}
+//	/**
+//	 * 
+//	 * @author Mark Gottschling on Oct 9, 2021
+//	 *
+//	 */
+//	@Deprecated
+//	public static class Data {
+//		private String uuid;
+//		private String playerName;
+//		
+//		public Data(String uuid) {
+//			this.uuid = (uuid == null) ? "" : uuid;
+//		}
+//		
+//		public Data(String uuid, String name) {
+//			this(uuid);
+//			this.playerName = name;
+//		}
+//
+//		public String getUuid() {
+//			return uuid;
+//		}
+//
+//		public void setUuid(String uuid) {
+//			this.uuid = uuid;
+//		}
+//
+//		public String getPlayerName() {
+//			return playerName;
+//		}
+//
+//		public void setPlayerName(String playerName) {
+//			this.playerName = playerName;
+//		}
+//
+//		@Override
+//		public String toString() {
+//			return "Data [uuid=" + uuid + ", playerName=" + playerName + "]";
+//		}
+//	}
 }

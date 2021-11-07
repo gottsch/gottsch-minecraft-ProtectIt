@@ -53,7 +53,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity {
 	@Override
 	public CompoundNBT save(CompoundNBT nbt) {
 		super.save(nbt);
-		ProtectIt.LOGGER.debug("saving overlap box -> {}", this);
+//		ProtectIt.LOGGER.debug("saving overlap box -> {}", this);
 		
 		if (StringUtils.isNotBlank(getOwnerUuid())) {
 			nbt.putString(OWNER_UUID, getOwnerUuid());

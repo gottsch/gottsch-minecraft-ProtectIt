@@ -17,20 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.claim;
-
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
+package com.someguyssoftware.protectit.registry;
 
 /**
- * 
- * @author Mark Gottschling on Oct 30, 2021
+ *  * Protection Registry more specific to PVP play. The protected areas are safe-zones.
+ * @author Mark Gottschling on Nov 6, 2021
  *
  */
-public class Claims {
-
-	public static final ICoords SMALL_CLAIM_SIZE = new Coords(8, 16, 8);
-	public static final ICoords MEDIUM_CLAIM_SIZE = new Coords(16, 32, 16);
-	public static final ICoords LARGE_CLAIM_SIZE = new Coords(32, 64, 32);
+public interface IPvpProtectionRegistry extends IProtectionRegistry {
 
 }

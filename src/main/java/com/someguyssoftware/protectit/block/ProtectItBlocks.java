@@ -26,7 +26,7 @@ import com.google.common.base.Preconditions;
 import com.someguyssoftware.gottschcore.block.ModBlock;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Claims;
+import com.someguyssoftware.protectit.claim.ClaimSizes;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -63,9 +63,9 @@ public class ProtectItBlocks {
 		 */
 		@SubscribeEvent
 		public static void registerBlocks(RegistryEvent.Register<Block> event) {
-			SMALL_CLAIM = new ClaimBlock(ProtectIt.MODID, "small_stake", Claims.SMALL_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
-			MEDIUM_CLAIM = new ClaimBlock(ProtectIt.MODID, "medium_claim", Claims.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
-			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", Claims.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
+			SMALL_CLAIM = new ClaimBlock(ProtectIt.MODID, "small_stake", ClaimSizes.SMALL_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
+			MEDIUM_CLAIM = new ClaimBlock(ProtectIt.MODID, "medium_claim", ClaimSizes.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
+			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", ClaimSizes.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
 			
 			/*
 	         * register blocks

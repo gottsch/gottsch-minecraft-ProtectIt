@@ -41,6 +41,7 @@ public class ProtectItNetworking {
 	public static final int REGISTRY_MUTATOR_MESSAGE_ID = 14;
 	public static final int REGISTRY_LOAD_MESSAGE_ID = 15;
 	public static final int REGISTRY_LOAD_MESSAGE_TO_SERVER_ID = 16;
+	public static final int REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID = 17;
 	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
@@ -62,6 +63,11 @@ public class ProtectItNetworking {
 				RegistryMutatorMessageToClient::encode, RegistryMutatorMessageToClient::decode,
 				RegistryMutatorMessageHandlerOnClient::onMessageReceived,
 		            Optional.of(PLAY_TO_CLIENT));
+		
+//		simpleChannel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, RegistryWhitelistMutatorMessageToClient.class,
+//				RegistryWhitelistMutatorMessageToClient::encode, RegistryWhitelistMutatorMessageToClient::decode,
+//				RegistryWhitelistMutatorMessageHandlerOnClient::onMessageReceived,
+//		            Optional.of(PLAY_TO_CLIENT));
 		
 		simpleChannel.registerMessage(REGISTRY_LOAD_MESSAGE_ID, RegistryLoadMessageToClient.class,
 				RegistryLoadMessageToClient::encode, RegistryLoadMessageToClient::decode,

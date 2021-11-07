@@ -44,8 +44,6 @@ public class RegistryMutatorMessageToClient {
 	public static final String NULL_UUID = "NULL";	
 	public static final ICoords EMPTY_COORDS = new Coords(0, -255, 0);
 	
-
-	
 	private boolean valid;
 	private String type;												//0
 	private String action;											//1
@@ -161,7 +159,7 @@ public class RegistryMutatorMessageToClient {
 		return message;
 	}
 		
-	private void writeCoords(ICoords coords, PacketBuffer buf) {
+	protected void writeCoords(ICoords coords, PacketBuffer buf) {
 		if (coords != null) {
 			buf.writeInt(coords.getX());
 			buf.writeInt(coords.getY());
@@ -169,7 +167,7 @@ public class RegistryMutatorMessageToClient {
 		}
 	}
 	
-	private static ICoords readCoords(PacketBuffer buf) {
+	protected static ICoords readCoords(PacketBuffer buf) {
 		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
 		return coords;
 	}

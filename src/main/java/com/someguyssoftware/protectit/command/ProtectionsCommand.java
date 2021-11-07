@@ -24,7 +24,6 @@ import java.util.List;
 import com.mojang.brigadier.CommandDispatcher;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
@@ -72,7 +71,7 @@ public class ProtectionsCommand {
 	 * @return
 	 */
 	private static int list(CommandSource source) {
-		List<String> list = ProtectionRegistries.getRegistry().toStringList();
+		List<String> list = ProtectionRegistries.block().toStringList();
 		list.forEach(element -> {
 			source.sendSuccess(new StringTextComponent(element), true);
 		});
@@ -80,7 +79,7 @@ public class ProtectionsCommand {
 	}
 
 	private static int clear(CommandSource source) {
-		ProtectionRegistries.getRegistry().clear();
+		ProtectionRegistries.block().clear();
 		ServerWorld world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {

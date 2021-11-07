@@ -22,12 +22,7 @@ package com.someguyssoftware.protectit.registry.bst;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.protectit.ProtectIt;
-
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 
 // NOTE this is currently not a balanced Binary Search Tree
@@ -134,7 +129,7 @@ public class ProtectedIntervalTree {
 	public synchronized void delete(Interval target, String uuid) {
 		List<Interval> list = getOverlapping(getRoot(), target, false);
 		list.forEach(i -> {
-			if (i.getData() != null && i.getData().getUuid().equalsIgnoreCase(uuid)) {
+			if (i.getData() != null && i.getData().getOwner().getUuid().equalsIgnoreCase(uuid)) {
 				delete(getRoot(), i);
 			}
 		});
@@ -163,6 +158,16 @@ public class ProtectedIntervalTree {
 		return deletedInterval;
 	}
 	
+	// better version of above
+	public synchronized void delete2(Interval target, Predicate<Interval> predicate) {
+		List<Interval> list = getOverlapping(getRoot(), target, false);
+		list.forEach(i -> {
+			if (predicate.test(target)) {
+				delete(target);
+			}
+		});
+	}
+	
 	/**
 	 * 
 	 * @param interval
@@ -173,7 +178,7 @@ public class ProtectedIntervalTree {
 		
 		List<String> display = new ArrayList<>();
 		list.forEach(element -> {
-			display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", element.getCoords1().toShortString(), element.getCoords2().toShortString(), element.getData().getPlayerName(), interval.getData().getUuid()));
+			display.add(String.format("[%s] -> [%s]: owner -> %s (%s)", element.getCoords1().toShortString(), element.getCoords2().toShortString(), element.getData().getOwner().getName(), element.getData().getOwner().getUuid()));
 		});
 		
 		return display;

@@ -17,46 +17,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.registry;
+package com.someguyssoftware.protectit.claim;
+
+import com.someguyssoftware.gottschcore.spatial.Coords;
+import com.someguyssoftware.gottschcore.spatial.ICoords;
 
 /**
  * 
- * @author Mark Gottschling on Oct 9, 2021
+ * @author Mark Gottschling on Oct 30, 2021
  *
  */
-public class PlayerData {
-	public static final PlayerData EMPTY = new PlayerData("", "");
-	
-	private String uuid;
-	private String name;
-	
-	public PlayerData(String uuid) {
-		setUuid(uuid);
-		setName("");
-	}
-	
-	public PlayerData(String uuid, String name) {
-		this(uuid);
-		setName(name);
-	}
-	
-	public String getUuid() {
-		return uuid;
-	}
-	protected void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-	
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+public class ClaimSizes {
 
-	@Override
-	public String toString() {
-		return "PlayerData [uuid=" + uuid + ", name=" + name + "]";
-	}
-	
+	public static final ICoords SMALL_CLAIM_SIZE = new Coords(8, 16, 8);
+	public static final ICoords MEDIUM_CLAIM_SIZE = new Coords(16, 32, 16);
+	public static final ICoords LARGE_CLAIM_SIZE = new Coords(32, 64, 32);
+
 }

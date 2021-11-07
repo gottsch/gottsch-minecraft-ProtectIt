@@ -86,7 +86,7 @@ public class RegistryLoadMessageHandlerOnClient {
 			switch(message.getType()) {
 			default:
 			case RegistryMutatorMessageToClient.BLOCK_TYPE:
-				registry = ProtectionRegistries.getRegistry();
+				registry = ProtectionRegistries.block();
 				break;
 			case RegistryMutatorMessageToClient.PVP_TYPE:
 				// TODO
@@ -98,7 +98,7 @@ public class RegistryLoadMessageHandlerOnClient {
 			for(Interval interval : message.getIntervals()) {
 				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
 				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
-						new PlayerData(interval.getData().getUuid(), interval.getData().getPlayerName()));
+						new PlayerData(interval.getData().getOwner().getUuid(), interval.getData().getOwner().getName()));
 			}
 		}
 		catch(Exception e) {

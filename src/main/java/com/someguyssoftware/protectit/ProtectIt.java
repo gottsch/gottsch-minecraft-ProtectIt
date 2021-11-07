@@ -143,7 +143,8 @@ public class ProtectIt implements IMod {
 	public void onWorldLoad(PlayerLoggedInEvent event) {
 		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
 		if(player.getServer().isDedicatedServer()) {
-			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.getRegistry().list());
+			// TODO will need two different message types now - block & pvp
+			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
 			ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
@@ -151,7 +152,7 @@ public class ProtectIt implements IMod {
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
@@ -161,12 +162,12 @@ public class ProtectIt implements IMod {
 	public void onBlockPlace(final EntityPlaceEvent event) {
 		// prevent protected blocks from breaking
 		if (event.getEntity() instanceof PlayerEntity) {
-			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
+			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
 				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 			}
 		}
-		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -175,12 +176,12 @@ public class ProtectIt implements IMod {
 	public void onMutliBlockPlace(final EntityMultiPlaceEvent event) {
 		// prevent protected blocks from breaking
 		if (event.getEntity() instanceof PlayerEntity) {
-			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
+			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
 				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 			}
 		}
-		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}		
 	}
@@ -188,7 +189,7 @@ public class ProtectIt implements IMod {
 	@SubscribeEvent
 	public void onToolInteract(final BlockToolInteractEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
@@ -200,13 +201,13 @@ public class ProtectIt implements IMod {
 		if (event.getEntity() instanceof PlayerEntity) {
 			// get the item in the player's hand
 			if (event.getHand() == Hand.MAIN_HAND && event.getItemStack().getItem() instanceof BlockItem) {
-				if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+				if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 					event.setCanceled(true);
 					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 				}
 			}
 		}
-		else if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -221,7 +222,7 @@ public class ProtectIt implements IMod {
 		//			}	
 		//		}
 		//		else
-		if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+		if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -232,7 +233,7 @@ public class ProtectIt implements IMod {
 			return;
 		}
 		// check if piston itself is inside protected area - if so, exit ie. allow movement
-		if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos()))) {
+		if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			return;
 		}
 
@@ -264,8 +265,8 @@ public class ProtectIt implements IMod {
 
 				if (event.getWorld().getBlockState(event.getPos().offset(xOffset, 0, zOffset)).getMaterial().isSolid()) {
 					// prevent protected blocks from breaking
-					if (ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos().offset(xOffset, 0, zOffset))) || 
-							ProtectionRegistries.getRegistry().isProtected(new Coords(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush)))) {
+					if (ProtectionRegistries.block().isProtected(new Coords(event.getPos().offset(xOffset, 0, zOffset))) || 
+							ProtectionRegistries.block().isProtected(new Coords(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush)))) {
 						event.setCanceled(true);
 						return;
 					}
@@ -282,7 +283,7 @@ public class ProtectIt implements IMod {
 		// remove any affected blocks that are protected
 		event.getAffectedBlocks().removeIf(block -> {
 			// prevent protected blocks from breaking
-			return ProtectionRegistries.getRegistry().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
+			return ProtectionRegistries.block().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
 		});
 	}
 

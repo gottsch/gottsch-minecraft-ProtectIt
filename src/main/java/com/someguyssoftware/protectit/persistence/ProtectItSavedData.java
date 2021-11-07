@@ -54,7 +54,7 @@ public class ProtectItSavedData extends WorldSavedData {
 		CompoundNBT protectIt = nbt.getCompound(PROTECT_IT);
 		if (protectIt.contains(PROTECTION_REGISTRY)) {
 //			ProtectionRegistry.load(protectIt.getCompound(PROTECTION_REGISTRY));
-			ProtectionRegistries.getRegistry().load(protectIt.getCompound(PROTECTION_REGISTRY));
+			ProtectionRegistries.block().load(protectIt.getCompound(PROTECTION_REGISTRY));
 		}
 	}
 
@@ -65,7 +65,7 @@ public class ProtectItSavedData extends WorldSavedData {
 		CompoundNBT protectIt = new CompoundNBT();
 		nbt.put(PROTECT_IT, protectIt);
 //		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistry.save(new CompoundNBT()));
-		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistries.getRegistry().save(new CompoundNBT()));
+		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundNBT()));
 		return nbt;
 	}
 	
