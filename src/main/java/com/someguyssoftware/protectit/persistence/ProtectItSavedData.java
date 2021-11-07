@@ -66,6 +66,7 @@ public class ProtectItSavedData extends WorldSavedData {
 		nbt.put(PROTECT_IT, protectIt);
 //		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistry.save(new CompoundNBT()));
 		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundNBT()));
+		// TODO save pvp registry
 		return nbt;
 	}
 	

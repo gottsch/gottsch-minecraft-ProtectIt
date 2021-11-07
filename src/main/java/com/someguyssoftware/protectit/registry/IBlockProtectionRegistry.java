@@ -51,6 +51,7 @@ public interface IBlockProtectionRegistry extends IProtectionRegistry {
 	
 	// TODO this replaces old PlayerData methods
 	public void addProtection(Claim claim);
+	public List<Claim> getAll();
 	public List<Claim> getProtections(String uuid);
 	public List<Claim> findByClaim(Predicate<Claim> predicate);
 

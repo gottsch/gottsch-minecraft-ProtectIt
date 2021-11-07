@@ -42,9 +42,15 @@ import net.minecraft.nbt.CompoundNBT;
  *
  */
 public class BlockProtectionRegistry implements IBlockProtectionRegistry {
+
+	private static final CLAIMS_KEY = "claims";
+
 	private final Map<String, List<Claim>> CLAIMS_BY_OWNER = new HashMap<>(); 
 	private final Map<ICoords, Claim> CLAIMS_BY_COORDS = new HashMap<>();
 
+	/**
+	 * Interval Binary Search Tree for fast lookups for block access/mutation actions
+	 */
 	private final ProtectedIntervalTree tree = new ProtectedIntervalTree();
 
 	@Override
@@ -146,6 +152,14 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		CLAIMS_BY_COORDS.entrySet().removeIf(entry -> entry.getValue().getOwner().getUuid().equalsIgnoreCase(uuid));
 	}
 
+	/**
+	 */
+	@Override
+	public List<Charm> getAll() {
+		List<Claim> claims = new ArrayList<>();
+		claims.addAll(CLAIMS_BY_COORDS.values());
+	}
+	
 	/**
 	 * Get all the claims owned by player.
 	 * @return A list of claims or an empty list if a claim isn't found.
@@ -315,8 +329,17 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	public CompoundNBT save(CompoundNBT nbt) {
 		// TODO save CLAIMS_BY_COORDS instead
-		ProtectIt.LOGGER.info("saving tree...");
+		//ProtectIt.LOGGER.info("saving tree...");
 		tree.save(nbt);
+
+		ListNBT list = new ListNBT();
+		CLAIMS_BY_COORDS.forEach(claim -> {
+			CompoundNBT claimNbt = new CompoundNBT();
+			claim.save(claimNbt);
+			list.add(claimNbt);
+		});
+		nbt.put(CLAIMS_KEY, list);
+
 		return nbt;
 	}
 
@@ -326,8 +349,18 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	public void load(CompoundNBT nbt) {
 		ProtectIt.LOGGER.info("loading tree...");
 		clear();
-		// TODO load CLAIMS_BY_COORDS instead and update other registry data structures
-		tree.load(nbt);
+
+		//tree.load(nbt);
+
+		if (nbt.contains(CLAIMS_KEY)) {
+			ListNBT list = nbt.getList(CLAIMS_KEY, 10);
+			list.forEach(element -> {
+				Claim claim = new Claim().load(element);
+				CLAIMS_BY_COORDS.put(claim.getCoords(), claim);
+				CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), claim);
+				tree.insert(new Interval(claim.getBox().getMinCoords()), claim.getBox().getMaxCoords());
+			})
+		}
 	}
 
 	/**

@@ -32,7 +32,14 @@ import com.someguyssoftware.protectit.registry.PlayerData;
  *
  */
 public class Claim {
+	public static Claim EMPTY = new Claim(Coords.EMPTY, Box.EMPTY);
+
 	public static final String NO_NAME = "";
+	public static final String NAME_KEY = "name";
+	public static final String OWNER_KEY = "owner";
+	public static final String COORDS_KEY = "coords";
+	public static final String BOX_KEY = "box";
+	public static final String WHITELIST_KEY = "whitelist";
 	
 	private String name;
 	private PlayerData owner;
@@ -41,7 +48,15 @@ public class Claim {
 	private Box box;
 	
 	// TODO probably a good candidate for a Builder
-		
+	// TODO add equals, hashCode()
+
+	/**
+	 * Empty constructor
+	 */
+	public Claim() {
+		this(Coords.EMPTY, box.EMPTY);
+	}
+
 	/**
 	 * 
 	 * @param coords
@@ -64,6 +79,67 @@ public class Claim {
 		setName(name);
 	}
 	
+	/**
+	 * 
+	 * @param nbt
+	 */
+	public void save(CompoundNBT nbt) {
+		ProtectIt.LOGGER.debug("saving claim -> {}", this);
+
+		CompoundNBT ownerNbt = CompoundNBT();
+		getOwner().save(dataNbt);
+		nbt.put(OWNER_KEY, dataNbt);
+
+		CompoundNBT coordsNbt = new CompoundNBT();
+		getCoords().save(coordsNbt);
+		nbt.put(COORDS_KEY, coordsNbt);
+
+		CompoundNBT boxNbt = new CompoundNBT();
+		getBox().save(boxNbt);
+		nbt.put(BOX_KEY, boxNbt);
+
+		nbt.putString(NAME_KEY, getName());
+
+		ListNBT list = new ListNBT();
+		getWhitelist().forEach(data -> {
+			CompoundNBT playerNbt = new CompoundNBT();
+			data.save(playerNbt);
+			list.add(playerNbt);
+		})
+		nbt.putList(WHITELIST_KEY, list);
+	}
+
+	/**
+	 * 
+	 * @param nbt
+	 * @return
+	 */
+	public Claim load(CompoundNBT nbt) {
+		ProtectIt.LOGGER.debug("loading claim -> {}", this);
+
+		if (nbt.contains(OWNER_KEY)) {
+			getOwner().load(nbt.get(OWNER_KEY));
+		}
+		if (nbt.contains(COORDS_KEY)) {
+			getCoords().load(nbt.get(COORDS_KEY));
+		}
+		if (nbt.contains(BOX_KEY)) {
+			getbox().load(nbt.get(BOX_KEY));
+		}
+		if (nbt.contains(NAME_KEY)) {
+			setName(nbt.getString(NAME_KEY));
+		}
+		if (nbt.contains(WHITELIST_KEY)) {
+			ListNBT list = nbt.getList(WHITELIST_KEY, 10);
+			list.forEach(element -> {
+				PlayerData playerData = new PlayerData("");
+				playerData.load(element);
+				getWhitelist().add(playerData);
+			})
+		}
+		return this;
+	}
+
 	public PlayerData getOwner() {
 		return owner;
 	}

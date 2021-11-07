@@ -144,7 +144,8 @@ public class ProtectIt implements IMod {
 		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
 		if(player.getServer().isDedicatedServer()) {
 			// TODO will need two different message types now - block & pvp
-			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
+			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
+			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().getAll());
 			ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
