@@ -123,16 +123,19 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return whitelisted;
 	}
 
+	// TODO update all registries
 	@Override
 	public void removeProtection(ICoords coords) {
 		tree.delete(new Interval(coords, coords));
 	}
 
+	// TODO update all registries
 	@Override
 	public void removeProtection(ICoords coords1, ICoords coords2) {
 		tree.delete(new Interval(coords1, coords2));
 	}
 
+	// TODO update all registries
 	@Override
 	public void removeProtection(ICoords coords1, ICoords coords2, String uuid) {
 		tree.delete(new Interval(coords1, coords2), uuid);
@@ -179,6 +182,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * A list is returned, but only one element should be returned
 	 * (else something went wrong)
 	 */
+	// TODO update use CLAIMS_BY_COORDS
 	@Override
 	public List<Box> getProtections(ICoords coords) {
 		return getProtections(coords, coords);
@@ -284,6 +288,11 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return boxes;
 	}
 
+	 @Override
+	public Claim getClaimByCoords(ICoords coords) {
+		return CLAIMS_BY_COORDS.get(coords);
+	}
+	
 	@Override
 	public List<Claim> findByClaim(Predicate<Claim> predicate) {
 //		List<Interval> protections = new ArrayList<>();

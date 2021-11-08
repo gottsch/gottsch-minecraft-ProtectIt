@@ -51,6 +51,8 @@ public class ProtectItBlocks {
 	public static Block MEDIUM_CLAIM;
 	public static Block LARGE_CLAIM;
 	
+	public static Block CLAIM_LEVER;
+	
 	/**
 	 *
 	 */
@@ -67,6 +69,8 @@ public class ProtectItBlocks {
 			MEDIUM_CLAIM = new ClaimBlock(ProtectIt.MODID, "medium_claim", ClaimSizes.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
 			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", ClaimSizes.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
 			
+			CLAIM_LEVER = new ClaimLever(ProtectIt.MODID, "claim_lever", Block.Properties.of(Material.STONE, MaterialColor.STONE).strength(0.75F));
+			
 			/*
 	         * register blocks
 	         */
@@ -74,7 +78,8 @@ public class ProtectItBlocks {
 			registry.registerAll(
 					SMALL_CLAIM,
 					MEDIUM_CLAIM,
-					LARGE_CLAIM);
+					LARGE_CLAIM,
+					CLAIM_LEVER);
 		}
 		
 		/**
@@ -91,6 +96,7 @@ public class ProtectItBlocks {
 			blocks.add(SMALL_CLAIM);
 			blocks.add(MEDIUM_CLAIM);
 			blocks.add(LARGE_CLAIM);
+			blocks.add(CLAIM_LEVER);
 			
 			for (Block b : blocks) {
 				BlockItem blockItem = new BlockItem(b, new Item.Properties().tab(ItemGroup.TAB_MISC));

@@ -21,6 +21,7 @@ package com.someguyssoftware.protectit.gui;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.gui.render.tileentity.ClaimLeverTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.render.tileentity.ClaimTileEntityRenderer;
 import com.someguyssoftware.protectit.tileentity.ProtectItTileEntities;
 
@@ -46,10 +47,13 @@ public class ProtectItGuis {
 		public static void onClientSetupEvent(FMLClientSetupEvent event) {
 			// tell the renderer that the base is rendered using CUTOUT_MIPPED (to match the Block Hopper)
 			RenderTypeLookup.setRenderLayer(ProtectItBlocks.SMALL_CLAIM, RenderType.cutoutMipped());
-
+			RenderTypeLookup.setRenderLayer(ProtectItBlocks.MEDIUM_CLAIM, RenderType.cutoutMipped());
+			RenderTypeLookup.setRenderLayer(ProtectItBlocks.LARGE_CLAIM, RenderType.cutoutMipped());
+			RenderTypeLookup.setRenderLayer(ProtectItBlocks.CLAIM_LEVER, RenderType.cutoutMipped());
+			
 			// register the custom renderer for our tile entity
 			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_TILE_ENTITY_TYPE, ClaimTileEntityRenderer::new);
-
+			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE, ClaimLeverTileEntityRenderer::new);
 		}
 		
 	}

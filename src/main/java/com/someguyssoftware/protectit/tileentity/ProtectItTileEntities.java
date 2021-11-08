@@ -35,6 +35,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
  */
 public class ProtectItTileEntities {
 	public static TileEntityType<ClaimTileEntity> CLAIM_TILE_ENTITY_TYPE;
+	public static TileEntityType<ClaimLeverTileEntity> CLAIM_LEVER_TILE_ENTITY_TYPE;
 	
 	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
 	public static class RegistrationHandler {
@@ -46,6 +47,13 @@ public class ProtectItTileEntities {
 					.build(null);
 			CLAIM_TILE_ENTITY_TYPE.setRegistryName("claim_te");
 			event.getRegistry().register(CLAIM_TILE_ENTITY_TYPE);
+			
+			// lever
+			CLAIM_LEVER_TILE_ENTITY_TYPE = TileEntityType.Builder
+					.of(ClaimLeverTileEntity::new, ProtectItBlocks.CLAIM_LEVER)
+					.build(null);
+			CLAIM_LEVER_TILE_ENTITY_TYPE.setRegistryName("claim_lever_te");
+			event.getRegistry().register(CLAIM_LEVER_TILE_ENTITY_TYPE);
 		}
 		
 	}

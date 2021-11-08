@@ -54,5 +54,6 @@ public interface IBlockProtectionRegistry extends IProtectionRegistry {
 	public List<Claim> getAll();
 	public List<Claim> getProtections(String uuid);
 	public List<Claim> findByClaim(Predicate<Claim> predicate);
+	public Claim getClaimByCoords(ICoords coords);
 
 }
