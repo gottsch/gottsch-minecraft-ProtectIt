@@ -27,6 +27,7 @@ import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -211,7 +212,7 @@ public class ClaimBlock extends ModBlock {
 		if (WorldInfo.isClientSide(world)) {
 			return ActionResultType.SUCCESS;
 		}
-		ProtectIt.LOGGER.info("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
+		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
 		// get the tile entity
 		TileEntity tileEntity = world.getBlockEntity(pos);
@@ -220,7 +221,19 @@ public class ClaimBlock extends ModBlock {
 
 			// add area to protections registry if this is a dedicated server
 			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords())) {
-				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+				ProtectIt.LOGGER.info("not protected");
+				// check if player already owns protections
+				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
+				// create a claim
+				Claim claim = new Claim(
+						box.getMinCoords(), 
+						box,
+						new PlayerData(player.getStringUUID(), player.getName().getString()),
+						String.valueOf(claims.size() + 1));
+				ProtectionRegistries.block().addProtection(claim);
+//				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+				
+				ProtectIt.LOGGER.info("should've added -> {} {}", box, player.getStringUUID());
 				ProtectItSavedData savedData = ProtectItSavedData.get(world);
 				// mark data as dirty
 				if (savedData != null) {

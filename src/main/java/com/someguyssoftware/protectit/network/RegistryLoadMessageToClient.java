@@ -24,11 +24,12 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.registry.bst.Interval;
-import com.someguyssoftware.protectit.registry.bst.OwnershipData;
+import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.network.PacketBuffer;
 
@@ -45,20 +46,20 @@ public class RegistryLoadMessageToClient {
 	private boolean valid;
 	private String type;
 	private int size;
-	@Deprecated
-	private List<Interval> intervals;
+//	@Deprecated
+//	private List<Interval> intervals;
 	private List<Claim> claims;
 	
 	public RegistryLoadMessageToClient() {
 		valid = false;
 	}
 	
-	public RegistryLoadMessageToClient(String type, List<Interval> intervals) {
-		this.valid = true;
-		this.type = type;
-		this.size = intervals.size();
-		this.intervals = intervals;
-	}
+//	public RegistryLoadMessageToClient(String type, List<Interval> intervals) {
+//		this.valid = true;
+//		this.type = type;
+//		this.size = intervals.size();
+//		this.intervals = intervals;
+//	}
 
 	public RegistryLoadMessageToClient(String type, List<Claim> claims) {
 		this.valid = true;
@@ -97,8 +98,8 @@ public class RegistryLoadMessageToClient {
 		// });
 
 		claims.forEach(claim -> {
-			writeClaimbuf, claim);
-		})
+			writeClaim(buf, claim);
+		});
 	}
 
 	private void writeClaim(PacketBuffer buf, Claim claim) {
@@ -108,9 +109,8 @@ public class RegistryLoadMessageToClient {
 		if (claim.getCoords() == null) {
 				writeCoords(EMPTY_COORDS, buf);
 			}
-			else {
-				writeCoords(claim.getCoords(), buf);
-			}
+		else {
+			writeCoords(claim.getCoords(), buf);
 		}
 
 		if (claim.getBox() == null) {
@@ -118,8 +118,8 @@ public class RegistryLoadMessageToClient {
 			writeCoords(EMPTY_COORDS, buf);
 		}
 		else {
-			writeCoords(claim.getBox().getMinCoords());
-			writeCoords(claim.getBox().getMaxCoords());
+			writeCoords(claim.getBox().getMinCoords(), buf);
+			writeCoords(claim.getBox().getMaxCoords(), buf);
 		}
 
 		buf.writeUtf(StringUtils.defaultString(claim.getName(), ""));
@@ -133,7 +133,7 @@ public class RegistryLoadMessageToClient {
 			claim.getWhitelist().forEach(player -> {
 				buf.writeUtf(StringUtils.defaultString(player.getUuid(), NULL_UUID));
 				buf.writeUtf(StringUtils.defaultString(player.getName(), ""));
-			})
+			});
 		}
 	}
 
@@ -185,7 +185,7 @@ public class RegistryLoadMessageToClient {
 		ICoords coords = readCoords(buf);
 		ICoords coords1 = readCoords(buf);
 		ICoords coords2 = readCoords(buf);
-		String name = readUtf();
+		String name = buf.readUtf();
 		int size = buf.readInt();
 		for (int index = 0; index < size; index++) {
 			String playerUuid = buf.readUtf();
@@ -227,13 +227,13 @@ public class RegistryLoadMessageToClient {
 		this.size = size;
 	}
 
-	public List<Interval> getIntervals() {
-		return intervals;
-	}
-
-	public void setIntervals(List<Interval> intervals) {
-		this.intervals = intervals;
-	}
+//	public List<Interval> getIntervals() {
+//		return intervals;
+//	}
+//
+//	public void setIntervals(List<Interval> intervals) {
+//		this.intervals = intervals;
+//	}
 
 	public String getType() {
 		return type;
@@ -241,5 +241,13 @@ public class RegistryLoadMessageToClient {
 
 	public void setType(String type) {
 		this.type = type;
+	}
+
+	protected List<Claim> getClaims() {
+		return claims;
+	}
+
+	protected void setClaims(List<Claim> claims) {
+		this.claims = claims;
 	}
 }

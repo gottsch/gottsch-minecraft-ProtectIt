@@ -24,7 +24,12 @@ import java.util.List;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.PlayerData;
+
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 
 /**
  * 
@@ -32,7 +37,7 @@ import com.someguyssoftware.protectit.registry.PlayerData;
  *
  */
 public class Claim {
-	public static Claim EMPTY = new Claim(Coords.EMPTY, Box.EMPTY);
+	public static Claim EMPTY = new Claim(WorldInfo.EMPTY_COORDS, Box.EMPTY);
 
 	public static final String NO_NAME = "";
 	public static final String NAME_KEY = "name";
@@ -54,7 +59,7 @@ public class Claim {
 	 * Empty constructor
 	 */
 	public Claim() {
-		this(Coords.EMPTY, box.EMPTY);
+		this(WorldInfo.EMPTY_COORDS, Box.EMPTY);
 	}
 
 	/**
@@ -86,9 +91,9 @@ public class Claim {
 	public void save(CompoundNBT nbt) {
 		ProtectIt.LOGGER.debug("saving claim -> {}", this);
 
-		CompoundNBT ownerNbt = CompoundNBT();
-		getOwner().save(dataNbt);
-		nbt.put(OWNER_KEY, dataNbt);
+		CompoundNBT ownerNbt = new CompoundNBT();
+		getOwner().save(ownerNbt);
+		nbt.put(OWNER_KEY, ownerNbt);
 
 		CompoundNBT coordsNbt = new CompoundNBT();
 		getCoords().save(coordsNbt);
@@ -105,8 +110,8 @@ public class Claim {
 			CompoundNBT playerNbt = new CompoundNBT();
 			data.save(playerNbt);
 			list.add(playerNbt);
-		})
-		nbt.putList(WHITELIST_KEY, list);
+		});
+		nbt.put(WHITELIST_KEY, list);
 	}
 
 	/**
@@ -115,16 +120,16 @@ public class Claim {
 	 * @return
 	 */
 	public Claim load(CompoundNBT nbt) {
-		ProtectIt.LOGGER.debug("loading claim -> {}", this);
+		ProtectIt.LOGGER.debug("loading claim...");
 
 		if (nbt.contains(OWNER_KEY)) {
-			getOwner().load(nbt.get(OWNER_KEY));
+			getOwner().load(nbt.getCompound(OWNER_KEY));
 		}
 		if (nbt.contains(COORDS_KEY)) {
-			getCoords().load(nbt.get(COORDS_KEY));
+			setCoords(WorldInfo.EMPTY_COORDS.load(nbt.getCompound(COORDS_KEY)));
 		}
 		if (nbt.contains(BOX_KEY)) {
-			getbox().load(nbt.get(BOX_KEY));
+			setBox(Box.load(nbt.getCompound(BOX_KEY)));
 		}
 		if (nbt.contains(NAME_KEY)) {
 			setName(nbt.getString(NAME_KEY));
@@ -133,9 +138,9 @@ public class Claim {
 			ListNBT list = nbt.getList(WHITELIST_KEY, 10);
 			list.forEach(element -> {
 				PlayerData playerData = new PlayerData("");
-				playerData.load(element);
+				playerData.load((CompoundNBT)element);
 				getWhitelist().add(playerData);
-			})
+			});
 		}
 		return this;
 	}
@@ -175,11 +180,11 @@ public class Claim {
 		this.box = box;
 	}
 
-	protected String getName() {
+	public String getName() {
 		return name;
 	}
 
-	protected void setName(String name) {
+	public void setName(String name) {
 		this.name = name;
 	}
 

@@ -35,6 +35,7 @@ import com.someguyssoftware.protectit.registry.bst.OwnershipData;
 import com.someguyssoftware.protectit.registry.bst.ProtectedIntervalTree;
 
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 
 /**
  * 
@@ -43,7 +44,7 @@ import net.minecraft.nbt.CompoundNBT;
  */
 public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
-	private static final CLAIMS_KEY = "claims";
+	private static final String CLAIMS_KEY = "claims";
 
 	private final Map<String, List<Claim>> CLAIMS_BY_OWNER = new HashMap<>(); 
 	private final Map<ICoords, Claim> CLAIMS_BY_COORDS = new HashMap<>();
@@ -70,7 +71,8 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	
 	@Override
 	public void addProtection(ICoords coords1, ICoords coords2, PlayerData data) {
-		
+		Claim claim = new Claim(coords1, new Box(coords1, coords2), data);
+		addProtection(claim);
 	}
 
 	/**
@@ -82,13 +84,12 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		
 		// add claims by owner
 		List<Claim> claims = null;
+		// TOODO make a method
 		if (!CLAIMS_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
 			// create new list entry
-			claims = CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
+			CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
 		}
-		else {
-			claims = CLAIMS_BY_OWNER.get(claim.getOwner().getUuid());
-		}
+		claims = CLAIMS_BY_OWNER.get(claim.getOwner().getUuid());
 		claims.add(claim);
 		
 		// add claims by coords
@@ -155,9 +156,10 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	/**
 	 */
 	@Override
-	public List<Charm> getAll() {
+	public List<Claim> getAll() {
 		List<Claim> claims = new ArrayList<>();
 		claims.addAll(CLAIMS_BY_COORDS.values());
+		return claims;
 	}
 	
 	/**
@@ -330,10 +332,10 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	public CompoundNBT save(CompoundNBT nbt) {
 		// TODO save CLAIMS_BY_COORDS instead
 		//ProtectIt.LOGGER.info("saving tree...");
-		tree.save(nbt);
+//		tree.save(nbt);
 
 		ListNBT list = new ListNBT();
-		CLAIMS_BY_COORDS.forEach(claim -> {
+		CLAIMS_BY_COORDS.forEach((coords, claim) -> {
 			CompoundNBT claimNbt = new CompoundNBT();
 			claim.save(claimNbt);
 			list.add(claimNbt);
@@ -347,7 +349,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * 
 	 */
 	public void load(CompoundNBT nbt) {
-		ProtectIt.LOGGER.info("loading tree...");
+		ProtectIt.LOGGER.debug("loading registry...");
 		clear();
 
 		//tree.load(nbt);
@@ -355,11 +357,18 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		if (nbt.contains(CLAIMS_KEY)) {
 			ListNBT list = nbt.getList(CLAIMS_KEY, 10);
 			list.forEach(element -> {
-				Claim claim = new Claim().load(element);
+				Claim claim = new Claim().load((CompoundNBT)element);
+				ProtectIt.LOGGER.debug("loaded claim -> {}", claim);
 				CLAIMS_BY_COORDS.put(claim.getCoords(), claim);
-				CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), claim);
-				tree.insert(new Interval(claim.getBox().getMinCoords()), claim.getBox().getMaxCoords());
-			})
+				
+				if (!CLAIMS_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
+					// create new list entry
+					CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
+				}
+				CLAIMS_BY_OWNER.get(claim.getOwner().getUuid()).add(claim);
+
+				tree.insert(new Interval(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), new OwnershipData(claim.getOwner().getUuid(), claim.getOwner().getName())));
+			});
 		}
 	}
 

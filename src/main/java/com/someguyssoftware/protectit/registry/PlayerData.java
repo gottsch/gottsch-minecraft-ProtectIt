@@ -19,6 +19,10 @@
  */
 package com.someguyssoftware.protectit.registry;
 
+import com.someguyssoftware.protectit.ProtectIt;
+
+import net.minecraft.nbt.CompoundNBT;
+
 /**
  * 
  * @author Mark Gottschling on Oct 9, 2021
@@ -47,7 +51,7 @@ public class PlayerData {
 		ProtectIt.LOGGER.info("saved name -> {}", nbt.getString("name"));
 	}
 	
-	public IdentifierData load(CompoundNBT nbt) {
+	public PlayerData load(CompoundNBT nbt) {
 		if (nbt.contains("uuid")) {
 			ProtectIt.LOGGER.info("loading uuid -> {}", nbt.getString("uuid"));
 			setUuid(nbt.getString("uuid"));

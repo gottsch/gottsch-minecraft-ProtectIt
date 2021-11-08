@@ -21,7 +21,6 @@ package com.someguyssoftware.protectit.persistence;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.IWorld;

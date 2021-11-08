@@ -82,8 +82,9 @@ public class RegistryLoadMessageHandlerOnServer {
 			ServerPlayerEntity player = minecraftServer.getPlayerList().getPlayer(UUID.fromString(message.getUuid()));
 			if (sendingPlayer != null) {
 				// send message to update client's registry with the loaded data
-				RegistryLoadMessageToClient clientMessage = new RegistryLoadMessageToClient(RegistryMutatorMessageToClient.BLOCK_TYPE, ProtectionRegistries.block().list());
-				ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity)player), clientMessage);
+//				TEMP
+//				RegistryLoadMessageToClient clientMessage = new RegistryLoadMessageToClient(RegistryMutatorMessageToClient.BLOCK_TYPE, ProtectionRegistries.block().list());
+//				ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity)player), clientMessage);
 			}
 		}
 		catch(Exception e) {

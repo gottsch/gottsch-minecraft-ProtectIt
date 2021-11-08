@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -95,10 +96,15 @@ public class RegistryLoadMessageHandlerOnClient {
 			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
 			// load registry from interval list
-			for(Interval interval : message.getIntervals()) {
-				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
-				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
-						new PlayerData(interval.getData().getOwner().getUuid(), interval.getData().getOwner().getName()));
+//			for(Interval interval : message.getIntervals()) {
+//				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
+//				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
+//						new PlayerData(interval.getData().getOwner().getUuid(), interval.getData().getOwner().getName()));
+//			}
+			for(Claim claim : message.getClaims()) {
+				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
+				registry.addProtection(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), 
+						new PlayerData(claim.getOwner().getUuid(), claim.getOwner().getName()));
 			}
 		}
 		catch(Exception e) {

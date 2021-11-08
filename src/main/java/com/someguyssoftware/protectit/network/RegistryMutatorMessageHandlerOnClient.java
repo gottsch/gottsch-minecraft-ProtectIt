@@ -20,17 +20,16 @@
 package com.someguyssoftware.protectit.network;
 
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.LogicalSidedProvider;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -97,7 +96,8 @@ public class RegistryMutatorMessageHandlerOnClient {
 			
 			if (message.getAction().equals(RegistryMutatorMessageToClient.ADD_ACTION)) {
 				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
-				registry.addProtection(message.getCoords1(), message.getCoords2(), data);
+				Claim claim = new Claim(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
+				registry.addProtection(claim);
 			}
 			else if (message.getAction().equals(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
 				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
