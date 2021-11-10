@@ -28,23 +28,21 @@ import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeverBlock;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Vector3d;
 
 /**
  * 
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverTileEntity> {
+public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverTileEntity> implements IClaimRenderer {
 
 	public ClaimLeverTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
 		super(dispatcher);
@@ -65,54 +63,44 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		// color of the bound (White)
 		Color c = Color.WHITE;
 		// split up in red, green and blue and transform it to 0.0 - 1.0
-		float red = c.getRed() / 255.0f;
-		float green = c.getGreen() / 255.0f;
-		float blue = c.getBlue() / 255.0f;
+//		float green = c.getGreen() / 255.0f;
 
 		IVertexBuilder builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
+		// TODO merge the Color strategies between the render methods
+		
 		// render the claim
 		ICoords size = claim.getBox().getMaxCoords().delta(claim.getBox().getMinCoords());
-		renderClaim(tileEntity, matrixStack, builder, size, 0, green, 0, 1.0f);		
+		renderClaim(tileEntity, matrixStack, builder, size, 0, c.getGreen(), 0, 1.0f);	
+		renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}
 
-	public void renderClaim(ClaimLeverTileEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
-			ICoords claimSize, float red, float green, float blue, float alpha) {
 
-//		int delta =  tileEntity.getBlockPos().getY() - tileEntity.getClaim().getBox().getMinCoords().getY();
-		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(tileEntity.getClaim().getBox().getMinCoords());
-		
-		// push the current transformation matrix + normals matrix
-		matrixStack.pushPose(); 
-		
-		// translate on the y-axis by the delta of  the TE pos and the box min pos
-		updateTranslation(matrixStack, delta.negate());
-		
-		// render
-		WorldRenderer.renderLineBox(matrixStack, builder, 
-				0, 0, 0,
-				claimSize.getX(), claimSize.getY(), claimSize.getZ(),
-				red, green,blue, 1.0f, red, green, blue);
-		
-		matrixStack.popPose();
+	@Override
+	public void updateClaimTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaim().getBox().getMinCoords()).negate();
+		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
 	}
 	
-	/**
-	 * 
-	 * @param matrixStack
-	 * @param offset
-	 */
-	public void updateTranslation(MatrixStack matrixStack, ICoords offset) {
-		matrixStack.translate(offset.getX(), offset.getY(), offset.getZ());
-	}
-	
-	/**
-	 * 
-	 * @param matrixStack
-	 * @param yOffset
-	 */
-	public void updateTranslation(MatrixStack matrixStack, int yOffset) {
-		final Vector3d TRANSLATION_OFFSET = new Vector3d(0.0, yOffset, 0.0);
-		matrixStack.translate(TRANSLATION_OFFSET.x, TRANSLATION_OFFSET.y, TRANSLATION_OFFSET.z);
+	@Override
+	public void updateHighlightTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+		Claim claim = ((ClaimLeverTileEntity)tileEntity).getClaim();
+		
+		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
+		ICoords highlightFloor = new Coords(leverCoords);
+		while (highlightFloor.getY() > claim.getBox().getMinCoords().getY()) {
+			if (tileEntity.getLevel().getBlockState(highlightFloor.down(1).toPos()).getMaterial().isSolid()) {
+				break;
+			}
+			highlightFloor = highlightFloor.down(1);
+		}
+		highlightFloor = leverCoords.delta(highlightFloor).negate();
+		
+		ICoords delta = 
+				new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaim().getBox().getMinCoords())
+				.negate()
+				.withY(highlightFloor.getY());
+
+		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());
 	}
 }

@@ -78,12 +78,13 @@ public class ClaimLeverTileEntity extends AbstractModTileEntity {
 		return INFINITE_EXTENT_AABB;
 	}
 	
+	// TODO shouldn't need these are they are already in AbstractModTileEntity
 	/**
 	 * collect data to send to client
 	 */
 	@Override
 	public CompoundNBT getUpdateTag() {
-		CompoundNBT nbt = super.getUpdateTag();
+		CompoundNBT nbt = new CompoundNBT(); //super.getUpdateTag();
 		nbt = save(nbt);
 		return nbt;
 	}
@@ -93,7 +94,7 @@ public class ClaimLeverTileEntity extends AbstractModTileEntity {
 	 */
 	@Override
 	public void handleUpdateTag(BlockState state, CompoundNBT tag) {
-		super.handleUpdateTag(state, tag);
+		//super.handleUpdateTag(state, tag);
 		load(state, tag);
 	}
 }
