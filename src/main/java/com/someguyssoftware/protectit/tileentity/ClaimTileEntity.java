@@ -26,10 +26,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.ClaimBlock;
+import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
+import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.math.AxisAlignedBB;
 
 /**
@@ -37,8 +41,9 @@ import net.minecraft.util.math.AxisAlignedBB;
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ClaimTileEntity extends AbstractClaimTileEntity {
-		
+public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickableTileEntity {
+	private static final int TICKS_PER_SECOND = 20;
+	private static final int FIVE_SECONDS = 5 * TICKS_PER_SECOND;
 	/**
 	 * 
 	 */
@@ -47,18 +52,32 @@ public class ClaimTileEntity extends AbstractClaimTileEntity {
 		setOverlaps(new ArrayList<>());
 	}
 
+	@Override
+	public void tick() {
+		// fetch overlaps from protection registry every 5 seconds
+		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
+			ClaimBlock block = (ClaimBlock)getLevel().getBlockState(getBlockPos()).getBlock();
+			Box box = block.getBox(getBlockPos());
+			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords());
+			getOverlaps().clear();
+			if (!overlaps.isEmpty()) {
+				getOverlaps().addAll(overlaps);
+			}
+		}
+	}
+
 	/**
 	 * 
 	 */
 	@Override
 	public CompoundNBT save(CompoundNBT nbt) {
 		super.save(nbt);
-//		ProtectIt.LOGGER.debug("saving overlap box -> {}", this);
-		
+		//		ProtectIt.LOGGER.debug("saving overlap box -> {}", this);
+
 		if (StringUtils.isNotBlank(getOwnerUuid())) {
 			nbt.putString(OWNER_UUID, getOwnerUuid());
 		}
-		
+
 		ListNBT list = new ListNBT();
 		getOverlaps().forEach(box -> {
 			CompoundNBT element = new CompoundNBT();
@@ -68,18 +87,18 @@ public class ClaimTileEntity extends AbstractClaimTileEntity {
 		nbt.put(OVERLAPS, list);
 		return nbt;
 	}
-	
+
 	/**
 	 * 
 	 */
 	@Override
 	public void load(BlockState state, CompoundNBT nbt) {
 		super.load(state, nbt);
-		
+
 		if (nbt.contains(OWNER_UUID)) {
 			setOwnerUuid(nbt.getString(OWNER_UUID));
 		}
-		
+
 		getOverlaps().clear();
 		if (nbt.contains(OVERLAPS)) {
 			ListNBT list = nbt.getList(OVERLAPS, 10);
@@ -91,7 +110,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity {
 			});
 		}
 	}
-	
+
 	/*
 	 * Get the render bounding box. Typical block is 1x1x1.
 	 */
@@ -100,7 +119,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity {
 		// always render regardless if TE is in FOV.
 		return INFINITE_EXTENT_AABB;
 	}
-	
+
 	/**
 	 * collect data to send to client
 	 */
@@ -110,7 +129,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity {
 		nbt = save(nbt);
 		return nbt;
 	}
-	
+
 	/*
 	 * handle on client
 	 */

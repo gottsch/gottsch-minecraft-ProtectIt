@@ -63,7 +63,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		// color of the bound (White)
 		Color c = Color.WHITE;
 		// split up in red, green and blue and transform it to 0.0 - 1.0
-//		float green = c.getGreen() / 255.0f;
+		float green = c.getGreen() / 255.0f;
 
 		IVertexBuilder builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
@@ -71,7 +71,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		
 		// render the claim
 		ICoords size = claim.getBox().getMaxCoords().delta(claim.getBox().getMinCoords());
-		renderClaim(tileEntity, matrixStack, builder, size, 0, c.getGreen(), 0, 1.0f);	
+		renderClaim(tileEntity, matrixStack, builder, size, 0, green, 0, 1.0f);	
 		renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}
 

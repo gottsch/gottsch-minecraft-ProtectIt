@@ -20,6 +20,7 @@
 package com.someguyssoftware.protectit.block;
 
 import java.util.List;
+import java.util.Random;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
@@ -27,7 +28,6 @@ import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
-import com.someguyssoftware.protectit.tileentity.ClaimTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
@@ -48,6 +48,8 @@ import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 
@@ -88,7 +90,7 @@ public class ClaimLever extends LeverBlock {
 		ProtectIt.LOGGER.info("createNewTileEntity | tileEntity -> {}}", tileEntity);
 		return tileEntity;
 	}
-	
+
 	/**
 	 * 
 	 * @param state
@@ -98,12 +100,12 @@ public class ClaimLever extends LeverBlock {
 	public boolean hasTileEntity(BlockState state) {
 		return true;
 	}
-	
+
 	@Override
 	public BlockRenderType getRenderShape(BlockState state) {
 		return BlockRenderType.MODEL;
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -135,6 +137,13 @@ public class ClaimLever extends LeverBlock {
 			}
 		}
 	}
+
+	@OnlyIn(Dist.CLIENT)
+	public void animateTick(BlockState state, World world, BlockPos pos, Random random) {
+		if (state.getValue(POWERED) && random.nextFloat() < 0.25F) {
+			makeParticle(state, world, pos, 0.5F);
+		}
+	}
 	
 	/**
 	 * 
@@ -149,17 +158,17 @@ public class ClaimLever extends LeverBlock {
 		double d0 = (double)pos.getX() + 0.5D + 0.1D * (double)direction.getStepX() + 0.2D * (double)direction1.getStepX();
 		double d1 = (double)pos.getY() + 0.5D + 0.1D * (double)direction.getStepY() + 0.2D * (double)direction1.getStepY();
 		double d2 = (double)pos.getZ() + 0.5D + 0.1D * (double)direction.getStepZ() + 0.2D * (double)direction1.getStepZ();
-		// TODO change to a different particle
-		world.addParticle(new RedstoneParticleData(1.0F, 0.0F, 0.0F, scale), d0, d1, d2, 0.0D, 0.0D, 0.0D);
+		world.addParticle(new RedstoneParticleData(0F, 1F, 0F, scale), d0, d1, d2, 0.0D, 0.0D, 0.0D);
 	}
 
 	/**
-	 * TODO update to set value in TE? or can the TE just look at the state of the block and render
+	 * 
 	 */
-	public BlockState pull(BlockState p_226939_1_, World p_226939_2_, BlockPos p_226939_3_) {
-		p_226939_1_ = p_226939_1_.cycle(POWERED);
-		p_226939_2_.setBlock(p_226939_3_, p_226939_1_, 3);
-		return p_226939_1_;
+	@Override
+	public BlockState pull(BlockState state, World world, BlockPos pos) {
+		state = state.cycle(POWERED);
+		world.setBlock(pos, state, 3);
+		return state;
 	}
 
 	/**

@@ -69,10 +69,10 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 			ProtectIt.LOGGER.info("not the right block -> {}", block);
 			return; // should never happen
 		}
-				
+
 		// test if the player owns the tile entity
-//		ProtectIt.LOGGER.info("owner uuid @ {} -> {}", pos.toShortString(), tileEntity.getOwnerUuid());
-//		ProtectIt.LOGGER.info("minecraft player -> {}", Minecraft.getInstance().player.getStringUUID());
+		//		ProtectIt.LOGGER.info("owner uuid @ {} -> {}", pos.toShortString(), tileEntity.getOwnerUuid());
+		//		ProtectIt.LOGGER.info("minecraft player -> {}", Minecraft.getInstance().player.getStringUUID());
 		if (StringUtils.isBlank(tileEntity.getOwnerUuid()) ||
 				!tileEntity.getOwnerUuid().equalsIgnoreCase(Minecraft.getInstance().player.getStringUUID())) {
 			return;
@@ -92,11 +92,29 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 		if (!((ClaimTileEntity)tileEntity).getOverlaps().isEmpty()) {
 			hasOverlaps = true;
 		}
+
+		// render claim outlines
 		renderClaim(tileEntity, matrixStack, builder, ((ClaimBlock)block).getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
 
 		// render all overlaps
 		((ClaimTileEntity)tileEntity).getOverlaps().forEach(b -> {
 			renderOverlap(tileEntity, matrixStack, builder, b, red, 0, 0, 1.0f);
+		});
+
+		// render higlights
+		if (hasOverlaps) {
+			renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, ((ClaimBlock)block).getClaimSize(), 
+					new Color(255, 255, 255, 100), combinedLight, combinedOverlay);
+		}
+		else {
+			renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, ((ClaimBlock)block).getClaimSize(), 
+					combinedLight, combinedOverlay);
+		}
+
+		// TODO need renderOverlapHighlight which set the correct translation
+		((ClaimTileEntity)tileEntity).getOverlaps().forEach(b -> {
+			renderOverlapHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, b, 
+					new Color(255, 0, 0, 100), combinedLight, combinedOverlay);
 		});
 	}
 
@@ -108,7 +126,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 		ICoords delta = new Coords(0, 0, 0).withY(pos.getY() - box.getMinCoords().getY());		
 		matrixStack.translate(delta.getX(), -delta.getY(), delta.getZ());
 	}
-	
+
 	/**
 	 * 
 	 * @param tileEntity
@@ -134,6 +152,24 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 				size.getY(),
 				size.getZ(),
 				red, 0, 0, 1.0f, red, 0, 0);
+		matrixStack.popPose();
+	}
+	
+	public void renderOverlapHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, 
+			Box overlapBox, Color color, int combinedLight, int combinedOverlay) {
+
+		// calculate render pos -> delta of b & pos
+		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
+		// calculate size of b
+		ICoords size = overlapBox.getSize();
+		
+		// push the current transformation matrix + normals matrix
+		matrixStack.pushPose();
+		
+		updateTranslation(matrixStack, offsetCoords.withY(0));
+		drawQuads(matrixStack, renderBuffers, size, color, combinedLight);
+		
+		// restore the original transformation matrix + normals matrix
 		matrixStack.popPose();
 	}
 }

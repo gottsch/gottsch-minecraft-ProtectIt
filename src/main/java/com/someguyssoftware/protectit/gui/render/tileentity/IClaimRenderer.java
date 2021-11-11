@@ -107,18 +107,23 @@ public interface IClaimRenderer {
 	 * @param combinedOverlay
 	 */
 	default public void renderHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, ICoords size,
-			int combinedLight, int combinedOverlay) {
+			Color color, int combinedLight, int combinedOverlay) {
 
 		// push the current transformation matrix + normals matrix
 		matrixStack.pushPose();
 		
 		updateHighlightTranslation(tileEntity, matrixStack);
-		drawQuads(matrixStack, renderBuffers, size, getHighlightColor(tileEntity), combinedLight);
+		drawQuads(matrixStack, renderBuffers, size, color, combinedLight);
 		
 		// restore the original transformation matrix + normals matrix
 		matrixStack.popPose();
 	}
 
+	default public void renderHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, ICoords size,
+			int combinedLight, int combinedOverlay) {
+		renderHighlight(tileEntity, partialTicks, matrixStack, renderBuffers, size, getHighlightColor(tileEntity), combinedLight, combinedOverlay);
+	}
+	
 	/**
 	 * 
 	 * @param tileEntity
