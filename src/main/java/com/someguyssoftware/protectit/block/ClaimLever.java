@@ -37,6 +37,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particles.RedstoneParticleData;
+import net.minecraft.state.properties.AttachFace;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
@@ -45,6 +46,8 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.shapes.ISelectionContext;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
@@ -57,6 +60,16 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  *
  */
 public class ClaimLever extends LeverBlock {
+
+	// redefine the VoxelShape as ClaimLever is larger than Minecraft Lever
+	protected static final VoxelShape NORTH_AABB = Block.box(4.0D, 3.0D, 10.0D, 12.0D, 13.0D, 16.0D);
+	protected static final VoxelShape SOUTH_AABB = Block.box(4.0D, 3.0D, 0.0D, 12.0D, 13.0D, 6.0D);
+	protected static final VoxelShape WEST_AABB = Block.box(10.0D, 3.0D, 4.0D, 16.0D, 13.0D, 12.0D);
+	protected static final VoxelShape EAST_AABB = Block.box(0.0D, 3.0D, 4.0D, 6.0D, 13.0D, 12.0D);
+	protected static final VoxelShape UP_AABB_Z = Block.box(4.0D, 0.0D, 3.0D, 12.0D, 6.0D, 13.0D);
+	protected static final VoxelShape UP_AABB_X = Block.box(3.0D, 0.0D, 4.0D, 13.0D, 6.0D, 12.0D);
+	protected static final VoxelShape DOWN_AABB_Z = Block.box(4.0D, 10.0D, 3.0D, 12.0D, 16.0D, 13.0D);
+	protected static final VoxelShape DOWN_AABB_X = Block.box(3.0D, 10.0D, 4.0D, 13.0D, 16.0D, 12.0D);
 
 	/**
 	 * 
@@ -106,6 +119,42 @@ public class ClaimLever extends LeverBlock {
 		return BlockRenderType.MODEL;
 	}
 
+	// duplicate super so that this class's version of VoxelShapes will be used
+	@Override
+	public VoxelShape getShape(BlockState state, IBlockReader reader, BlockPos pos, ISelectionContext context) {
+		switch((AttachFace)state.getValue(FACE)) {
+		case FLOOR:
+			switch(state.getValue(FACING).getAxis()) {
+			case X:
+				return UP_AABB_X;
+			case Z:
+			default:
+				return UP_AABB_Z;
+			}
+		case WALL:
+			switch((Direction)state.getValue(FACING)) {
+			case EAST:
+				return EAST_AABB;
+			case WEST:
+				return WEST_AABB;
+			case SOUTH:
+				return SOUTH_AABB;
+			case NORTH:
+			default:
+				return NORTH_AABB;
+			}
+		case CEILING:
+		default:
+			switch(state.getValue(FACING).getAxis()) {
+			case X:
+				return DOWN_AABB_X;
+			case Z:
+			default:
+				return DOWN_AABB_Z;
+			}
+		}
+	}
+
 	/**
 	 * 
 	 */
@@ -144,7 +193,7 @@ public class ClaimLever extends LeverBlock {
 			makeParticle(state, world, pos, 0.5F);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param state

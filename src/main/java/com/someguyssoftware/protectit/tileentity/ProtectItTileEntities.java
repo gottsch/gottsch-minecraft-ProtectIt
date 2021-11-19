@@ -22,6 +22,7 @@ package com.someguyssoftware.protectit.tileentity;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 
+import net.minecraft.tileentity.LecternTileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -36,7 +37,10 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 public class ProtectItTileEntities {
 	public static TileEntityType<ClaimTileEntity> CLAIM_TILE_ENTITY_TYPE;
 	public static TileEntityType<ClaimLeverTileEntity> CLAIM_LEVER_TILE_ENTITY_TYPE;
-	
+	public static TileEntityType<ClaimLecternTileEntity> CLAIM_LECTERN_TILE_ENTITY_TYPE;
+
+//	public static TileEntityType<TestTE> TEST_TYPE;
+
 	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
 	public static class RegistrationHandler {
 
@@ -47,14 +51,27 @@ public class ProtectItTileEntities {
 					.build(null);
 			CLAIM_TILE_ENTITY_TYPE.setRegistryName("claim_te");
 			event.getRegistry().register(CLAIM_TILE_ENTITY_TYPE);
-			
+
 			// lever
 			CLAIM_LEVER_TILE_ENTITY_TYPE = TileEntityType.Builder
 					.of(ClaimLeverTileEntity::new, ProtectItBlocks.CLAIM_LEVER)
 					.build(null);
 			CLAIM_LEVER_TILE_ENTITY_TYPE.setRegistryName("claim_lever_te");
 			event.getRegistry().register(CLAIM_LEVER_TILE_ENTITY_TYPE);
+
+			// lectern
+						CLAIM_LECTERN_TILE_ENTITY_TYPE = TileEntityType.Builder
+								.of(ClaimLecternTileEntity::new, ProtectItBlocks.CLAIM_LECTERN)
+								.build(null);
+						CLAIM_LECTERN_TILE_ENTITY_TYPE.setRegistryName("claim_lectern_te");
+						event.getRegistry().register(CLAIM_LECTERN_TILE_ENTITY_TYPE);
+
+
+//			TEST_TYPE = TileEntityType.Builder
+//					.of(TestTE::new, ProtectItBlocks.CLAIM_LECTERN)
+//					.build(null);
+//			TEST_TYPE.setRegistryName("test_te");
+//			event.getRegistry().register(TEST_TYPE);
 		}
-		
 	}
 }

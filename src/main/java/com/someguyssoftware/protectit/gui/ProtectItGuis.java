@@ -21,10 +21,14 @@ package com.someguyssoftware.protectit.gui;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.gui.render.tileentity.ClaimLecternTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.render.tileentity.ClaimLeverTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.render.tileentity.ClaimTileEntityRenderer;
+import com.someguyssoftware.protectit.gui.screen.ClaimLecternScreen;
+import com.someguyssoftware.protectit.inventory.ProtectItContainers;
 import com.someguyssoftware.protectit.tileentity.ProtectItTileEntities;
 
+import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraftforge.api.distmarker.Dist;
@@ -50,10 +54,16 @@ public class ProtectItGuis {
 			RenderTypeLookup.setRenderLayer(ProtectItBlocks.MEDIUM_CLAIM, RenderType.cutoutMipped());
 			RenderTypeLookup.setRenderLayer(ProtectItBlocks.LARGE_CLAIM, RenderType.cutoutMipped());
 			RenderTypeLookup.setRenderLayer(ProtectItBlocks.CLAIM_LEVER, RenderType.cutoutMipped());
+			RenderTypeLookup.setRenderLayer(ProtectItBlocks.CLAIM_LECTERN, RenderType.cutoutMipped());
+			
+			// register the custom screens
+			ScreenManager.register(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE, ClaimLecternScreen::new);
 			
 			// register the custom renderer for our tile entity
 			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_TILE_ENTITY_TYPE, ClaimTileEntityRenderer::new);
 			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE, ClaimLeverTileEntityRenderer::new);
+			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_LECTERN_TILE_ENTITY_TYPE, ClaimLecternTileEntityRenderer::new);
+
 		}
 		
 	}

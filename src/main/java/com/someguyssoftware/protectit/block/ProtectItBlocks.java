@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
-import com.someguyssoftware.gottschcore.block.ModBlock;
-import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.ClaimSizes;
 
@@ -52,6 +50,7 @@ public class ProtectItBlocks {
 	public static Block LARGE_CLAIM;
 	
 	public static Block CLAIM_LEVER;
+	public static Block CLAIM_LECTERN;
 	
 	/**
 	 *
@@ -70,6 +69,7 @@ public class ProtectItBlocks {
 			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", ClaimSizes.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
 			
 			CLAIM_LEVER = new ClaimLever(ProtectIt.MODID, "claim_lever", Block.Properties.of(Material.STONE, MaterialColor.STONE).strength(0.75F));
+			CLAIM_LECTERN = new ClaimLectern(ProtectIt.MODID, "claim_lectern", Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(2.5F));
 			
 			/*
 	         * register blocks
@@ -79,7 +79,9 @@ public class ProtectItBlocks {
 					SMALL_CLAIM,
 					MEDIUM_CLAIM,
 					LARGE_CLAIM,
-					CLAIM_LEVER);
+					CLAIM_LEVER,
+					CLAIM_LECTERN
+					);
 		}
 		
 		/**
@@ -97,6 +99,7 @@ public class ProtectItBlocks {
 			blocks.add(MEDIUM_CLAIM);
 			blocks.add(LARGE_CLAIM);
 			blocks.add(CLAIM_LEVER);
+			blocks.add(CLAIM_LECTERN);
 			
 			for (Block b : blocks) {
 				BlockItem blockItem = new BlockItem(b, new Item.Properties().tab(ItemGroup.TAB_MISC));

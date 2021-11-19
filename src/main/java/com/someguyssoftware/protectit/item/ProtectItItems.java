@@ -22,6 +22,8 @@ package com.someguyssoftware.protectit.item;
 import com.someguyssoftware.protectit.ProtectIt;
 
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.WritableBookItem;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -35,6 +37,8 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ProtectItItems {
 //	public static Item SMALL_STAKE;
+	
+	public static Item CLAIM_BOOK;
 	
 	/**
 	 * The actual event handler that registers the custom items.
@@ -50,10 +54,12 @@ public class ProtectItItems {
 
 		// ITEMS
 //		SMALL_STAKE = new Item(new Item.Properties()).setRegistryName(new ResourceLocation(ProtectIt.MODID, "small_stake"));
+		CLAIM_BOOK = new ClaimBook(ProtectIt.MODID, "claim_book", new Item.Properties().stacksTo(1).tab(ItemGroup.TAB_MISC)); // TODO may remove from tabs
 		
 		/*
 		 * register items (make sure you have set the registry name).
 		 */
 //		event.getRegistry().registerAll(SMALL_STAKE);
+		event.getRegistry().register(CLAIM_BOOK);
 	}
 }
