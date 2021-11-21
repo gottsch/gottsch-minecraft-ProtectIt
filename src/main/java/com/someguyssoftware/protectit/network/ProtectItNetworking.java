@@ -42,6 +42,7 @@ public class ProtectItNetworking {
 	public static final int REGISTRY_LOAD_MESSAGE_ID = 15;
 	public static final int REGISTRY_LOAD_MESSAGE_TO_SERVER_ID = 16;
 	public static final int REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID = 17;
+	public static final int CLAIM_BOOK_MESSAGE_ID = 18;
 	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
@@ -77,6 +78,11 @@ public class ProtectItNetworking {
 		simpleChannel.registerMessage(REGISTRY_LOAD_MESSAGE_TO_SERVER_ID, RegistryLoadMessageToServer.class,
 				RegistryLoadMessageToServer::encode, RegistryLoadMessageToServer::decode,
 				RegistryLoadMessageHandlerOnServer::onMessageReceived,
+	            Optional.of(PLAY_TO_SERVER));
+		
+		simpleChannel.registerMessage(CLAIM_BOOK_MESSAGE_ID, ClaimBookMessageToServer.class,
+				ClaimBookMessageToServer::encode, ClaimBookMessageToServer::decode,
+				ClaimBookMessageHandlerOnServer::onMessageReceived,
 	            Optional.of(PLAY_TO_SERVER));
 	}
 	

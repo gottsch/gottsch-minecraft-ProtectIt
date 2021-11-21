@@ -19,6 +19,8 @@
  */
 package com.someguyssoftware.protectit.item;
 
+import javax.annotation.Nullable;
+
 import com.someguyssoftware.gottschcore.item.ModItem;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
@@ -32,6 +34,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
@@ -44,7 +48,8 @@ import net.minecraft.world.World;
  *
  */
 public class ClaimBook extends ModItem {
-
+	public static final String PAGES_TAG = "pages";
+	
 	/**
 	 * 
 	 */
@@ -62,7 +67,9 @@ public class ClaimBook extends ModItem {
 		// TODO maybe have to change to instanceof interface in future
 		if (state.is(ProtectItBlocks.CLAIM_LECTERN)) {
 			ProtectIt.LOGGER.debug("lectern is a ClaimLectern");
-			return ClaimLectern.tryPlaceBook(world, pos, state, context.getItemInHand()) ? ActionResultType.sidedSuccess(world.isClientSide) : ActionResultType.PASS;
+			return ClaimLectern.tryPlaceBook(world, pos, state, context.getItemInHand())
+					? ActionResultType.sidedSuccess(world.isClientSide)
+					: ActionResultType.PASS;
 		} else {
 			ProtectIt.LOGGER.debug("what is it then? -> {}", state.getBlock().getRegistryName().toString());
 			return ActionResultType.PASS;
@@ -79,5 +86,28 @@ public class ClaimBook extends ModItem {
 			Minecraft.getInstance().setScreen(new EditClaimBookScreen(player, itemStack, hand));
 		}
 		return ActionResult.sidedSuccess(itemStack, world.isClientSide());
+	}
+
+	/**
+	 * 
+	 * @param nbt
+	 * @return
+	 */
+	public static boolean makeSureTagIsValid(@Nullable CompoundNBT nbt) {
+		if (nbt == null) {
+			return false;
+		} else if (!nbt.contains(PAGES_TAG, 9)) {
+			return false;
+		} else {
+			ListNBT list = nbt.getList(PAGES_TAG, 8);
+
+			for (int i = 0; i < list.size(); ++i) {
+				String s = list.getString(i);
+				if (s.length() > 32767) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 }

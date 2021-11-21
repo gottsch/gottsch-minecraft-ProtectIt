@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.tileentity.ClaimLecternTileEntity;
-import com.someguyssoftware.protectit.tileentity.TestTE;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -32,9 +31,6 @@ import net.minecraft.block.LecternBlock;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
-import net.minecraft.stats.Stats;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tileentity.LecternTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
@@ -111,8 +107,8 @@ public class ClaimLectern extends LecternBlock {
 			return ActionResultType.sidedSuccess(world.isClientSide);
 		} else {
 			ProtectIt.LOGGER.debug("testing if book is in hand.");
-			ItemStack itemstack = player.getItemInHand(hand);
-			return !itemstack.isEmpty() && itemstack.getItem() != ProtectItItems.CLAIM_BOOK ? ActionResultType.CONSUME : ActionResultType.PASS;
+			ItemStack itemStack = player.getItemInHand(hand);
+			return !itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK ? ActionResultType.CONSUME : ActionResultType.PASS;
 		}
 	}
 

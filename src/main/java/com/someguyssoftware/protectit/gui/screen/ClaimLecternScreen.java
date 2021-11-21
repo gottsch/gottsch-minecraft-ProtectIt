@@ -19,7 +19,13 @@
  */
 package com.someguyssoftware.protectit.gui.screen;
 
+import java.util.List;
+
+import com.google.common.collect.Lists;
+import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
+import com.someguyssoftware.protectit.item.ProtectItItems;
+import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IHasContainer;
@@ -29,6 +35,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.IContainerListener;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -50,9 +58,6 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 		}
 
 		public void setContainerData(Container container, int p_71112_2_, int p_71112_3_) {
-//			if (p_71112_2_ == 0) {
-//				ClaimLecternScreen.this.pageChanged();
-//			}
 		}
 	};
 
@@ -63,55 +68,72 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 	}
 
 	@Override
-	   protected void init() {
-		      super.init();
-		      this.menu.addSlotListener(this.listener);
-		   }
-	
-	@Override
-	   protected void createMenuControls() {
-		      if (this.minecraft.player.mayBuild()) {
-		         this.addButton(new Button(this.width / 2 - 100, 196, 98, 20, DialogTexts.GUI_DONE, (p_214181_1_) -> {
-		            this.minecraft.setScreen((Screen)null);
-		         }));
-		         this.addButton(new Button(this.width / 2 + 2, 196, 98, 20, new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
-		            this.sendButtonClick(3);
-		         }));
-		      } else {
-		         super.createMenuControls();
-		      }
+	protected void init() {
+		super.init();
+		this.menu.addSlotListener(this.listener);
+	}
 
-		   }
-	   
-	   private void sendButtonClick(int p_214179_1_) {
-		      this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, p_214179_1_);
-		   }
-	   
 	@Override
-	   public ClaimLecternContainer getMenu() {
-	      return this.menu;
-	   }
-	   
+	protected void createMenuControls() {
+		if (this.minecraft.player.mayBuild()) {
+			this.addButton(new Button(this.width / 2 - 100, 196, 98, 20, DialogTexts.GUI_DONE, (p_214181_1_) -> {
+				this.minecraft.setScreen((Screen) null);
+			}));
+			// TODO don't add if not owner
+			this.addButton(new Button(this.width / 2 + 2, 196, 98, 20,
+					new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
+						this.sendButtonClick(3);
+					}));
+		} else {
+			super.createMenuControls();
+		}
+
+	}
+
+	private void sendButtonClick(int p_214179_1_) {
+		this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, p_214179_1_);
+	}
+
 	@Override
-	   public void onClose() {
-		      this.minecraft.player.closeContainer();
-		      super.onClose();
-		      // TODO this is where we update the Claim Registries and resolve Player whitelist values
-		   }
-	   
+	public ClaimLecternContainer getMenu() {
+		return this.menu;
+	}
+
 	@Override
-	   public void removed() {
-		      super.removed();
-		      this.menu.removeSlotListener(this.listener);
-		   }
-	   
+	public void onClose() {
+		this.minecraft.player.closeContainer();
+		super.onClose();
+	}
+
 	@Override
-	   public boolean isPauseScreen() {
-		      return false;
-		   }
-	   
+	public void removed() {
+		super.removed();
+		this.menu.removeSlotListener(this.listener);
+	}
+
+	@Override
+	public boolean isPauseScreen() {
+		return false;
+	}
+
 	private void bookChanged() {
-		ItemStack itemstack = this.menu.getBook();
-		this.setBookAccess(IBookInfo.fromItem(itemstack));
+		ProtectIt.LOGGER.debug("bookChanged!");
+		ItemStack bookStack = this.menu.getBook();
+		ProtectIt.LOGGER.debug("book item? -> {}", bookStack);
+		try {
+			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
+				CompoundNBT bookNbt = bookStack.getTag();
+				ListNBT list = bookNbt.getList("playerData", 10).copy();
+				List<String> playerNames = Lists.newArrayList();
+				list.forEach(element -> {
+					PlayerData playerData = new PlayerData().load((CompoundNBT) element);
+					ProtectIt.LOGGER.debug("updating player names with name -> {}", playerData.getName());
+					playerNames.add(playerData.getName());
+				});
+				this.setPlayerNames(playerNames);
+			}
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("An error occurred reading the Claim Book data", e);
+		}
 	}
 }

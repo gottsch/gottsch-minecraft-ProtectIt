@@ -34,6 +34,13 @@ public class PlayerData {
 	private String uuid;
 	private String name;
 	
+	/**
+	 * 
+	 */
+	public PlayerData() {
+		this("", "");
+	}
+	
 	public PlayerData(String uuid) {
 		setUuid(uuid);
 		setName("");
@@ -42,6 +49,12 @@ public class PlayerData {
 	public PlayerData(String uuid, String name) {
 		this(uuid);
 		setName(name);
+	}
+	
+	public CompoundNBT save() {
+		CompoundNBT nbt = new CompoundNBT();
+		save(nbt);
+		return nbt;
 	}
 	
 	public void save(CompoundNBT nbt) {
@@ -66,7 +79,7 @@ public class PlayerData {
 	public String getUuid() {
 		return uuid;
 	}
-	protected void setUuid(String uuid) {
+	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
 	

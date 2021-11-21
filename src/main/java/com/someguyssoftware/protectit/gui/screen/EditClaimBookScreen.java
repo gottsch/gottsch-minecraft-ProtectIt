@@ -22,6 +22,7 @@ package com.someguyssoftware.protectit.gui.screen;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -33,6 +34,10 @@ import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.network.ClaimBookMessageToServer;
+import com.someguyssoftware.protectit.network.ProtectItNetworking;
+import com.someguyssoftware.protectit.registry.PlayerData;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -53,7 +58,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SharedConstants;
 import net.minecraft.util.Util;
@@ -61,7 +65,6 @@ import net.minecraft.util.text.CharacterManager;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -71,8 +74,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  */
 @OnlyIn(Dist.CLIENT)
 public class EditClaimBookScreen extends Screen {
-	private static final String PAGES_TAG = "pages";
-
+	private static final String PLAYER_DATA_TAG = "playerData";
+	
 	// context properties
 	private final PlayerEntity owner;
 	private final ItemStack book;
@@ -81,14 +84,18 @@ public class EditClaimBookScreen extends Screen {
 	// buttons
 	private Button doneButton;
 
-	// book state properties
+	// transient book state properties
 	private final List<String> pages = Lists.newArrayList();
 	private boolean isModified;
 	private int frameTick;
 	private int currentPage;
 	private long lastClickTime;
 	private int lastIndex = -1;
-	private ITextComponent pageMsg = StringTextComponent.EMPTY;
+	
+	// persistent book state properties
+	private final List<PlayerData> playerDataCache = Lists.newArrayList();
+	
+//	private ITextComponent pageMsg = StringTextComponent.EMPTY;
 
 	private final TextInputUtil pageEdit = new TextInputUtil(this::getCurrentPageText, this::setCurrentPageText, this::getClipboard, this::setClipboard, (p_238774_1_) -> {
 		return p_238774_1_.length() < 1024 && this.font.wordWrapHeight(p_238774_1_, 114) <= 128;
@@ -96,7 +103,6 @@ public class EditClaimBookScreen extends Screen {
 
 	@Nullable
 	private EditClaimBookScreen.BookPage displayCache = EditClaimBookScreen.BookPage.EMPTY;
-
 
 	/**
 	 * 
@@ -113,12 +119,16 @@ public class EditClaimBookScreen extends Screen {
 		// load the text from the item
 		CompoundNBT nbt = itemStack.getTag();
 		if (nbt != null) {
-			ListNBT listNbt = nbt.getList(PAGES_TAG, 8).copy();
-
-			// there is only 1 page to whitelist book
-			//			for(int i = 0; i < listNbt.size(); ++i) {
-			this.pages.add(listNbt.getString(0));
-			//			}
+			// load the PlayerData			
+			ListNBT playerDataList = nbt.getList(PLAYER_DATA_TAG, 10);
+			playerDataList.forEach(element -> {
+				PlayerData playerData = new PlayerData("");
+				playerData.load((CompoundNBT)element);
+				getPlayerDataCache().add(playerData);
+			});
+			if (!getPlayerDataCache().isEmpty()) {
+				this.pages.add(getPlayerDataCache().stream().map(data -> data.getName()).collect(Collectors.joining("\n")));
+			}
 		}
 
 		if (this.pages.isEmpty()) {
@@ -173,15 +183,53 @@ public class EditClaimBookScreen extends Screen {
 	private void saveChanges(boolean finalize) {
 		if (this.isModified) {
 			this.eraseEmptyTrailingPages();
-			ListNBT listnbt = new ListNBT();
-			this.pages.stream().map(StringNBT::valueOf).forEach(listnbt::add);
-			if (!this.pages.isEmpty()) {
-				this.book.addTagElement(PAGES_TAG, listnbt);
-			}
 
-			int i = this.hand == Hand.MAIN_HAND ? this.owner.inventory.selected : 40;
-			// TODO replace with custom message to server
-			//		         this.minecraft.getConnection().send(new CEditBookPacket(this.book, finalize, i));
+			// save the player data
+			List<PlayerData> workingData = Lists.newArrayList();
+			this.pages.forEach(entry -> {
+				List<String> playerNames = Arrays.asList(entry.split("\n"));
+				playerNames.forEach(playerName -> {
+					ProtectIt.LOGGER.debug("line output -> {}", playerName);
+					// check if playerName already exists in playerData
+					boolean playerDataAdded = false;
+					for (PlayerData playerData : getPlayerDataCache()) {
+						if (playerData.getName().equalsIgnoreCase(playerName)) {
+							ProtectIt.LOGGER.debug("line player was in the cache -> {}", playerName);
+							playerDataAdded = workingData.add(playerData);
+							break;
+						}
+					}
+					// player name was not found in list
+					if (!playerDataAdded) {
+						ProtectIt.LOGGER.debug("line player was NOT in the cache -> {}", playerName);
+						PlayerData playerData = new PlayerData("", playerName);
+						workingData.add(playerData);
+					}
+				});
+			});
+
+			// clear the player data cache
+			getPlayerDataCache().clear();
+			// copy all from working to cache
+			getPlayerDataCache().addAll(workingData);
+			ProtectIt.LOGGER.debug("playerDataCache.size -> {}", getPlayerDataCache().size());
+
+			// save the data cache to the item
+			ListNBT playerDataList = new ListNBT();
+			getPlayerDataCache().forEach(playerData -> {
+				CompoundNBT nbt = new CompoundNBT();
+				ProtectIt.LOGGER.debug("saving/adding player data -> {}", playerData);
+				playerData.save(nbt);
+				ProtectIt.LOGGER.info("result nbt uuid -> {}", nbt.getString("uuid"));
+				ProtectIt.LOGGER.info("result nbt name -> {}", nbt.getString("name"));
+				playerDataList.add(nbt);
+				ProtectIt.LOGGER.debug("playerDataList.size -> {}", playerDataList.size());
+			});
+			this.book.addTagElement(PLAYER_DATA_TAG, playerDataList);
+			
+			int slot = this.hand == Hand.MAIN_HAND ? this.owner.inventory.selected : 40;
+			ClaimBookMessageToServer messageToServer = new ClaimBookMessageToServer(this.book, slot);
+			ProtectItNetworking.simpleChannel.sendToServer(messageToServer);
 		}
 	}
 
@@ -331,8 +379,8 @@ public class EditClaimBookScreen extends Screen {
 		this.minecraft.getTextureManager().bind(ReadBookScreen.BOOK_LOCATION);
 		int i = (this.width - 192) / 2;
 		this.blit(matrixStack, i, 2, 0, 0, 192, 192);
-		int j1 = this.font.width(this.pageMsg);
-		this.font.draw(matrixStack, this.pageMsg, (float)(i - j1 + 192 - 44), 18.0F, 0);
+//		int j1 = this.font.width(this.pageMsg);
+//		this.font.draw(matrixStack, this.pageMsg, (float)(i - j1 + 192 - 44), 18.0F, 0);
 		EditClaimBookScreen.BookPage editbookscreen$bookpage = this.getDisplayCache();
 
 		for(EditClaimBookScreen.BookLine editbookscreen$bookline : editbookscreen$bookpage.lines) {
@@ -388,7 +436,7 @@ public class EditClaimBookScreen extends Screen {
 	private EditClaimBookScreen.BookPage getDisplayCache() {
 		if (this.displayCache == null) {
 			this.displayCache = this.rebuildDisplayCache();
-			this.pageMsg = new TranslationTextComponent("book.pageIndicator", this.currentPage + 1, this.getNumPages());
+//			this.pageMsg = new TranslationTextComponent("book.pageIndicator", this.currentPage + 1, this.getNumPages());
 		}
 
 		return this.displayCache;
@@ -531,9 +579,6 @@ public class EditClaimBookScreen extends Screen {
 		int l = Math.max(screenPoint1.y, screenPoint2.y);
 		return new Rectangle2d(i, k, j - i, l - k);
 	}
-	private int getNumPages() {
-		return this.pages.size();
-	}
 
 	public void tick() {
 		super.tick();
@@ -548,7 +593,7 @@ public class EditClaimBookScreen extends Screen {
 		return hand;
 	}
 
-
+	@Deprecated
 	protected List<String> getPages() {
 		return pages;
 	}
@@ -642,5 +687,9 @@ public class EditClaimBookScreen extends Screen {
 			this.x = x;
 			this.y = y;
 		}
+	}
+
+	protected List<PlayerData> getPlayerDataCache() {
+		return playerDataCache;
 	}
 }

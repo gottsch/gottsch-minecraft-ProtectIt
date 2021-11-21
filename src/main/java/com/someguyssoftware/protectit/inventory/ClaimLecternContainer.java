@@ -64,7 +64,6 @@ public class ClaimLecternContainer extends Container {
 	 * @param data
 	 */
 	public ClaimLecternContainer(int windowID, IInventory inventory, IIntArray data) {
-		// TODO change to claim lectern container type
 		super(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE, windowID);
 		checkContainerSize(inventory, 1);
 		checkContainerDataCount(data, 1);
@@ -127,6 +126,7 @@ public class ClaimLecternContainer extends Container {
 		return this.lectern.getItem(0);
 	}
 
+	@Deprecated
 	@OnlyIn(Dist.CLIENT)
 	public int getPage() {
 		return this.lecternData.get(0);
