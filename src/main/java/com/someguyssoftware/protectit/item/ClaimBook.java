@@ -19,13 +19,18 @@
  */
 package com.someguyssoftware.protectit.item;
 
+import java.util.List;
+
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Lists;
 import com.someguyssoftware.gottschcore.item.ModItem;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.gui.screen.EditClaimBookScreen;
+import com.someguyssoftware.protectit.gui.screen.OpenScreenUtil;
+import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
@@ -41,6 +46,8 @@ import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 /**
  * 
@@ -49,6 +56,7 @@ import net.minecraft.world.World;
  */
 public class ClaimBook extends ModItem {
 	public static final String PAGES_TAG = "pages";
+	public static final String PLAYER_DATA_TAG = "playerData";
 	
 	/**
 	 * 
@@ -61,13 +69,14 @@ public class ClaimBook extends ModItem {
 	 * 
 	 */
 	public ActionResultType useOn(ItemUseContext context) {
+		ProtectIt.LOGGER.debug("using ClaimBook...");
 		World world = context.getLevel();
 		BlockPos pos = context.getClickedPos();
 		BlockState state = world.getBlockState(pos);
 		// TODO maybe have to change to instanceof interface in future
 		if (state.is(ProtectItBlocks.CLAIM_LECTERN)) {
 			ProtectIt.LOGGER.debug("lectern is a ClaimLectern");
-			return ClaimLectern.tryPlaceBook(world, pos, state, context.getItemInHand())
+			return ClaimLectern.tryPlaceBook(world, pos, state, context.getPlayer(), context.getItemInHand())
 					? ActionResultType.sidedSuccess(world.isClientSide)
 					: ActionResultType.PASS;
 		} else {
@@ -80,10 +89,15 @@ public class ClaimBook extends ModItem {
 	 * 
 	 */
 	public ActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
+
 		ItemStack itemStack = player.getItemInHand(hand);
-		if (player instanceof ClientPlayerEntity) {
-			// open the edit claim book screen
-			Minecraft.getInstance().setScreen(new EditClaimBookScreen(player, itemStack, hand));
+		if ( world.isClientSide()) {
+			/*
+			 *  open the edit claim book screen.
+			 *  must use DistExectuor to safely open code that should only run on one physical side.
+			 *  the actual call to the sided-code should be in it's own class
+			 */
+			DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> OpenScreenUtil.openEditClaimBookScreen(player, itemStack, hand));
 		}
 		return ActionResult.sidedSuccess(itemStack, world.isClientSide());
 	}
@@ -109,5 +123,47 @@ public class ClaimBook extends ModItem {
 			}
 			return true;
 		}
+	}
+	
+	/**
+	 * 
+	 * @param itemStack
+	 * @return
+	 */
+	public static List<PlayerData> loadPlayerData(ItemStack itemStack) {
+		List<PlayerData> result = Lists.newArrayList();
+		if (itemStack.getItem() != ProtectItItems.CLAIM_BOOK) {
+			return result;
+		}
+		
+		// get white list from book stack
+		CompoundNBT nbt = itemStack.getTag();
+		if (nbt != null) {
+			// load the PlayerData			
+			ListNBT playerDataListNbt = nbt.getList(ClaimBook.PLAYER_DATA_TAG, 10);
+			playerDataListNbt.forEach(element -> {
+				PlayerData playerData = new PlayerData();
+				playerData.load((CompoundNBT)element);
+				result.add(playerData);
+			});
+		}
+		return result;
+	}
+	
+	/**
+	 * 
+	 * @param itemStack
+	 * @param data
+	 * @return
+	 */
+	public static ListNBT savePlayerData(ItemStack itemStack, List<PlayerData> data) {
+		ListNBT playerDataList = new ListNBT();
+		data.forEach(playerData -> {
+			CompoundNBT nbt = new CompoundNBT();
+			playerData.save(nbt);
+			playerDataList.add(nbt);
+		});
+		itemStack.addTagElement(PLAYER_DATA_TAG, playerDataList);
+		return playerDataList;
 	}
 }

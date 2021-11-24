@@ -161,7 +161,7 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onBlockPlace(final EntityPlaceEvent event) {
-		// prevent protected blocks from breaking
+		// prevent protected blocks from placing
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
@@ -206,6 +206,7 @@ public class ProtectIt implements IMod {
 					event.setCanceled(true);
 					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 				}
+				// TODO check if Claim Lectern and if one already exists in claim?
 			}
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {

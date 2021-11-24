@@ -76,8 +76,8 @@ public class RegistryLoadMessageToClient {
 		if (!isValid()) {
 			return;
 		}
-		// buf.writeUtf(StringUtils.defaultString(type, ""));
-		// buf.writeInt(intervals.size());
+		 buf.writeUtf(StringUtils.defaultString(type, ""));
+		 buf.writeInt(claims.size());
 		
 		// intervals.forEach(interval -> {
 		// 	if (interval.getCoords1() == null) {
@@ -130,6 +130,7 @@ public class RegistryLoadMessageToClient {
 			// buf.writeUtf(NULL_NAME);
 		}
 		else {
+			buf.writeInt(claim.getWhitelist().size());
 			claim.getWhitelist().forEach(player -> {
 				buf.writeUtf(StringUtils.defaultString(player.getUuid(), NULL_UUID));
 				buf.writeUtf(StringUtils.defaultString(player.getName(), ""));

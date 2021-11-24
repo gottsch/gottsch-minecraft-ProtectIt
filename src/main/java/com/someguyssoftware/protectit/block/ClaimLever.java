@@ -178,11 +178,15 @@ public class ClaimLever extends LeverBlock {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
 		if (tileEntity instanceof ClaimLeverTileEntity) {
 			// get the claim for this position
+			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
+			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos));
+			ProtectIt.LOGGER.debug("found protections -> {}", list);
 			if (!list.isEmpty()) {
+				
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.debug("found claim -> {}", claim);
-				((ClaimLeverTileEntity)tileEntity).setClaim(claim);
+				((ClaimLeverTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}
 		}
 	}

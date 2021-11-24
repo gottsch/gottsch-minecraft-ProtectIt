@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
@@ -80,7 +82,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	@Override
 	public void addProtection(Claim claim) {
-		ProtectIt.LOGGER.info("adding protection -> {}", claim.getBox());
+		ProtectIt.LOGGER.info("adding claim protection -> {}", claim);
 		
 		// add claims by owner
 		List<Claim> claims = null;
@@ -93,7 +95,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		claims.add(claim);
 		
 		// add claims by coords
-		CLAIMS_BY_COORDS.put(claim.getCoords(), claim);
+		CLAIMS_BY_COORDS.put(claim.getBox().getMinCoords(), claim);
 		
 		// add to BST
 		tree.insert(new Interval(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), new OwnershipData(claim.getOwner().getUuid(), claim.getOwner().getName())));
@@ -178,11 +180,11 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return claims;
 	}
 	
+	// TODO add new method to get claims - getClaim(ICoords), getClaims(ICoords, ICoords)
 	/**
 	 * A list is returned, but only one element should be returned
 	 * (else something went wrong)
 	 */
-	// TODO update use CLAIMS_BY_COORDS
 	@Override
 	public List<Box> getProtections(ICoords coords) {
 		return getProtections(coords, coords);
@@ -254,23 +256,40 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 			return false;
 		}
 		else {
+
 			// interrogate each interval to determine if the uuid is the owner
 			for (Interval p : protections) {
-//				ProtectIt.LOGGER.debug("protection -> {}", p);
-				// TODO cycle through whitelist
-				boolean isWhitelist = false;
-				if (!p.getData().getWhitelist().isEmpty()) {
-					for(IdentifierData id : p.getData().getWhitelist()) {
-						if (id.getUuid().equals(uuid)) {
-							isWhitelist = true;
-							break;
+				ProtectIt.LOGGER.debug("protection -> {}", p);
+				// short circuit if owner or no owner
+				if (p.getData().getOwner().getUuid().equalsIgnoreCase(uuid)) {
+					break;
+				}
+				if (StringUtils.isBlank(p.getData().getOwner().getUuid())) {
+					return true;
+				}
+				
+				// get the claim
+				Claim claim = CLAIMS_BY_COORDS.get(p.getCoords1());
+				ProtectIt.LOGGER.debug("claim -> {}", claim);
+				// cycle through whitelist
+//				boolean isWhitelist = false;
+				if (!/*p.getData()*/claim.getWhitelist().isEmpty()) {
+					ProtectIt.LOGGER.debug("whitelist is not null");
+//					for(IdentifierData id : p.getData().getWhitelist()) {
+					for (PlayerData id : claim.getWhitelist()) {
+						ProtectIt.LOGGER.debug("compare whitelist id -> {} to uuid -> {}", id.getUuid(), uuid);
+						if (id.getUuid().equalsIgnoreCase(uuid)) {
+//							isWhitelist = true;
+//							break;
+							return false;
 						}
 					}
 				}
-				if (p.getData().getOwner().getUuid() == null || (!p.getData().getOwner().getUuid().equals(uuid) && !isWhitelist)) {
+				return true;
+//				if (!isWhitelist) {
 //					ProtectIt.LOGGER.debug("protected against me!");
-					return true;
-				}
+//					return true;
+//				}
 			}
 		}
 		return false;
@@ -340,11 +359,12 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	public CompoundNBT save(CompoundNBT nbt) {
 		// TODO save CLAIMS_BY_COORDS instead
-		//ProtectIt.LOGGER.info("saving tree...");
+		ProtectIt.LOGGER.info("saving registry...");
 //		tree.save(nbt);
 
 		ListNBT list = new ListNBT();
 		CLAIMS_BY_COORDS.forEach((coords, claim) -> {
+			ProtectIt.LOGGER.info("registry saving claim -> {}", claim);
 			CompoundNBT claimNbt = new CompoundNBT();
 			claim.save(claimNbt);
 			list.add(claimNbt);

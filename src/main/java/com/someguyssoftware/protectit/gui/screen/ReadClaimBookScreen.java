@@ -21,24 +21,29 @@ package com.someguyssoftware.protectit.gui.screen;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.chat.NarratorChatListener;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 
 /**
  * 
  * @author Mark Gottschling on Nov 18, 2021
  *
  */
-@OnlyIn(Dist.CLIENT)
+//@OnlyIn(Dist.CLIENT)
 public class ReadClaimBookScreen extends Screen {
 	public static final ResourceLocation BOOK_LOCATION = new ResourceLocation("textures/gui/book.png");
 
@@ -46,7 +51,7 @@ public class ReadClaimBookScreen extends Screen {
 	// MC send a List<String> representing pages, in each in line there are LF
 	// delimiters for each line on the page.
 
-	private List<String> playerNames = Lists.newArrayList();
+	private List<PlayerData> playerDataCache = Lists.newArrayList();
 
 	/**
 	 * 
@@ -79,33 +84,38 @@ public class ReadClaimBookScreen extends Screen {
 		}
 	}
 
+	/**
+	 * 
+	 */
+	@SuppressWarnings("deprecation")
 	public void render(MatrixStack matrixStack, int xPos, int yPos, float p_230430_4_) {
 		this.renderBackground(matrixStack);
 		RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		this.minecraft.getTextureManager().bind(BOOK_LOCATION);
 		int i = (this.width - 192) / 2;
-
 		this.blit(matrixStack, i, 2, 0, 0, 192, 192);
+		// add title
+		IFormattableTextComponent title = new TranslationTextComponent("label.protectit.claim_book.title", TextFormatting.GOLD);
+		int titleWidth = this.font.width(title);
+		this.font.draw(matrixStack, title, (float)((this.width/2) - (titleWidth/2)), 18.0F, 0);
 
-		// TODO use this code to write title centered "Claim Whitelist" or "Claim
-		// Members"
-//				      int i1 = this.font.width(this.pageMsg);
-		// this.font.draw(matrixStack, this.pageMsg, (float)(i - i1 + 192 - 44), 18.0F,
-		// 0);
-//		int k = Math.min(128 / 9, this.cachedPageComponents.size());
-
-		// TODO highlight any names without UUIDs
-		for (int index = 0; index < getPlayerNames().size(); index++) {
-			this.font.draw(matrixStack, getPlayerNames().get(index), (float) (i + 36), (float) (32 + index * 9), 0);
+		for (int index = 0; index < getPlayerDataCache().size(); index++) {
+			// highlight any names without UUIDs
+			PlayerData playerData = getPlayerDataCache().get(index);
+			IFormattableTextComponent nameText = new StringTextComponent(playerData.getName());
+			if (StringUtils.isBlank(playerData.getUuid())) {
+				nameText = nameText.withStyle(TextFormatting.RED);
+			}			
+			this.font.draw(matrixStack, /*getPlayerNames().get(index)*/nameText, (float) (i + 36), (float) (32 + index * 9), 0);
 		}
 		super.render(matrixStack, xPos, yPos, p_230430_4_);
 	}
 
-	protected List<String> getPlayerNames() {
-		return playerNames;
+	public List<PlayerData> getPlayerDataCache() {
+		return playerDataCache;
 	}
 
-	protected void setPlayerNames(List<String> playerNames) {
-		this.playerNames = playerNames;
+	public void setPlayerDataCache(List<PlayerData> playerDataCache) {
+		this.playerDataCache = playerDataCache;
 	}
 }

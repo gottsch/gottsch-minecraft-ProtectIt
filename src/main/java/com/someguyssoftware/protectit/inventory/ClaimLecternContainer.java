@@ -121,13 +121,13 @@ public class ClaimLecternContainer extends Container {
 		return this.lectern.stillValid(player);
 	}
 
-	@OnlyIn(Dist.CLIENT)
+//	@OnlyIn(Dist.CLIENT)
 	public ItemStack getBook() {
 		return this.lectern.getItem(0);
 	}
 
 	@Deprecated
-	@OnlyIn(Dist.CLIENT)
+//	@OnlyIn(Dist.CLIENT)
 	public int getPage() {
 		return this.lecternData.get(0);
 	}

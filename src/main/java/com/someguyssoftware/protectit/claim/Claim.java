@@ -89,7 +89,7 @@ public class Claim {
 	 * @param nbt
 	 */
 	public void save(CompoundNBT nbt) {
-		ProtectIt.LOGGER.debug("saving claim -> {}", this);
+//		ProtectIt.LOGGER.debug("saving claim -> {}", this);
 
 		CompoundNBT ownerNbt = new CompoundNBT();
 		getOwner().save(ownerNbt);

@@ -24,17 +24,14 @@ import java.util.function.Supplier;
 
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.StringNBT;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
@@ -63,20 +60,16 @@ public class ClaimBookMessageHandlerOnServer {
 		}
 
 		// we know for sure that this handler is only used on the server side, so it is
-		// ok to assume
-		// that the ctx handler is a serverhandler, and that ServerPlayerEntity exists
-		// Packets received on the client side must be handled differently! See
-		// MessageHandlerOnClient
+		// ok to assume that the ctx handler is a serverhandler, and that ServerPlayerEntity exists.
+		// Packets received on the client side must be handled differently! See MessageHandlerOnClient
 
 		final ServerPlayerEntity sendingPlayer = ctx.getSender();
 		if (sendingPlayer == null) {
 			ProtectIt.LOGGER.warn("EntityPlayerMP was null when ClaimBookMessageToServer was received");
 		}
 
-		// This code creates a new task which will be executed by the server during the
-		// next tick,
-		// In this case, the task is to call
-		// messageHandlerOnServer.processMessage(message, sendingPlayer)
+		// This code creates a new task which will be executed by the server during the next tick,
+		// In this case, the task is to call messageHandlerOnServer.processMessage(message, sendingPlayer)
 		ctx.enqueueWork(() -> processMessage(message, sendingPlayer));
 	}
 
@@ -102,11 +95,13 @@ public class ClaimBookMessageHandlerOnServer {
 						// check for player on server if missing uuid and add it
 						if (data.getUuid().isEmpty()) {
 							players.forEach(player -> {
-								if (player.getDisplayName().getString().equals(data.getName())) {
+								ProtectIt.LOGGER.debug("checking data -> {} against player -> {}", data.getName(), player.getDisplayName());
+								if (player.getDisplayName().getString().equals(data.getName())) {									
 									data.setUuid(player.getStringUUID());
 								}
 							});
 						}
+						ProtectIt.LOGGER.debug("adding data to playerDataList -> {}", data);
 						playerDataList.add(data);
 					});
 

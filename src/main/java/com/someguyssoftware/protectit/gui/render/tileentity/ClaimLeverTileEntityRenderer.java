@@ -26,6 +26,7 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.BlockState;
@@ -54,7 +55,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		
 		BlockPos pos = tileEntity.getBlockPos();
 		BlockState state =  tileEntity.getLevel().getBlockState(pos);
-		Claim claim = tileEntity.getClaim();
+		Claim claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 		
 		if (!state.getValue(LeverBlock.POWERED) || claim == null) {
 			return;
@@ -78,14 +79,14 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 
 	@Override
 	public void updateClaimTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
-		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaim().getBox().getMinCoords()).negate();
+		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaimCoords()).negate();
 		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
 	}
 	
 	@Override
 	public void updateHighlightTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
-		Claim claim = ((ClaimLeverTileEntity)tileEntity).getClaim();
-		
+		Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverTileEntity)tileEntity).getClaimCoords());
+
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);
 		while (highlightFloor.getY() > claim.getBox().getMinCoords().getY()) {
@@ -97,7 +98,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		highlightFloor = leverCoords.delta(highlightFloor).negate();
 		
 		ICoords delta = 
-				new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaim().getBox().getMinCoords())
+				new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaimCoords())
 				.negate()
 				.withY(highlightFloor.getY());
 

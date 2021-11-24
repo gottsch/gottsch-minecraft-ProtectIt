@@ -6,5 +6,6 @@
 	"message.protectit.block_region_not_protected_or_owner":"That region is not protected or you are not the owner.",
 	"message.protectit.invalid_coords_format": "Block pos B must be >= than block pos A.",
 	"message.protectit.empty_list": "Protections: [Empty]",
-	"message.protectit.option_unavailable": "That option is not available yet."
+	"message.protectit.option_unavailable": "That option is not available yet.",
+	"label.protectit.claim_book.title": "Claim Access Manifest"
 }

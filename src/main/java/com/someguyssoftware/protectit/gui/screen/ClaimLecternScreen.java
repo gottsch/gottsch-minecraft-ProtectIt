@@ -53,7 +53,7 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 			ClaimLecternScreen.this.bookChanged();
 		}
 
-		public void slotChanged(Container container, int p_71111_2_, ItemStack p_71111_3_) {
+		public void slotChanged(Container container, int slot, ItemStack itemStack) {
 			ClaimLecternScreen.this.bookChanged();
 		}
 
@@ -116,6 +116,9 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 		return false;
 	}
 
+	/**
+	 * 
+	 */
 	private void bookChanged() {
 		ProtectIt.LOGGER.debug("bookChanged!");
 		ItemStack bookStack = this.menu.getBook();
@@ -124,13 +127,13 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
 				CompoundNBT bookNbt = bookStack.getTag();
 				ListNBT list = bookNbt.getList("playerData", 10).copy();
-				List<String> playerNames = Lists.newArrayList();
+				List<PlayerData> playerDataList = Lists.newArrayList();
 				list.forEach(element -> {
 					PlayerData playerData = new PlayerData().load((CompoundNBT) element);
 					ProtectIt.LOGGER.debug("updating player names with name -> {}", playerData.getName());
-					playerNames.add(playerData.getName());
+					playerDataList.add(playerData);
 				});
-				this.setPlayerNames(playerNames);
+				this.setPlayerDataCache(playerDataList);
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("An error occurred reading the Claim Book data", e);

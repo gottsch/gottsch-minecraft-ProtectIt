@@ -19,12 +19,24 @@
  */
 package com.someguyssoftware.protectit.tileentity;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import javax.annotation.Nullable;
 
+import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
+import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
 import com.someguyssoftware.protectit.item.ClaimBook;
+import com.someguyssoftware.protectit.item.ProtectItItems;
+import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.registry.PlayerData;
+import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
@@ -48,10 +60,12 @@ import net.minecraft.util.text.TranslationTextComponent;
 public class ClaimLecternTileEntity extends AbstractModTileEntity implements IClearable, INamedContainerProvider {
 	private static final String BOOK_TAG = "book";
 	private static final String PAGE_TAG = "page";
-
+	private static final String CLAIM_COORDS_TAG = "claimCoords";
+	
 	private ItemStack book = ItemStack.EMPTY;
+	@Deprecated
 	private int page;
-	// private int pageCount;
+	private ICoords claimCoords;
 
 	private final IIntArray dataAccess = new IIntArray() {
 		public int get(int index) {
@@ -99,7 +113,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	 */
 	private void onBookItemRemove() {
 		this.page = 0;
-		// this.pageCount = 0;
+		this.book = ItemStack.EMPTY;
 		ClaimLectern.resetBookState(this.getLevel(), this.getBlockPos(), this.getBlockState(), false);
 	}
 
@@ -118,12 +132,15 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	@Override
 	public void load(BlockState state, CompoundNBT nbt) {
 		super.load(state, nbt);
+
+		if (nbt.contains(CLAIM_COORDS_TAG)) {
+			setClaimCoords(WorldInfo.EMPTY_COORDS.load(nbt.getCompound(CLAIM_COORDS_TAG)));
+		}
 		if (nbt.contains(BOOK_TAG, 10)) {
 			this.book = ItemStack.of(nbt.getCompound(BOOK_TAG));
 		} else {
 			this.book = ItemStack.EMPTY;
 		}
-		// this.pageCount = WrittenBookItem.getPageCount(this.book);
 		this.page = nbt.getInt(PAGE_TAG);
 	}
 
@@ -132,7 +149,15 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	 */
 	@Override
 	public CompoundNBT save(CompoundNBT nbt) {
+		ProtectIt.LOGGER.debug("saving ClaimLecternTileEntity");
 		super.save(nbt);
+
+		if (getClaimCoords() != null) {
+			CompoundNBT coordsNbt = new CompoundNBT();
+			getClaimCoords().save(coordsNbt);
+			nbt.put(CLAIM_COORDS_TAG, coordsNbt);
+		}
+		
 		if (!this.getBook().isEmpty()) {
 			nbt.put(BOOK_TAG, this.getBook().save(new CompoundNBT()));
 			nbt.putInt(PAGE_TAG, this.page);
@@ -144,28 +169,60 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 		return this.book;
 	}
 
-	public void setBook(ItemStack itemStack) {
-		this.setBook(itemStack, (PlayerEntity) null);
+	/**
+	 * 
+	 * @param bookStack
+	 */
+	public void setBook(ItemStack bookStack) {
+		if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
+			// get the claim from the registry (use min coords as key instead of coords)
+			Claim registryClaim = ProtectionRegistries.block().getClaimByCoords(/*getClaim().getBox().getMinCoords()*/getClaimCoords());
+			List<PlayerData> bookPlayerDataList = ClaimBook.loadPlayerData(bookStack);
+
+			/*
+			 * compare white lists and update
+			 */
+			// get list of everything in B (book list) that is net new to A (registry list)
+			List<PlayerData> netNew = new ArrayList<>(bookPlayerDataList);
+			netNew.removeAll(registryClaim.getWhitelist());
+			ProtectIt.LOGGER.debug("net new list -> {}", netNew);
+			// add net new to registryClaim
+			registryClaim.getWhitelist()
+					.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
+			ProtectIt.LOGGER.debug("registry claim white list after ADD net new -> {}", registryClaim.getWhitelist());
+			
+			// remove from registryClaim that are no longer contained in bookPlayerDataList.
+			// note, not using difference of lists as only the name is tested, not the equals() of the object
+			List<String> newNames = bookPlayerDataList.stream().map(data -> data.getName())
+					.collect(Collectors.toList());
+			registryClaim.getWhitelist().removeIf(data -> !newNames.contains(data.getName()));
+			ProtectIt.LOGGER.debug("registry claim white list after REMOVE names -> {}", registryClaim.getWhitelist());
+			
+			// update this claim - mark as dirty
+			ProtectItSavedData savedData = ProtectItSavedData.get(getLevel());
+			if (savedData != null) {
+				savedData.setDirty();
+			}
+			
+			// update bookStack
+			bookStack.removeTagKey("playerData");
+			ClaimBook.savePlayerData(bookStack, bookPlayerDataList);
+		}
+		this.setBook(bookStack, (PlayerEntity) null);
 	}
 
 	public void setBook(ItemStack itemStack, @Nullable PlayerEntity player) {
 		this.book = itemStack;
 		this.page = 0;
 		// this.pageCount = WrittenBookItem.getPageCount(this.book);
-		// this.setChanged();
+		this.setChanged();
 	}
 
+	@Deprecated
 	private void setPage(int page) {
-		// there is only one page - this is deprecated
-		// int i = MathHelper.clamp(page, 0, this.pageCount - 1);
-		// if (i != this.page) {
-		// this.page = i;
-		// this.setChanged();
-		// LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(),
-		// this.getBlockState());
-		// }
 	}
 
+	@Deprecated
 	public int getPage() {
 		return this.page;
 	}
@@ -186,19 +243,20 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 			return p_70301_1_ == 0 ? ClaimLecternTileEntity.this.book : ItemStack.EMPTY;
 		}
 
-		public ItemStack removeItem(int p_70298_1_, int p_70298_2_) {
-			if (p_70298_1_ == 0) {
-				ItemStack itemstack = ClaimLecternTileEntity.this.book.split(p_70298_2_);
+		@Override
+		public ItemStack removeItem(int slot, int size) {
+			if (slot == 0) {
+				ItemStack itemstack = ClaimLecternTileEntity.this.book.split(size);
 				if (ClaimLecternTileEntity.this.book.isEmpty()) {
 					ClaimLecternTileEntity.this.onBookItemRemove();
 				}
-
 				return itemstack;
 			} else {
 				return ItemStack.EMPTY;
 			}
 		}
 
+		@Override
 		public ItemStack removeItemNoUpdate(int slot) {
 			if (slot == 0) {
 				ItemStack itemstack = ClaimLecternTileEntity.this.book;
@@ -240,4 +298,12 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 		public void clearContent() {
 		}
 	};
+
+	public ICoords getClaimCoords() {
+		return claimCoords;
+	}
+
+	public void setClaimCoords(ICoords claimCoords) {
+		this.claimCoords = claimCoords;
+	}
 }

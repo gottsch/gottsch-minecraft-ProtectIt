@@ -19,15 +19,23 @@
  */
 package com.someguyssoftware.protectit.block;
 
+import java.util.List;
+
 import javax.annotation.Nullable;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
+import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.item.ProtectItItems;
+import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLecternTileEntity;
+import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
@@ -72,10 +80,10 @@ public class ClaimLectern extends LecternBlock {
 	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
 		ProtectIt.LOGGER.info("creating new ClaimLecternTileEntity...");
 		ClaimLecternTileEntity tileEntity = null;
-//		TestTE tileEntity = null;
+		//		TestTE tileEntity = null;
 		try {
 			tileEntity = new ClaimLecternTileEntity();
-//			tileEntity = new TestTE();
+			//			tileEntity = new TestTE();
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("An error occurred", e);
@@ -92,6 +100,20 @@ public class ClaimLectern extends LecternBlock {
 	@Override
 	public boolean hasTileEntity(BlockState state) {
 		return true;
+	}
+
+	@Override
+	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		TileEntity tileEntity = worldIn.getBlockEntity(pos);
+		if (tileEntity instanceof ClaimLecternTileEntity) {
+			// get the claim for this position
+			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos));
+			if (!list.isEmpty()) {
+				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+				ProtectIt.LOGGER.debug("found claim -> {}", claim);
+				((ClaimLecternTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+			}
+		}
 	}
 
 	@Override
@@ -120,12 +142,27 @@ public class ClaimLectern extends LecternBlock {
 	 * @param itemStack
 	 * @return
 	 */
-	public static boolean tryPlaceBook(World world, BlockPos pos, BlockState state, ItemStack itemStack) {
+	public static boolean tryPlaceBook(World world, BlockPos pos, BlockState state, PlayerEntity player, ItemStack itemStack) {
 		ProtectIt.LOGGER.debug("trying to place book.");
 		if (!state.getValue(HAS_BOOK)) {
 			ProtectIt.LOGGER.debug("doesn't have a book yet.");
 			if (!world.isClientSide) {
 				ProtectIt.LOGGER.debug("on server side.");
+				
+				// test if the player is the owner
+				TileEntity tileEntity = world.getBlockEntity(pos);
+				
+				if (tileEntity instanceof ClaimLecternTileEntity) {
+					ClaimLecternTileEntity lecternTileEntity = (ClaimLecternTileEntity)tileEntity;
+					Claim lecternClaim = ProtectionRegistries.block().getClaimByCoords(lecternTileEntity.getClaimCoords());
+					if (lecternClaim == null || !lecternClaim.getOwner().getUuid().equalsIgnoreCase(player.getStringUUID())) {
+						// TODO display a message to the user
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
 				placeBook(world, pos, state, itemStack);
 			}
 			return true;
@@ -150,6 +187,7 @@ public class ClaimLectern extends LecternBlock {
 			ClaimLecternTileEntity lecternTileEntity = (ClaimLecternTileEntity)tileEntity;
 			ProtectIt.LOGGER.debug("settings the book.");
 			lecternTileEntity.setBook(itemStack.split(1));
+			// update the block state
 			resetBookState(world, pos, state, true);
 			world.playSound((PlayerEntity)null, pos, SoundEvents.BOOK_PUT, SoundCategory.BLOCKS, 1.0F, 1.0F);
 		}

@@ -19,7 +19,9 @@
  */
 package com.someguyssoftware.protectit.tileentity;
 
+import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
+import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.claim.Claim;
 
 import net.minecraft.block.BlockState;
@@ -32,19 +34,12 @@ import net.minecraft.util.math.AxisAlignedBB;
  *
  */
 public class ClaimLeverTileEntity extends AbstractModTileEntity {
+	private static final String CLAIM_COORDS_TAG = "claimCoords";
 
-	private Claim claim;
+	private ICoords claimCoords;
 	
 	public ClaimLeverTileEntity() {
 		super(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE);
-	}
-
-	public Claim getClaim() {
-		return claim;
-	}
-
-	public void setClaim(Claim claim) {
-		this.claim = claim;
 	}
 
 	/**
@@ -53,8 +48,10 @@ public class ClaimLeverTileEntity extends AbstractModTileEntity {
 	@Override
 	public CompoundNBT save(CompoundNBT nbt) {
 		super.save(nbt);
-		if (getClaim() != null) {
-			getClaim().save(nbt);
+		if (getClaimCoords() != null) {
+			CompoundNBT coordsNbt = new CompoundNBT();
+			getClaimCoords().save(coordsNbt);
+			nbt.put(CLAIM_COORDS_TAG, coordsNbt);
 		}
 		return nbt;
 	}
@@ -65,8 +62,9 @@ public class ClaimLeverTileEntity extends AbstractModTileEntity {
 	@Override
 	public void load(BlockState state, CompoundNBT nbt) {
 		super.load(state, nbt);
-		Claim claim = new Claim().load(nbt);
-		setClaim(claim);
+		if (nbt.contains(CLAIM_COORDS_TAG)) {
+			setClaimCoords(WorldInfo.EMPTY_COORDS.load(nbt.getCompound(CLAIM_COORDS_TAG)));
+		}
 	}
 	
 	/*
@@ -96,5 +94,13 @@ public class ClaimLeverTileEntity extends AbstractModTileEntity {
 	public void handleUpdateTag(BlockState state, CompoundNBT tag) {
 		//super.handleUpdateTag(state, tag);
 		load(state, tag);
+	}
+
+	public ICoords getClaimCoords() {
+		return claimCoords;
+	}
+
+	public void setClaimCoords(ICoords claimCoords) {
+		this.claimCoords = claimCoords;
 	}
 }
