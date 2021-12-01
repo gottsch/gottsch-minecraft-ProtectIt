@@ -95,9 +95,11 @@ public class ProtectCommand {
 	
 	private static final SuggestionProvider<CommandSource> GIVABLE_ITEMS = (source, builder) -> {
 		List<String> items = Arrays.asList(
-				ProtectItBlocks.CLAIM_LECTERN.getRegistryName().toString(),
-				ProtectItBlocks.CLAIM_LEVER.getRegistryName().toString(),
-				ProtectItItems.CLAIM_BOOK.getRegistryName().toString());
+//				ProtectItBlocks.CLAIM_LECTERN.getRegistryName().toString(),
+//				ProtectItBlocks.CLAIM_LEVER.getRegistryName().toString(),
+//				ProtectItItems.CLAIM_BOOK.getRegistryName().toString()
+				"Claim Access Letern", "Claim Vizualizer Lever", "Claim Access Manifest"
+				);
 		return ISuggestionProvider.suggest(items, builder);
 	};
 
@@ -204,7 +206,7 @@ public class ProtectCommand {
 						///// GIVE OPTION /////
 						.then(Commands.literal(GIVE)
 								.requires(source -> {
-									return source.hasPermission(4);
+									return source.hasPermission(0);
 								})
 								.then(Commands.argument(GIVE_ITEM, StringArgumentType.greedyString())
 										.suggests(GIVABLE_ITEMS)
@@ -641,17 +643,25 @@ public class ProtectCommand {
 	 * @param registryName
 	 * @return
 	 */
-	private static int give(CommandSource source, String registryName) {
+	private static int give(CommandSource source, String name) {
 		try {
-//			// parse out the uuid
-//			uuid = parseNameUuid(uuid);
-//			ProtectionRegistries.block().removeProtection(uuid);
-//			// save world data
-//			ServerWorld world = source.getLevel();
-//			ProtectItSavedData savedData = ProtectItSavedData.get(world);
-//			if (savedData != null) {
-//				savedData.setDirty();
-//			}
+			Item givableItem;
+			switch (name.toLowerCase()) {
+			case "claim access letern":
+				givableItem = Item.getItemFromBlock(ProtectItBlocks.CLAIM_LECTERN);
+				break;
+			case "claim vizualizer lever":
+				givaItem = Item.getItemFromBlock(ProtectItBlocks.CLAIM_LEVER);
+				break;
+			case "claim access manifest":
+				givableItem = ProtectItItems.CLAIM_BOOK;
+				break;
+			}
+			if (givableItem == null) {
+				source.sendSuccess(new TranslationTextComponent("message.protectit.non-givable-item"), true);
+				return 1;
+			}
+			source.getPlayerOrException().inventory.addItemStackToInventory(givableItem);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on give uuid -> ", e);

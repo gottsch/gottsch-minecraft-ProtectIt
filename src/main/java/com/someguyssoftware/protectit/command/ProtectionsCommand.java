@@ -35,6 +35,7 @@ import net.minecraft.world.server.ServerWorld;
  * @author Mark Gottschling on Sep 16, 2021
  *
  */
+@Deprecated
 public class ProtectionsCommand {
 
 	/**

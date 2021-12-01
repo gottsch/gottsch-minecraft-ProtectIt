@@ -15,6 +15,7 @@
 	"message.protectit.invalid_coords_format": "Block pos B must be >= than block pos A.",
 	"message.protectit.empty_list": "Protections: [Empty]",
 	"message.protectit.option_unavailable": "That option is not available yet.",
+	"message.protectit.non-givable-item": "That is not a valid item to give.",
 	
 	"label.protectit.claim_book.title": "Claim Access Manifest"
 }
