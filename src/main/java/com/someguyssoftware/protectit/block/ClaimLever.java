@@ -159,6 +159,15 @@ public class ClaimLever extends LeverBlock {
 	 * 
 	 */
 	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult hit) {
+		TileEntity tileEntity = world.getBlockEntity(pos);
+		// prevent use if not the owner
+		if (tileEntity instanceof ClaimLeverTileEntity) {
+			Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverTileEntity)tileEntity).getClaimCoords());
+			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
+				return ActionResultType.FAIL;
+			}
+		}	
+
 		if (world.isClientSide) {
 			BlockState blockstate1 = state.cycle(POWERED);
 			if (blockstate1.getValue(POWERED)) {

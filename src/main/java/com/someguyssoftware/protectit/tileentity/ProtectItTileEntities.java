@@ -39,7 +39,7 @@ public class ProtectItTileEntities {
 	public static TileEntityType<ClaimLeverTileEntity> CLAIM_LEVER_TILE_ENTITY_TYPE;
 	public static TileEntityType<ClaimLecternTileEntity> CLAIM_LECTERN_TILE_ENTITY_TYPE;
 
-//	public static TileEntityType<TestTE> TEST_TYPE;
+	//	public static TileEntityType<TestTE> TEST_TYPE;
 
 	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
 	public static class RegistrationHandler {
@@ -60,18 +60,18 @@ public class ProtectItTileEntities {
 			event.getRegistry().register(CLAIM_LEVER_TILE_ENTITY_TYPE);
 
 			// lectern
-						CLAIM_LECTERN_TILE_ENTITY_TYPE = TileEntityType.Builder
-								.of(ClaimLecternTileEntity::new, ProtectItBlocks.CLAIM_LECTERN)
-								.build(null);
-						CLAIM_LECTERN_TILE_ENTITY_TYPE.setRegistryName("claim_lectern_te");
-						event.getRegistry().register(CLAIM_LECTERN_TILE_ENTITY_TYPE);
+			CLAIM_LECTERN_TILE_ENTITY_TYPE = TileEntityType.Builder
+					.of(ClaimLecternTileEntity::new, ProtectItBlocks.CLAIM_LECTERN)
+					.build(null);
+			CLAIM_LECTERN_TILE_ENTITY_TYPE.setRegistryName("claim_lectern_te");
+			event.getRegistry().register(CLAIM_LECTERN_TILE_ENTITY_TYPE);
 
 
-//			TEST_TYPE = TileEntityType.Builder
-//					.of(TestTE::new, ProtectItBlocks.CLAIM_LECTERN)
-//					.build(null);
-//			TEST_TYPE.setRegistryName("test_te");
-//			event.getRegistry().register(TEST_TYPE);
+			//			TEST_TYPE = TileEntityType.Builder
+			//					.of(TestTE::new, ProtectItBlocks.CLAIM_LECTERN)
+			//					.build(null);
+			//			TEST_TYPE.setRegistryName("test_te");
+			//			event.getRegistry().register(TEST_TYPE);
 		}
 	}
 }

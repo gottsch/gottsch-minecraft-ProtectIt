@@ -1,4 +1,12 @@
 {
+	"block.protectit.small_stake":"Small Claim Stake",
+	"block.protectit.medium_claim":"Medium Claim Stake",
+	"block.protectit.large_claim":"Large Claim Stake",
+	"block.protectit.claim_lever":"Claim Visualizer Lever",
+	"block.protectit.claim_lectern":"Claim Access Lectern",
+	
+	"item.protectit.claim_book":"Claim Access Manifest",
+			
 	"message.protectit.block_region_successfully_protected":"Region %s -> %s is now protected.",
 	"message.protectit.block_protected": "Block is protected.",
 	"message.protectit.block_region_protected":"A block(s) in that region are already protected.",
@@ -7,5 +15,6 @@
 	"message.protectit.invalid_coords_format": "Block pos B must be >= than block pos A.",
 	"message.protectit.empty_list": "Protections: [Empty]",
 	"message.protectit.option_unavailable": "That option is not available yet.",
+	
 	"label.protectit.claim_book.title": "Claim Access Manifest"
 }

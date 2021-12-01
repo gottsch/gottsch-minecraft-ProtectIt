@@ -61,7 +61,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	private static final String BOOK_TAG = "book";
 	private static final String PAGE_TAG = "page";
 	private static final String CLAIM_COORDS_TAG = "claimCoords";
-	
+
 	private ItemStack book = ItemStack.EMPTY;
 	@Deprecated
 	private int page;
@@ -96,7 +96,10 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	}
 
 	public Container createMenu(int id, PlayerInventory playerInventory, PlayerEntity player) {
-		return new ClaimLecternContainer(id, this.bookAccess, this.dataAccess);
+		ClaimLecternContainer container = new ClaimLecternContainer(id, this.bookAccess, this.dataAccess);
+		Claim claim = ProtectionRegistries.block().getClaimByCoords(claimCoords);
+		container.setClaim(claim);
+		return container;
 	}
 
 	/**
@@ -157,7 +160,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 			getClaimCoords().save(coordsNbt);
 			nbt.put(CLAIM_COORDS_TAG, coordsNbt);
 		}
-		
+
 		if (!this.getBook().isEmpty()) {
 			nbt.put(BOOK_TAG, this.getBook().save(new CompoundNBT()));
 			nbt.putInt(PAGE_TAG, this.page);
@@ -174,39 +177,44 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	 * @param bookStack
 	 */
 	public void setBook(ItemStack bookStack) {
-		if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
-			// get the claim from the registry (use min coords as key instead of coords)
-			Claim registryClaim = ProtectionRegistries.block().getClaimByCoords(/*getClaim().getBox().getMinCoords()*/getClaimCoords());
-			List<PlayerData> bookPlayerDataList = ClaimBook.loadPlayerData(bookStack);
+		// get the claim from the registry (use min coords as key instead of coords)
+		Claim registryClaim = ProtectionRegistries.block().getClaimByCoords(getClaimCoords());
 
-			/*
-			 * compare white lists and update
-			 */
-			// get list of everything in B (book list) that is net new to A (registry list)
-			List<PlayerData> netNew = new ArrayList<>(bookPlayerDataList);
-			netNew.removeAll(registryClaim.getWhitelist());
-			ProtectIt.LOGGER.debug("net new list -> {}", netNew);
-			// add net new to registryClaim
-			registryClaim.getWhitelist()
-					.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
-			ProtectIt.LOGGER.debug("registry claim white list after ADD net new -> {}", registryClaim.getWhitelist());
-			
-			// remove from registryClaim that are no longer contained in bookPlayerDataList.
-			// note, not using difference of lists as only the name is tested, not the equals() of the object
-			List<String> newNames = bookPlayerDataList.stream().map(data -> data.getName())
-					.collect(Collectors.toList());
-			registryClaim.getWhitelist().removeIf(data -> !newNames.contains(data.getName()));
-			ProtectIt.LOGGER.debug("registry claim white list after REMOVE names -> {}", registryClaim.getWhitelist());
-			
-			// update this claim - mark as dirty
-			ProtectItSavedData savedData = ProtectItSavedData.get(getLevel());
-			if (savedData != null) {
-				savedData.setDirty();
+		if (registryClaim !=null) {
+			if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
+				List<PlayerData> bookPlayerDataList = ClaimBook.loadPlayerData(bookStack);
+				/*
+				 * compare white lists and update
+				 */
+				// get list of everything in B (book list) that is net new to A (registry list)
+				List<PlayerData> netNew = new ArrayList<>(bookPlayerDataList);
+				netNew.removeAll(registryClaim.getWhitelist());
+				ProtectIt.LOGGER.debug("net new list -> {}", netNew);
+				// add net new to registryClaim
+				registryClaim.getWhitelist()
+				.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
+				ProtectIt.LOGGER.debug("registry claim white list after ADD net new -> {}", registryClaim.getWhitelist());
+
+				// remove from registryClaim that are no longer contained in bookPlayerDataList.
+				// note, not using difference of lists as only the name is tested, not the equals() of the object
+				List<String> newNames = bookPlayerDataList.stream().map(data -> data.getName())
+						.collect(Collectors.toList());
+				registryClaim.getWhitelist().removeIf(data -> !newNames.contains(data.getName()));
+				ProtectIt.LOGGER.debug("registry claim white list after REMOVE names -> {}", registryClaim.getWhitelist());
+
+				// update this claim - mark as dirty
+				ProtectItSavedData savedData = ProtectItSavedData.get(getLevel());
+				if (savedData != null) {
+					savedData.setDirty();
+				}
+
+				// update bookStack
+				bookStack.removeTagKey("playerData");
+				ClaimBook.savePlayerData(bookStack, bookPlayerDataList);
 			}
-			
-			// update bookStack
-			bookStack.removeTagKey("playerData");
-			ClaimBook.savePlayerData(bookStack, bookPlayerDataList);
+			else {
+				registryClaim.getWhitelist().clear();
+			}
 		}
 		this.setBook(bookStack, (PlayerEntity) null);
 	}

@@ -1,5 +1,5 @@
 {
     "variants": {
-        "": { "model": "protectit:block/small_stake" }
+        "": { "model": "protectit:block/medium_claim" }
     }
 }

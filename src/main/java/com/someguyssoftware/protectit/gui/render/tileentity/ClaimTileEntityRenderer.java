@@ -155,6 +155,17 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 		matrixStack.popPose();
 	}
 	
+	/**
+	 * 
+	 * @param tileEntity
+	 * @param partialTicks
+	 * @param matrixStack
+	 * @param renderBuffers
+	 * @param overlapBox
+	 * @param color
+	 * @param combinedLight
+	 * @param combinedOverlay
+	 */
 	public void renderOverlapHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, 
 			Box overlapBox, Color color, int combinedLight, int combinedOverlay) {
 

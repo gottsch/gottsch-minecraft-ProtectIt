@@ -27,10 +27,12 @@ import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.IContainerListener;
@@ -62,9 +64,17 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 	};
 
 	private final ClaimLecternContainer menu;
+	private final PlayerEntity player;
 
-	public ClaimLecternScreen(ClaimLecternContainer container, PlayerInventory player, ITextComponent text) {
+	/**
+	 * 
+	 * @param container
+	 * @param playerInventory
+	 * @param text
+	 */
+	public ClaimLecternScreen(ClaimLecternContainer container, PlayerInventory playerInventory, ITextComponent text) {
 		this.menu = container;
+		this.player = playerInventory.player;
 	}
 
 	@Override
@@ -79,11 +89,13 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 			this.addButton(new Button(this.width / 2 - 100, 196, 98, 20, DialogTexts.GUI_DONE, (p_214181_1_) -> {
 				this.minecraft.setScreen((Screen) null);
 			}));
-			// TODO don't add if not owner
-			this.addButton(new Button(this.width / 2 + 2, 196, 98, 20,
-					new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
-						this.sendButtonClick(3);
-					}));
+			// add if owner of claim
+			if (getMenu().getClaim() == null || player.getStringUUID().equalsIgnoreCase(getMenu().getClaim().getOwner().getUuid())) {
+				this.addButton(new Button(this.width / 2 + 2, 196, 98, 20,
+						new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
+							this.sendButtonClick(3);
+						}));
+			}
 		} else {
 			super.createMenuControls();
 		}

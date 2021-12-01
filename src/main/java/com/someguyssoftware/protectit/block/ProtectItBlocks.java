@@ -33,6 +33,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -64,8 +65,14 @@ public class ProtectItBlocks {
 		 */
 		@SubscribeEvent
 		public static void registerBlocks(RegistryEvent.Register<Block> event) {
-			SMALL_CLAIM = new ClaimBlock(ProtectIt.MODID, "small_stake", ClaimSizes.SMALL_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
-			MEDIUM_CLAIM = new ClaimBlock(ProtectIt.MODID, "medium_claim", ClaimSizes.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
+			VoxelShape smallClaimShape = Block.box(7, 0, 7, 9, 10, 9);
+			SMALL_CLAIM = new ClaimBlock(ProtectIt.MODID, "small_stake", ClaimSizes.SMALL_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+					.setBounds(new VoxelShape[] {  smallClaimShape, smallClaimShape, smallClaimShape, smallClaimShape });
+			
+			VoxelShape mediumClaimShape = Block.box(7, 0, 7, 9, 13, 9);
+			MEDIUM_CLAIM = new ClaimBlock(ProtectIt.MODID, "medium_claim", ClaimSizes.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+					.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape });
+			
 			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", ClaimSizes.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
 			
 			CLAIM_LEVER = new ClaimLever(ProtectIt.MODID, "claim_lever", Block.Properties.of(Material.STONE, MaterialColor.STONE).strength(0.75F));

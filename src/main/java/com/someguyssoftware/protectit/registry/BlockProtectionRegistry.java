@@ -86,7 +86,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		
 		// add claims by owner
 		List<Claim> claims = null;
-		// TOODO make a method
+		// TODO make a method
 		if (!CLAIMS_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
 			// create new list entry
 			CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());

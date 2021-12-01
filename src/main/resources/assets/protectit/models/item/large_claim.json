@@ -1,5 +1,5 @@
 {
-    "parent": "protectit:block/medium_claim",
+    "parent": "protectit:block/large_claim",
     "display": {
         "thirdperson": {
             "rotation": [ 10, -45, 170 ],
