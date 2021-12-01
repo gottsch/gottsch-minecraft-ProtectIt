@@ -19,6 +19,7 @@
  */
 package com.someguyssoftware.protectit.command;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +36,9 @@ import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.network.RegistryWhitelistMutatorMessageToClient;
@@ -73,18 +76,29 @@ public class ProtectCommand {
 	private static final String TARGETS = "targets";
 	private static final String UUID = "uuid";
 
+	private static final String GIVE = "give";
+	private static final String GIVE_ITEM = "giveItem";
+
 	///// SUGGESTIONS /////
 	private static final SuggestionProvider<CommandSource> SUGGEST_UUID = (source, builder) -> {
 		// get all uuids from registry
-//		return ISuggestionProvider.suggest(ProtectionRegistries.block().find(p -> !p.getData().getOwner().getUuid().isEmpty()).stream()
-//				.map(i -> String.format("%s [%s]", 
-//						(i.getData().getOwner().getName() == null) ? "" : i.getData().getOwner().getName(),
-//								(i.getData().getOwner().getUuid() == null) ? "" : i.getData().getOwner().getUuid())), builder);
-		
+		//		return ISuggestionProvider.suggest(ProtectionRegistries.block().find(p -> !p.getData().getOwner().getUuid().isEmpty()).stream()
+		//				.map(i -> String.format("%s [%s]", 
+		//						(i.getData().getOwner().getName() == null) ? "" : i.getData().getOwner().getName(),
+		//								(i.getData().getOwner().getUuid() == null) ? "" : i.getData().getOwner().getUuid())), builder);
+
 		return ISuggestionProvider.suggest(ProtectionRegistries.block().findByClaim(p -> !p.getOwner().getUuid().isEmpty()).stream()
 				.map(i -> String.format("%s [%s]", 
 						(i.getOwner().getName() == null) ? "" : i.getOwner().getName(),
 								(i.getOwner().getUuid() == null) ? "" : i.getOwner().getUuid())), builder);
+	};
+	
+	private static final SuggestionProvider<CommandSource> GIVABLE_ITEMS = (source, builder) -> {
+		List<String> items = Arrays.asList(
+				ProtectItBlocks.CLAIM_LECTERN.getRegistryName().toString(),
+				ProtectItBlocks.CLAIM_LEVER.getRegistryName().toString(),
+				ProtectItItems.CLAIM_BOOK.getRegistryName().toString());
+		return ISuggestionProvider.suggest(items, builder);
 	};
 
 	/*
@@ -172,7 +186,7 @@ public class ProtectCommand {
 						///// LIST OPTION /////
 						.then(Commands.literal("list")
 								.requires(source -> {
-									return source.hasPermission(0);
+									return source.hasPermission(4);
 								})
 								.executes(source -> {
 									return list(source.getSource());
@@ -187,10 +201,22 @@ public class ProtectCommand {
 									return clear(source.getSource());
 								})
 								)
+						///// GIVE OPTION /////
+						.then(Commands.literal(GIVE)
+								.requires(source -> {
+									return source.hasPermission(4);
+								})
+								.then(Commands.argument(GIVE_ITEM, StringArgumentType.greedyString())
+										.suggests(GIVABLE_ITEMS)
+										.executes(source -> {
+											return give(source.getSource(), StringArgumentType.getString(source, GIVE_ITEM));
+										})
+										)
+								)
 						///// WHITELIST OPTION /////
 						.then(Commands.literal("whitelist")
 								.requires(source -> {
-									return source.hasPermission(0);
+									return source.hasPermission(4);
 								})
 								///// WHITELIST ADD /////
 								.then(Commands.literal("add")
@@ -220,7 +246,7 @@ public class ProtectCommand {
 								///// WHITELIST LIST /////
 								.then(Commands.literal("list")
 										.requires(source -> {
-											return source.hasPermission(0);
+											return source.hasPermission(4);
 										})
 										// TODO - needs pos1, pos2, entity
 										.executes(source -> {
@@ -309,20 +335,20 @@ public class ProtectCommand {
 
 			// check if player already owns protections
 			List<Claim> claims = ProtectionRegistries.block().getProtections(uuid);
-			
+
 			// TODO check if the max # of claims has been reached (via config value)
-			
+
 			// create a claim
 			Claim claim = new Claim(
 					validCoords.get().getA(), 
 					new Box(validCoords.get().getA(), validCoords.get().getB()),
 					new PlayerData(uuid, name.get()),
 					String.valueOf(claims.size() + 1));
-			
+
 			// add protection on server
-//			ProtectionRegistries.block().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name.get()));
+			//			ProtectionRegistries.block().addProtection(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(uuid, name.get()));
 			ProtectionRegistries.block().addProtection(claim);
-			
+
 			// save world data
 			ServerWorld world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -608,7 +634,30 @@ public class ProtectCommand {
 		}
 		return 1;
 	}
-	
+
+	/**
+	 * 
+	 * @param source
+	 * @param registryName
+	 * @return
+	 */
+	private static int give(CommandSource source, String registryName) {
+		try {
+//			// parse out the uuid
+//			uuid = parseNameUuid(uuid);
+//			ProtectionRegistries.block().removeProtection(uuid);
+//			// save world data
+//			ServerWorld world = source.getLevel();
+//			ProtectItSavedData savedData = ProtectItSavedData.get(world);
+//			if (savedData != null) {
+//				savedData.setDirty();
+//			}
+		}
+		catch(Exception e) {
+			ProtectIt.LOGGER.error("error on give uuid -> ", e);
+		}
+		return 1;
+	}
 	
 	/**
 	 * 
@@ -657,7 +706,7 @@ public class ProtectCommand {
 				name.set(player.getName().getString());
 			}
 			ServerPlayerEntity owner = source.getPlayerOrException();
-			
+
 			// TODO update
 			// add protection on server
 			List<Interval> whitelisted = ((BlockProtectionRegistry)ProtectionRegistries.block()).addWhitelist(validCoords.get().getA(), validCoords.get().getB(), new PlayerData(owner.getStringUUID(), owner.getName().getString()), new PlayerData(uuid, name.get()));
@@ -688,7 +737,7 @@ public class ProtectCommand {
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
 		}
-		
+
 		// TODO check that you are the owner of said protection(s)
 		// TODO add targetEntity's uuid & name to whitelist of protection(s)
 		// TODO send update message
