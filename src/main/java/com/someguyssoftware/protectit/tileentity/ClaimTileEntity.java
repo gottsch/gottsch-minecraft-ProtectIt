@@ -33,7 +33,10 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.ITickableTileEntity;
+import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.math.AxisAlignedBB;
 
 /**
@@ -44,11 +47,20 @@ import net.minecraft.util.math.AxisAlignedBB;
 public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickableTileEntity {
 	private static final int TICKS_PER_SECOND = 20;
 	private static final int FIVE_SECONDS = 5 * TICKS_PER_SECOND;
+	
 	/**
 	 * 
 	 */
 	public ClaimTileEntity() {
-		super(ProtectItTileEntities.CLAIM_TILE_ENTITY_TYPE);
+		this(ProtectItTileEntities.CLAIM_TILE_ENTITY_TYPE);
+	}
+	
+	/**
+	 * 
+	 * @param type
+	 */
+	public ClaimTileEntity(TileEntityType<?> type) {
+		super(type);
 		setOverlaps(new ArrayList<>());
 	}
 
@@ -58,7 +70,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
 			ClaimBlock block = (ClaimBlock)getLevel().getBlockState(getBlockPos()).getBlock();
 			Box box = block.getBox(getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords());
+			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			getOverlaps().clear();
 			if (!overlaps.isEmpty()) {
 				getOverlaps().addAll(overlaps);
@@ -125,17 +137,16 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 	 */
 	@Override
 	public CompoundNBT getUpdateTag() {
-		CompoundNBT nbt = super.getUpdateTag();
-		nbt = save(nbt);
+		CompoundNBT nbt = new CompoundNBT();
+		save(nbt);
 		return nbt;
 	}
-
+	
 	/*
 	 * handle on client
 	 */
 	@Override
 	public void handleUpdateTag(BlockState state, CompoundNBT tag) {
-		super.handleUpdateTag(state, tag);
 		load(state, tag);
 	}
 }

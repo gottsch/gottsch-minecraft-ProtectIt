@@ -35,6 +35,7 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -45,6 +46,9 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -65,6 +69,13 @@ public class ClaimBook extends ModItem {
 		super(modID, name, properties);
 	}
 
+	@SuppressWarnings("deprecation")
+	@Override
+	public void appendHoverText(ItemStack stack, World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
+		super.appendHoverText(stack, world, tooltip, flag);
+		tooltip.add(new TranslationTextComponent("tooltip.protectit.claim_book.howto").withStyle(TextFormatting.GREEN));		
+	}
+	
 	/**
 	 * 
 	 */

@@ -59,6 +59,7 @@ public interface IProtectionRegistry {
 	 */
 	public boolean isProtected(ICoords coords);
 	public boolean isProtected(ICoords coords1, ICoords coords2);
+	public boolean isProtected(ICoords coords1, ICoords coords2, boolean includeBorders);
 	
 	/**
 	 * get a list of all protections that intersect with the coords area
@@ -67,8 +68,8 @@ public interface IProtectionRegistry {
 	 */
 	public List<Box> getProtections(ICoords coords);
 	public List<Box> getProtections(ICoords coords1, ICoords coords2);
-	// TODO replace Interval with Box
 	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast);
+	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder);
 
 	/**
 	 * clear all protections
@@ -101,4 +102,5 @@ public interface IProtectionRegistry {
 	 * @return
 	 */
 	public CompoundNBT save(CompoundNBT nbt);
+
 }

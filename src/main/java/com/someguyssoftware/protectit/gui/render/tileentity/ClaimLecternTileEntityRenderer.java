@@ -28,9 +28,12 @@ import net.minecraft.block.LecternBlock;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.model.BookModel;
+import net.minecraft.client.renderer.model.RenderMaterial;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.tileentity.EnchantmentTableTileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3f;
 
 /**
@@ -40,6 +43,7 @@ import net.minecraft.util.math.vector.Vector3f;
  */
 public class ClaimLecternTileEntityRenderer extends TileEntityRenderer<ClaimLecternTileEntity> {
 	private final BookModel bookModel = new BookModel();
+	public static final RenderMaterial BOOK_LOCATION = new RenderMaterial(AtlasTexture.LOCATION_BLOCKS, new ResourceLocation("entity/enchanting_table_book"));
 
 	public ClaimLecternTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
 		super(dispatcher);
@@ -57,7 +61,7 @@ public class ClaimLecternTileEntityRenderer extends TileEntityRenderer<ClaimLect
 			matrixStack.mulPose(Vector3f.ZP.rotationDegrees(67.5F));
 			matrixStack.translate(0.0D, -0.125D, 0.0D);
 			this.bookModel.setupAnim(0.0F, 0.1F, 0.9F, 1.2F);
-			IVertexBuilder ivertexbuilder = EnchantmentTableTileEntityRenderer.BOOK_LOCATION.buffer(renderTypeBuffer, RenderType::entitySolid);
+			IVertexBuilder ivertexbuilder = BOOK_LOCATION.buffer(renderTypeBuffer, RenderType::entitySolid);
 			this.bookModel.render(matrixStack, ivertexbuilder, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
 			matrixStack.popPose();
 		}

@@ -39,6 +39,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
@@ -107,7 +108,7 @@ public class ClaimLectern extends LecternBlock {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
 		if (tileEntity instanceof ClaimLecternTileEntity) {
 			// get the claim for this position
-			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos));
+			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			if (!list.isEmpty()) {
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.debug("found claim -> {}", claim);
@@ -130,7 +131,16 @@ public class ClaimLectern extends LecternBlock {
 		} else {
 			ProtectIt.LOGGER.debug("testing if book is in hand.");
 			ItemStack itemStack = player.getItemInHand(hand);
-			return !itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK ? ActionResultType.CONSUME : ActionResultType.PASS;
+			// if Book in hand, replace with claim book
+			if (!itemStack.isEmpty() && itemStack.getItem() == Items.BOOK) {
+				itemStack.shrink(1);
+				player.setItemInHand(hand, new ItemStack(ProtectItItems.CLAIM_BOOK));
+			}
+			else if (!itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK) {
+				return ActionResultType.CONSUME;
+			}
+//			return !itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK ? ActionResultType.CONSUME : ActionResultType.PASS;
+			return ActionResultType.PASS;
 		}
 	}
 

@@ -87,6 +87,7 @@ public class Interval implements Comparable<Interval> {
 	@Override
 	public int compareTo(Interval interval) {
 		if (this.getStart() < interval.getStart()) {
+			ProtectIt.LOGGER.debug("this.c1.x < interval.c1.x");
 			return -1;
 		} else if (this.getStart() == interval.getStart()) {
 
@@ -98,25 +99,31 @@ public class Interval implements Comparable<Interval> {
 //						return 0;
 						///////						
 						if (getStartY() < interval.getStartY()) {
-							
+							return -1;
 						} else if (getStartY() == interval.getStartY()) {
 							if (getEndY() == interval.getEndY()) {
 								return 0;
 							}
+							ProtectIt.LOGGER.debug("this.c2.y -> {}, interval.c2.y -> {}", this.getEndY(), interval.getEndY());
 							return this.getEndY() < interval.getEndY() ? -1 : 1;
 						} else {
+							ProtectIt.LOGGER.debug("this.c1.y -> {}, interval.c1.y -> {}", this.getEndY(), interval.getEndY());
 							return 1;
 						}
 						//////////////
 					}
+					ProtectIt.LOGGER.debug("this.c2.z -> {}, interval.c2.z -> {}", this.getEndZ(), interval.getEndZ());
 					return this.getEndZ() < interval.getEndZ() ? -1 : 1;
 				} else {
+					ProtectIt.LOGGER.debug("this.c1.z -> {}, interval.c1.z -> {}", this.getEndZ(), interval.getEndZ());
 					return 1;
 				}
 			} else {
+				ProtectIt.LOGGER.debug("this.c2.x -> {}, interval.c2.x -> {}", this.getEnd(), interval.getEnd());
 				return this.getEnd() < interval.getEnd() ? -1 : 1;
 			}
 		} else {
+			ProtectIt.LOGGER.debug("this.c1.x > interval.c1.x -> {} > {}", this.getStart(), interval.getStart());
 			return 1;
 		}
 	}

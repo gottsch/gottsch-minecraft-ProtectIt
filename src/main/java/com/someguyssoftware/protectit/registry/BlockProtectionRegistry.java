@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.electronwill.nightconfig.core.CommentedConfig.Entry;
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
@@ -125,22 +126,78 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return whitelisted;
 	}
 
-	// TODO update all registries
 	@Override
 	public void removeProtection(ICoords coords) {
-		tree.delete(new Interval(coords, coords));
+//		List<Claim> claims = CLAIMS_BY_OWNER.get(claim.getOwner().getUuid());
+//		if (claims != null) {
+//			boolean isRemoved = claims.remove(claim);
+//			if (isRemoved) {
+//				ProtectIt.LOGGER.debug("claim was removed from BY_OWNER -> {}", claim);
+//			}
+//		}
+//		tree.delete(new Interval(coords, coords));
+		removeProtection(coords, coords);
 	}
 
-	// TODO update all registries
 	@Override
 	public void removeProtection(ICoords coords1, ICoords coords2) {
-		tree.delete(new Interval(coords1, coords2));
+		ProtectIt.LOGGER.debug("in remove protection for c1 -> {}, c2 -> {}", coords1, coords2);
+		List<Box> protections = getProtections(coords1, coords2);
+		ProtectIt.LOGGER.debug("found protections -> {}", protections);
+		removeClaims(protections);
+		protections.forEach(p -> {
+			tree.delete(new Interval(p.getMinCoords(), p.getMaxCoords()));
+		});
+		
 	}
 
-	// TODO update all registries
+	/**
+	 * 
+	 * @param protections
+	 */
+	private void removeClaims(final List<Box> protections) {
+		if (!protections.isEmpty()) {
+			protections.forEach(p -> {
+				Claim claim = CLAIMS_BY_COORDS.remove(p.getMinCoords());
+				ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
+				ProtectIt.LOGGER.debug("claims after removal from BY_COORDS -> {}", CLAIMS_BY_COORDS);
+				CLAIMS_BY_OWNER.values().forEach(l -> {
+					l.removeIf(c -> c.getBox().getMinCoords().equals(p.getMinCoords()));
+				});
+				ProtectIt.LOGGER.debug("claims_by_owner -> {}", CLAIMS_BY_OWNER);
+
+			});
+		}
+	}
+	
 	@Override
 	public void removeProtection(ICoords coords1, ICoords coords2, String uuid) {
-		tree.delete(new Interval(coords1, coords2), uuid);
+		ProtectIt.LOGGER.debug("in remove protection for c1 -> {}, c2 -> {}, uuid -> {}", coords1, coords2, uuid);
+		List<Box> protections = getProtections(coords1, coords2);
+		ProtectIt.LOGGER.debug("found protections -> {}", protections);
+		removeClaims(protections, uuid);
+		protections.forEach(p -> {
+			List<Interval> intervals = tree.delete(new Interval(p.getMinCoords(), p.getMaxCoords()), uuid);
+			ProtectIt.LOGGER.debug("removed from tree -> {}", intervals);
+		});
+	}
+
+	private void removeClaims(final List<Box> protections, final String uuid) {
+		if (!protections.isEmpty()) {
+			protections.forEach(p -> {
+				ProtectIt.LOGGER.debug("claims -> {}", CLAIMS_BY_COORDS);
+				Claim claim = getClaimByCoords(p.getMinCoords());
+				ProtectIt.LOGGER.debug("claim -> {}", claim);
+				if (claim != null && claim.getOwner().getUuid().equalsIgnoreCase(uuid)) {
+					CLAIMS_BY_COORDS.remove(p.getMinCoords());
+					ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
+				}
+				List<Claim> claims = CLAIMS_BY_OWNER.get(uuid);
+				if (claims != null && !claims.isEmpty()) {
+					claims.removeIf(c -> c.getBox().getMinCoords().equals(p.getMinCoords()));
+				}
+			});
+		}
 	}
 
 	@Override
@@ -192,23 +249,36 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 	@Override
 	public List<Box> getProtections(ICoords coords1, ICoords coords2) {
-		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), false);
-		List<Box> boxes = new ArrayList<>();
-		protections.forEach(p -> {
-			boxes.add(p.toBox());
-		});
-		return boxes;
+//		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), false);
+//		List<Box> boxes = new ArrayList<>();
+//		protections.forEach(p -> {
+//			boxes.add(p.toBox());
+//		});
+//		return boxes;
+		return getProtections(coords1, coords2, false);
 	}
 
 	@Override
 	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast) {
-		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), findFast);
+//		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), findFast);
+//		List<Box> boxes = new ArrayList<>();
+//		protections.forEach(p -> {
+//			boxes.add(p.toBox());
+//		});
+//		return boxes;
+		return getProtections(coords1, coords2, findFast, true);
+	}
+	
+	@Override
+	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
+		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), findFast, includeBorder);
 		List<Box> boxes = new ArrayList<>();
 		protections.forEach(p -> {
 			boxes.add(p.toBox());
 		});
 		return boxes;
 	}
+	
 
 	/**
 	 * For a single block
@@ -228,7 +298,20 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	@Override
 	public boolean isProtected(ICoords coords1, ICoords coords2) {
-		List<Box> protections = getProtections(coords1, coords2, true);
+//		List<Box> protections = getProtections(coords1, coords2, true);
+//		if (protections.isEmpty()) {
+//			return false;
+//		}		 
+//		return true;
+		return isProtected(coords1, coords2, true);
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public boolean isProtected(ICoords coords1, ICoords coords2, boolean includeBorders) {
+		List<Box> protections = getProtections(coords1, coords2, true, includeBorders);
 		if (protections.isEmpty()) {
 			return false;
 		}		 
@@ -307,6 +390,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return boxes;
 	}
 
+	// TODO change to return Claim.EMPTY is not found or Optional<Claim> (Optional is better)
 	 @Override
 	public Claim getClaimByCoords(ICoords coords) {
 		return CLAIMS_BY_COORDS.get(coords);

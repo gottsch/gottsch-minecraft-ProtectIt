@@ -25,6 +25,10 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.ClaimSizes;
+import com.someguyssoftware.protectit.item.ClaimBlockItem;
+import com.someguyssoftware.protectit.item.ClaimLecternBlockItem;
+import com.someguyssoftware.protectit.item.ClaimLeverBlockItem;
+import com.someguyssoftware.protectit.item.RemoveClaimBlockItem;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -49,6 +53,7 @@ public class ProtectItBlocks {
 	public static Block SMALL_CLAIM;
 	public static Block MEDIUM_CLAIM;
 	public static Block LARGE_CLAIM;
+	public static Block REMOVE_CLAIM;
 	
 	public static Block CLAIM_LEVER;
 	public static Block CLAIM_LECTERN;
@@ -73,7 +78,12 @@ public class ProtectItBlocks {
 			MEDIUM_CLAIM = new ClaimBlock(ProtectIt.MODID, "medium_claim", ClaimSizes.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 					.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape });
 			
-			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", ClaimSizes.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F));
+			VoxelShape largeClaimShape = Block.box(7, 0, 7, 9, 16, 9);
+			LARGE_CLAIM = new ClaimBlock(ProtectIt.MODID, "large_claim", ClaimSizes.LARGE_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+					.setBounds(new VoxelShape[] {  largeClaimShape, largeClaimShape, largeClaimShape, largeClaimShape });
+			
+			REMOVE_CLAIM = new RemoveClaimBlock(ProtectIt.MODID, "remove_claim", ClaimSizes.MEDIUM_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+					.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape });
 			
 			CLAIM_LEVER = new ClaimLever(ProtectIt.MODID, "claim_lever", Block.Properties.of(Material.STONE, MaterialColor.STONE).strength(0.75F));
 			CLAIM_LECTERN = new ClaimLectern(ProtectIt.MODID, "claim_lectern", Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(2.5F));
@@ -86,6 +96,7 @@ public class ProtectItBlocks {
 					SMALL_CLAIM,
 					MEDIUM_CLAIM,
 					LARGE_CLAIM,
+					REMOVE_CLAIM,
 					CLAIM_LEVER,
 					CLAIM_LECTERN
 					);
@@ -101,19 +112,49 @@ public class ProtectItBlocks {
 			final IForgeRegistry<Item> registry = event.getRegistry();
 			
 			List<Block> blocks = new ArrayList<>(3);
+			List<Block> claimBlocks = new ArrayList<>(3);
 			
-			blocks.add(SMALL_CLAIM);
-			blocks.add(MEDIUM_CLAIM);
-			blocks.add(LARGE_CLAIM);
-			blocks.add(CLAIM_LEVER);
-			blocks.add(CLAIM_LECTERN);
+			claimBlocks.add(SMALL_CLAIM);
+			claimBlocks.add(MEDIUM_CLAIM);
+			claimBlocks.add(LARGE_CLAIM);
+//			blocks.add(CLAIM_LEVER);
+//			blocks.add(CLAIM_LECTERN);
 			
-			for (Block b : blocks) {
-				BlockItem blockItem = new BlockItem(b, new Item.Properties().tab(ItemGroup.TAB_MISC));
+			// claim blocks must use the ClaimBlockItem class
+			for (Block b : claimBlocks) {
+				ClaimBlockItem blockItem = new ClaimBlockItem(b, new Item.Properties().tab(ItemGroup.TAB_MISC));
 				final ResourceLocation registryName = Preconditions.checkNotNull(b.getRegistryName(),
 						"Block %s has null registry name", b);
 				registry.register(blockItem.setRegistryName(registryName));
 			}
+						
+//			for (Block b : blocks) {
+//				BlockItem blockItem = new BlockItem(b, new Item.Properties().tab(ItemGroup.TAB_MISC));
+//				final ResourceLocation registryName = Preconditions.checkNotNull(b.getRegistryName(),
+//						"Block %s has null registry name", b);
+//				registry.register(blockItem.setRegistryName(registryName));
+//			}
+			
+			RemoveClaimBlockItem blockItem = new RemoveClaimBlockItem(REMOVE_CLAIM, new Item.Properties().tab(ItemGroup.TAB_MISC));
+			register(registry, blockItem, REMOVE_CLAIM);
+			
+			BlockItem leverBlockItem = new ClaimLeverBlockItem(CLAIM_LEVER, new Item.Properties().tab(ItemGroup.TAB_MISC));			
+			register(registry, leverBlockItem, CLAIM_LEVER);
+			
+			BlockItem lecternBlockItem = new ClaimLecternBlockItem(CLAIM_LECTERN, new Item.Properties().tab(ItemGroup.TAB_MISC));			
+			register(registry, lecternBlockItem, CLAIM_LECTERN);
+		}
+
+		/**
+		 * 
+		 * @param registry
+		 * @param blockItem
+		 * @param block
+		 */
+		private static void register(IForgeRegistry<Item> registry, BlockItem blockItem,	Block block) {
+			final ResourceLocation registryName = Preconditions.checkNotNull(block.getRegistryName(),
+					"Block %s has null registry name", block);
+			registry.register(blockItem.setRegistryName(registryName));
 		}
 	}
 }

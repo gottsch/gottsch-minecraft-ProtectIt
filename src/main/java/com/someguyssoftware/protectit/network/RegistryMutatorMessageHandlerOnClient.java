@@ -94,23 +94,27 @@ public class RegistryMutatorMessageHandlerOnClient {
 				break;
 			}
 			
-			if (message.getAction().equals(RegistryMutatorMessageToClient.ADD_ACTION)) {
+			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
 				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
 				Claim claim = new Claim(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
 				registry.addProtection(claim);
 			}
-			else if (message.getAction().equals(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
+			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
 				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
+					ProtectIt.LOGGER.info("has coords");
 					// use methods that take coords
 					if (message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
+						ProtectIt.LOGGER.info("doesn't have uuid");
 						registry.removeProtection(message.getCoords1(), message.getCoords2());
 					}
 					else {
+						ProtectIt.LOGGER.info("has uuid");
 						registry.removeProtection(message.getCoords1(), message.getCoords2(), message.getUuid());
 					}
 				}
 				else {
 					if (!message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
+						ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
 						registry.removeProtection(message.getUuid());
 					}
 				}

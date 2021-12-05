@@ -2,6 +2,7 @@
 	"block.protectit.small_stake":"Small Claim Stake",
 	"block.protectit.medium_claim":"Medium Claim Stake",
 	"block.protectit.large_claim":"Large Claim Stake",
+	"block.protectit.large_claim":"Remove Claim Stake",
 	"block.protectit.claim_lever":"Claim Visualizer Lever",
 	"block.protectit.claim_lectern":"Claim Access Lectern",
 	
@@ -11,11 +12,19 @@
 	"message.protectit.block_protected": "Block is protected.",
 	"message.protectit.block_region_protected":"A block(s) in that region are already protected.",
 	"message.protectit.block_region_not_protected":"That region is not protected.",
+	"message.protectit.block_region_not_owner":"You are not the owner of that region.",
 	"message.protectit.block_region_not_protected_or_owner":"That region is not protected or you are not the owner.",
 	"message.protectit.invalid_coords_format": "Block pos B must be >= than block pos A.",
 	"message.protectit.empty_list": "Protections: [Empty]",
 	"message.protectit.option_unavailable": "That option is not available yet.",
-	"message.protectit.non-givable-item": "That is not a valid item to give.",
+	"message.protectit.non_givable_item": "That is not a valid item to give.",
+	"message.protectit.max_claims_met": "You have already reached your max. number of claims.",
+	"message.protectit.claim_successfully_removed": "The claim has been removed.",
 	
-	"label.protectit.claim_book.title": "Claim Access Manifest"
+	"label.protectit.claim_book.title": "Claim Access Manifest",
+	"tooltip.protectit.claim_book.howto": "A players name to the manifast to allow them\naccess to interact or modify your land ie. a whitelist.",
+	"tooltip.protectit.claim.howto": "Place block to highlight area.\nUse placed block to claim your land.",
+	"tooltip.protectit.remove_claim.howto": "Place block to highlight your claim.\nUse placed block to remove your claim.",
+	"tooltip.protectit.claim_lever.howto": "Place lever within protected area.\nUse placed block to highlight your land.",
+	"tooltip.protectit.claim_lectern.howto": "Place lectern within protected area.\nUse Claim Access Manifest (CAM) on lectern to modify the access (whitelist) to your land.\nYou can generate a CAM by using a Book on the lectern."
 }

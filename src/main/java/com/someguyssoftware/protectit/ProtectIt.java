@@ -134,6 +134,7 @@ public class ProtectIt implements IMod {
 			ProtectIt.LOGGER.debug("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
 			if (WorldInfo.isSurfaceWorld(world)) {
 				LOGGER.debug("loading Protect It data...");
+				ProtectionRegistries.block().clear();
 				ProtectItSavedData.get(world);
 			}
 		}

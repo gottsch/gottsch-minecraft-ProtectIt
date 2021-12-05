@@ -5,6 +5,8 @@ import com.someguyssoftware.gottschcore.mod.IMod;
 import com.someguyssoftware.protectit.ProtectIt;
 
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
+import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.config.ModConfig;
@@ -58,12 +60,22 @@ public class Config extends AbstractConfig {
 	 *
 	 */
 	public static class General {
+		public IntValue giveCommandLevel;
+		public IntValue claimsPerPlayer;
+		
 		General(final ForgeConfigSpec.Builder builder) {
 			builder.comment(CATEGORY_DIV, " General properties for Protect It  mod.", CATEGORY_DIV).push(GENERAL_CATEGORY);
+			
+			giveCommandLevel = builder
+					.comment("The access level required for the 'give' command.")
+					.defineInRange("'give' command level:", 0, 0, 4);
+			claimsPerPlayer = builder
+					.comment(" The number of claims each player can place per world.")
+					.defineInRange("Number of claims per player:", 5, 1, 100);
+						
 		}
 		
-		public void init() {
-			
+		public void init() {			
 		}
 	}
 	

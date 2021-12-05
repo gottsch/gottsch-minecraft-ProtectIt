@@ -38,6 +38,7 @@ import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
@@ -56,6 +57,8 @@ import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
@@ -98,7 +101,7 @@ public class ProtectCommand {
 //				ProtectItBlocks.CLAIM_LECTERN.getRegistryName().toString(),
 //				ProtectItBlocks.CLAIM_LEVER.getRegistryName().toString(),
 //				ProtectItItems.CLAIM_BOOK.getRegistryName().toString()
-				"Claim Access Letern", "Claim Vizualizer Lever", "Claim Access Manifest"
+				"Claim Access Lectern", "Claim Vizualizer Lever", "Claim Access Manifest", "Remove Claim Stake"
 				);
 		return ISuggestionProvider.suggest(items, builder);
 	};
@@ -206,7 +209,7 @@ public class ProtectCommand {
 						///// GIVE OPTION /////
 						.then(Commands.literal(GIVE)
 								.requires(source -> {
-									return source.hasPermission(0);
+									return source.hasPermission(Config.GENERAL.giveCommandLevel.get());
 								})
 								.then(Commands.argument(GIVE_ITEM, StringArgumentType.greedyString())
 										.suggests(GIVABLE_ITEMS)
@@ -643,28 +646,32 @@ public class ProtectCommand {
 	 * @param registryName
 	 * @return
 	 */
+	// TODO update to take in a Player param
 	private static int give(CommandSource source, String name) {
 		try {
-			Item givableItem;
+			Item givableItem = null;
 			switch (name.toLowerCase()) {
-			case "claim access letern":
-				givableItem = Item.getItemFromBlock(ProtectItBlocks.CLAIM_LECTERN);
+			case "claim access lectern":
+				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LECTERN);
 				break;
 			case "claim vizualizer lever":
-				givaItem = Item.getItemFromBlock(ProtectItBlocks.CLAIM_LEVER);
+				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LEVER);
 				break;
 			case "claim access manifest":
 				givableItem = ProtectItItems.CLAIM_BOOK;
 				break;
+			case "remove claim stake":
+				givableItem = Item.byBlock(ProtectItBlocks.REMOVE_CLAIM);
+				break;
 			}
 			if (givableItem == null) {
-				source.sendSuccess(new TranslationTextComponent("message.protectit.non-givable-item"), true);
+				source.sendSuccess(new TranslationTextComponent("message.protectit.non_givable_item"), true);
 				return 1;
 			}
-			source.getPlayerOrException().inventory.addItemStackToInventory(givableItem);
+			source.getPlayerOrException().inventory.add(new ItemStack(givableItem));
 		}
 		catch(Exception e) {
-			ProtectIt.LOGGER.error("error on give uuid -> ", e);
+			ProtectIt.LOGGER.error("error on give -> ", e);
 		}
 		return 1;
 	}
@@ -682,6 +689,7 @@ public class ProtectCommand {
 	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2) {
 		return addWhitelist(source, pos, pos2, null);
 	}
+	
 	/**
 	 * 
 	 * @param source

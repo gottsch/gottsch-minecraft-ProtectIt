@@ -26,6 +26,7 @@ import com.someguyssoftware.protectit.claim.Claim;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.math.AxisAlignedBB;
 
 /**
@@ -39,9 +40,13 @@ public class ClaimLeverTileEntity extends AbstractModTileEntity {
 	private ICoords claimCoords;
 	
 	public ClaimLeverTileEntity() {
-		super(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE);
+		this(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE);
 	}
 
+	public ClaimLeverTileEntity(TileEntityType<?> type) {
+		super(type);
+	}
+	
 	/**
 	 * 
 	 */

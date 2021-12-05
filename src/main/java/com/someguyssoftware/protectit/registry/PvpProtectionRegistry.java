@@ -84,6 +84,12 @@ public class PvpProtectionRegistry implements IPvpProtectionRegistry {
 	}
 
 	@Override
+	public boolean isProtected(ICoords coords1, ICoords coords2, boolean includeBorders) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
 	public List<Box> getProtections(ICoords coords) {
 		// TODO Auto-generated method stub
 		return null;
@@ -97,6 +103,12 @@ public class PvpProtectionRegistry implements IPvpProtectionRegistry {
 
 	@Override
 	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -124,5 +136,4 @@ public class PvpProtectionRegistry implements IPvpProtectionRegistry {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }

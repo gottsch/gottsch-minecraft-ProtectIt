@@ -28,6 +28,8 @@ import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -141,16 +143,111 @@ public class ClaimBlock extends ModBlock {
 	@Override
 	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
+//		ProtectIt.LOGGER.info("setPlacedBy claimBlock TE -> {}", tileEntity.getClass().getSimpleName());
+		// gather the number of claims the player has
+		List<Claim> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
+		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
+			placer.sendMessage(new TranslationTextComponent("message.protectit.max_claims_met"), placer.getUUID());
+			return;
+		}
+		
 		if (tileEntity instanceof ClaimTileEntity) {
 			((ClaimTileEntity) tileEntity).setOwnerUuid(placer.getStringUUID());
+//			ProtectIt.LOGGER.info("setting ower to -> {}",( (ClaimTileEntity) tileEntity).getOwnerUuid());
 			// save any overlaps to the TileEntity
 			Box box = getBox(tileEntity.getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords());
-//			ProtectIt.LOGGER.info("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
+			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			ProtectIt.LOGGER.info("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
 				((ClaimTileEntity)tileEntity).getOverlaps().addAll(overlaps);
 			}
 		}
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player,
+			Hand handIn, BlockRayTraceResult hit) {
+
+		// exit if on the client
+		if (WorldInfo.isClientSide(world)) {
+			return ActionResultType.SUCCESS;
+		}
+		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
+
+		// gather the number of claims the player has
+		List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());		
+		ProtectIt.LOGGER.info("claims -> {}", claims);
+		
+		// prevent the use of claim if max claims is met
+		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
+			player.sendMessage(new TranslationTextComponent("message.protectit.max_claims_met"), player.getUUID());
+			return ActionResultType.SUCCESS;
+		}
+		
+		// get the tile entity
+		TileEntity tileEntity = world.getBlockEntity(pos);
+		if (tileEntity instanceof ClaimTileEntity) {
+			final Box box = getBox(pos);
+
+			// add area to protections registry if this is a dedicated server
+			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords(), false)) {
+				ProtectIt.LOGGER.info("not protected");
+				// check if player already owns protections
+//				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
+				// create a claim
+				Claim claim = new Claim(
+						box.getMinCoords(), 
+						box,
+						new PlayerData(player.getStringUUID(), player.getName().getString()),
+						String.valueOf(claims.size() + 1));
+				ProtectionRegistries.block().addProtection(claim);
+//				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+				
+				ProtectIt.LOGGER.info("should've added -> {} {}", box, player.getStringUUID());
+				ProtectItSavedData savedData = ProtectItSavedData.get(world);
+				// mark data as dirty
+				if (savedData != null) {
+					savedData.setDirty();
+				}
+
+				if(((ServerWorld)world).getServer().isDedicatedServer()) {
+					// send message to add protection on all clients
+					RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
+							RegistryMutatorMessageToClient.BLOCK_TYPE, 
+							RegistryMutatorMessageToClient.ADD_ACTION, 
+							player.getStringUUID()).with($ -> {
+								$.coords1 = box.getMinCoords();//.get();
+								$.coords2 = box.getMaxCoords();//ref2.get();
+								$.playerName = player.getName().getString();
+							}).build();
+					ProtectIt.LOGGER.info("sending message to sync client side ");
+					ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+				}
+				// remove claim block
+				world.removeBlock(pos, false);
+
+				// give player Claim Lectern and Lever
+				ItemStack lecternStack = new ItemStack(ProtectItBlocks.CLAIM_LECTERN);
+				if (!player.inventory.add(lecternStack)) {
+					player.drop(lecternStack, false);
+				}
+				ItemStack leverStack = new ItemStack(ProtectItBlocks.CLAIM_LEVER);
+				if (!player.inventory.add(leverStack)) {
+					player.drop(leverStack, false);
+				}
+				
+				// send message to player
+				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
+			}
+			else {
+				// message player that the area is already protected
+				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_protected"), player.getUUID());
+			}
+		}
+		return ActionResultType.SUCCESS;
 	}
 
 	/**
@@ -200,74 +297,7 @@ public class ClaimBlock extends ModBlock {
 				context.getHorizontalDirection().getOpposite());
 		return blockState;
 	}
-
-	/**
-	 * 
-	 */
-	@Override
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player,
-			Hand handIn, BlockRayTraceResult hit) {
-
-		// exit if on the client
-		if (WorldInfo.isClientSide(world)) {
-			return ActionResultType.SUCCESS;
-		}
-		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
-
-		// get the tile entity
-		TileEntity tileEntity = world.getBlockEntity(pos);
-		if (tileEntity instanceof ClaimTileEntity) {
-			final Box box = getBox(pos);
-
-			// add area to protections registry if this is a dedicated server
-			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords())) {
-				ProtectIt.LOGGER.info("not protected");
-				// check if player already owns protections
-				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
-				// create a claim
-				Claim claim = new Claim(
-						box.getMinCoords(), 
-						box,
-						new PlayerData(player.getStringUUID(), player.getName().getString()),
-						String.valueOf(claims.size() + 1));
-				ProtectionRegistries.block().addProtection(claim);
-//				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
-				
-				ProtectIt.LOGGER.info("should've added -> {} {}", box, player.getStringUUID());
-				ProtectItSavedData savedData = ProtectItSavedData.get(world);
-				// mark data as dirty
-				if (savedData != null) {
-					savedData.setDirty();
-				}
-
-				if(((ServerWorld)world).getServer().isDedicatedServer()) {
-					// send message to add protection on all clients
-					RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
-							RegistryMutatorMessageToClient.BLOCK_TYPE, 
-							RegistryMutatorMessageToClient.ADD_ACTION, 
-							player.getStringUUID()).with($ -> {
-								$.coords1 = box.getMinCoords();//.get();
-								$.coords2 = box.getMaxCoords();//ref2.get();
-								$.playerName = player.getName().getString();
-							}).build();
-					ProtectIt.LOGGER.info("sending message to sync client side ");
-					ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
-				}
-				// remove claim block
-				world.removeBlock(pos, false);
-
-				// send message to player
-				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
-			}
-			else {
-				// message player that the area is already protected
-				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_protected"), player.getUUID());
-			}
-		}
-
-		return ActionResultType.SUCCESS;
-	}
-
+	
 	/**
 	 * 
 	 * @param pos

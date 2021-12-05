@@ -23,10 +23,8 @@ import java.awt.Color;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.someguyssoftware.gottschcore.spatial.Coords;
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
-import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.tileentity.AbstractClaimTileEntity;
 
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -142,6 +140,63 @@ public interface IClaimRenderer {
 		// do nothing
 	}
 
+	/**
+	 * 
+	 * @param tileEntity
+	 * @param matrixStack
+	 * @param builder
+	 * @param overlapBox
+	 * @param red
+	 * @param green
+	 * @param blue
+	 * @param alpha
+	 */
+	default public void renderOverlap(AbstractClaimTileEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
+			Box overlapBox, float red, float green, float blue, float alpha) {
+		// calculate render pos -> delta of b & pos
+		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
+		// calculate size of b
+		ICoords size = overlapBox.getSize();
+
+		matrixStack.pushPose(); 
+		updateTranslation(matrixStack, offsetCoords);
+		WorldRenderer.renderLineBox(matrixStack, builder, 0, 0, 0,
+				size.getX(),
+				size.getY(),
+				size.getZ(),
+				red, 0, 0, 1.0f, red, 0, 0);
+		matrixStack.popPose();
+	}
+	
+	/**
+	 * 
+	 * @param tileEntity
+	 * @param partialTicks
+	 * @param matrixStack
+	 * @param renderBuffers
+	 * @param overlapBox
+	 * @param color
+	 * @param combinedLight
+	 * @param combinedOverlay
+	 */
+	default public void renderOverlapHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, 
+			Box overlapBox, Color color, int combinedLight, int combinedOverlay) {
+
+		// calculate render pos -> delta of b & pos
+		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
+		// calculate size of b
+		ICoords size = overlapBox.getSize();
+		
+		// push the current transformation matrix + normals matrix
+		matrixStack.pushPose();
+		
+		updateTranslation(matrixStack, offsetCoords.withY(0));
+		drawQuads(matrixStack, renderBuffers, size, color, combinedLight);
+		
+		// restore the original transformation matrix + normals matrix
+		matrixStack.popPose();
+	}
+	
 	/**
 	 * Draw a cube from [0,0,0] to [x, y, z], same texture on all sides, using a supplied texture
 	 */

@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.google.common.collect.Lists;
+import com.someguyssoftware.protectit.ProtectIt;
+
 import net.minecraft.nbt.CompoundNBT;
 
 // NOTE this is currently not a balanced Binary Search Tree
@@ -80,6 +83,8 @@ public class ProtectedIntervalTree {
 	 */
 	public synchronized Interval delete(Interval target) {
 		root = delete(root, target);
+		ProtectIt.LOGGER.debug("root is now -> {}", root);
+		ProtectIt.LOGGER.debug("all intervals now -> {}", toStringList(root));
 		return root;
 	}
 
@@ -90,31 +95,39 @@ public class ProtectedIntervalTree {
 	 * @return
 	 */
 	private Interval delete(Interval interval, Interval target) {
+		ProtectIt.LOGGER.debug("delete interval -> {}, target -> {}", interval, target);
 		if (interval == null) {
 			return interval;
 		}
 
 		if (interval.compareTo(target) < 0) {
+			ProtectIt.LOGGER.debug("setting right...");
 			interval.setRight(delete(interval.getRight(), target));
 		}
 		else if (interval.compareTo(target) > 0) {
+			ProtectIt.LOGGER.debug("setting left...");
 			interval.setLeft(delete(interval.getLeft(), target));
 		}
 		else {
 			// node with no leaf nodes
 			if (interval.getLeft() == null && interval.getRight() == null) {
+				ProtectIt.LOGGER.debug("no child nodes...");
 				return null;
 			}
 			else if (interval.getLeft() == null) {
+				ProtectIt.LOGGER.debug("returning right...");
 				return interval.getRight();
 			}
 			else if (interval.getRight() == null) {
+				ProtectIt.LOGGER.debug("returing left...");
 				return interval.getLeft();
 			}
 			else {
+				ProtectIt.LOGGER.debug("inserting left into right...");
 				// insert right tree into left tree
 				insert(interval.getLeft(), interval.getRight());
 				// return the left tree
+				ProtectIt.LOGGER.debug("returning left -> {}", interval.getLeft());
 				return interval.getLeft();
 			}
 		}
@@ -126,13 +139,20 @@ public class ProtectedIntervalTree {
 	 * @param target
 	 * @param uuid
 	 */
-	public synchronized void delete(Interval target, String uuid) {
+	public synchronized List<Interval> delete(Interval target, String uuid) {
+		ProtectIt.LOGGER.debug("uuid -> {}", uuid);
+		List<Interval> removed = Lists.newArrayList();
 		List<Interval> list = getOverlapping(getRoot(), target, false);
+		ProtectIt.LOGGER.debug("list of overlappings -> {}", list);
 		list.forEach(i -> {
+			ProtectIt.LOGGER.debug("overlapping interval -> {}", i);
 			if (i.getData() != null && i.getData().getOwner().getUuid().equalsIgnoreCase(uuid)) {
-				delete(getRoot(), i);
+				Interval interval = delete(getRoot(), i);
+				ProtectIt.LOGGER.debug("removed interval");
+				removed.add(interval);
 			}
 		});
+		return removed;
 	}
 	
 	/**
@@ -255,14 +275,23 @@ public class ProtectedIntervalTree {
 		return isFound;
 	}
 
+	public List<Interval> getOverlapping(Interval interval, Interval testInterval, boolean findFast) {
+		return getOverlapping(interval, testInterval, true, true);
+	}	
+	
 	/**
 	 * public wrapper to ensure that the return value is non-null
 	 * @param interval
 	 * @param testInterval
 	 */
-	public synchronized List<Interval> getOverlapping(Interval interval, Interval testInterval, boolean findFast) {
+	public synchronized List<Interval> getOverlapping(Interval interval, Interval testInterval, boolean findFast, boolean includeBorder) {
 		List<Interval> results = new ArrayList<>();
-		checkOverlap(interval, testInterval, results, findFast);
+		if (includeBorder) {
+			checkOverlap(interval, testInterval, results, findFast);
+		}
+		else {
+			checkOverlapNoBorder(interval, testInterval, results, findFast);
+		}
 		return results;
 	}
 
@@ -280,32 +309,91 @@ public class ProtectedIntervalTree {
 			return false;
 		}
 
+		// short-circuit
         if(testInterval.getStart() > interval.getMax() || testInterval.getEnd() < interval.getMin()) {
         	return false;
         }
-        
+
 		if (!((interval.getStart() > testInterval.getEnd()) || (interval.getEnd() < testInterval.getStart()))) {
 			// x-axis overlaps, check z-axis
 			if (!((interval.getStartZ() > testInterval.getEndZ()) || (interval.getEndZ() < testInterval.getStartZ()))) {
 				// z-axis overlaps, check y-axis
 				if (!((interval.getStartY() > testInterval.getEndY()) || (interval.getEndY() < testInterval.getStartY()))) {
-				
+
 					results.add(interval);
 					if (findFast) {
 						return true;
-					}
-				
+					}				
 				}
 			}
 		}
 
+		// walk the left branch
 		if ((interval.getLeft() != null) && (interval.getLeft().getMax() >= testInterval.getStart())) {
 			if (this.checkOverlap(interval.getLeft(), testInterval, results, findFast) && findFast) {
 				return true;
 			}
 		}
 
+		// walk the right branch
 		if (this.checkOverlap(interval.getRight(), testInterval, results, findFast) && findFast) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param interval
+	 * @param testInterval
+	 * @param results
+	 * @param findFirst find first occurrence only
+	 * @return whether an overlap was found in this subtree
+	 */
+	private boolean checkOverlapNoBorder(Interval interval, Interval testInterval, List<Interval> results, boolean findFast) {
+		if (interval == null) {
+			return false;
+		}
+
+		// short-circuit
+        if(testInterval.getStart() > interval.getMax() || testInterval.getEnd() < interval.getMin()) { //TESTING - adding >=, <= instead of >, <
+        	return false;
+        }
+        
+        // TODO add logging
+//    	ProtectIt.LOGGER.debug("testing: interval -> {}, test -> {}", interval, testInterval);
+//    	ProtectIt.LOGGER.debug("testing x: i.startx -> {}, t.endx -> {}, i.endx -> {}, t.startx -> {}", interval.getStart(), testInterval.getEnd(),
+//    			interval.getEnd(), testInterval.getStart());
+		if (!((interval.getStart() >= testInterval.getEnd()) || (interval.getEnd() <= testInterval.getStart()))) { // TESTING - adding >= and <= to all comparisons
+//			ProtectIt.LOGGER.info("has x overlap");
+//	    	ProtectIt.LOGGER.debug("testing z: i.startz -> {}, t.endz -> {}, i.endz -> {}, t.startz -> {}", interval.getStartZ(), testInterval.getEndZ(),
+//	    			interval.getEndZ(), testInterval.getStartZ());
+			// x-axis overlaps, check z-axis
+			if (!((interval.getStartZ() >= testInterval.getEndZ()) || (interval.getEndZ() <= testInterval.getStartZ()))) {
+//				ProtectIt.LOGGER.info("has z overlap");
+//		    	ProtectIt.LOGGER.debug("testing y: i.starty -> {}, t.endy -> {}, i.endy -> {}, t.starty -> {}", interval.getStartY(), testInterval.getEndY(),
+//		    			interval.getEndY(), testInterval.getStartY());
+				// z-axis overlaps, check y-axis
+				if (!((interval.getStartY() >= testInterval.getEndY()) || (interval.getEndY() <= testInterval.getStartY()))) {
+//					ProtectIt.LOGGER.info("has y overlap - adding to overlaps");
+					results.add(interval);
+					if (findFast) {
+						return true;
+					}				
+				}
+			}
+		}
+
+		// walk the left branch
+		if ((interval.getLeft() != null) && (interval.getLeft().getMax() > testInterval.getStart())) { // TESTING replaced >= with >
+			if (this.checkOverlapNoBorder(interval.getLeft(), testInterval, results, findFast) && findFast) {
+				return true;
+			}
+		}
+
+		// walk the right branch
+		if (this.checkOverlapNoBorder(interval.getRight(), testInterval, results, findFast) && findFast) {
 			return true;
 		}
 		

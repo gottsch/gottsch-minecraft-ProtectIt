@@ -189,10 +189,9 @@ public class ClaimLever extends LeverBlock {
 			// get the claim for this position
 			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
-			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos));
+			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			ProtectIt.LOGGER.debug("found protections -> {}", list);
-			if (!list.isEmpty()) {
-				
+			if (!list.isEmpty()) {				
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.debug("found claim -> {}", claim);
 				((ClaimLeverTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());

@@ -36,6 +36,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
  */
 public class ProtectItTileEntities {
 	public static TileEntityType<ClaimTileEntity> CLAIM_TILE_ENTITY_TYPE;
+	public static TileEntityType<RemoveClaimTileEntity> REMOVE_CLAIM_TILE_ENTITY_TYPE;
 	public static TileEntityType<ClaimLeverTileEntity> CLAIM_LEVER_TILE_ENTITY_TYPE;
 	public static TileEntityType<ClaimLecternTileEntity> CLAIM_LECTERN_TILE_ENTITY_TYPE;
 
@@ -51,6 +52,12 @@ public class ProtectItTileEntities {
 					.build(null);
 			CLAIM_TILE_ENTITY_TYPE.setRegistryName("claim_te");
 			event.getRegistry().register(CLAIM_TILE_ENTITY_TYPE);
+			
+			REMOVE_CLAIM_TILE_ENTITY_TYPE = TileEntityType.Builder
+					.of(RemoveClaimTileEntity::new, ProtectItBlocks.REMOVE_CLAIM)
+					.build(null);
+			REMOVE_CLAIM_TILE_ENTITY_TYPE.setRegistryName("remove_claim_te");
+			event.getRegistry().register(REMOVE_CLAIM_TILE_ENTITY_TYPE);
 
 			// lever
 			CLAIM_LEVER_TILE_ENTITY_TYPE = TileEntityType.Builder

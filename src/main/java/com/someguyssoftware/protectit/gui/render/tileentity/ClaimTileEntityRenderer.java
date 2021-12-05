@@ -30,14 +30,12 @@ import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimBlock;
-import com.someguyssoftware.protectit.tileentity.AbstractClaimTileEntity;
 import com.someguyssoftware.protectit.tileentity.ClaimTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.tileentity.TileEntity;
@@ -71,10 +69,10 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 		}
 
 		// test if the player owns the tile entity
-		//		ProtectIt.LOGGER.info("owner uuid @ {} -> {}", pos.toShortString(), tileEntity.getOwnerUuid());
-		//		ProtectIt.LOGGER.info("minecraft player -> {}", Minecraft.getInstance().player.getStringUUID());
 		if (StringUtils.isBlank(tileEntity.getOwnerUuid()) ||
-				!tileEntity.getOwnerUuid().equalsIgnoreCase(Minecraft.getInstance().player.getStringUUID())) {
+				!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(tileEntity.getOwnerUuid())) {
+//					ProtectIt.LOGGER.info("not rendering bc: owner uuid @ {} -> {}", pos.toShortString(), tileEntity.getOwnerUuid());
+//					ProtectIt.LOGGER.info("not rendering bc: minecraft player -> {}", Minecraft.getInstance().player.getStringUUID());
 			return;
 		}
 
@@ -111,7 +109,6 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 					combinedLight, combinedOverlay);
 		}
 
-		// TODO need renderOverlapHighlight which set the correct translation
 		((ClaimTileEntity)tileEntity).getOverlaps().forEach(b -> {
 			renderOverlapHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, b, 
 					new Color(255, 0, 0, 100), combinedLight, combinedOverlay);
@@ -127,60 +124,60 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 		matrixStack.translate(delta.getX(), -delta.getY(), delta.getZ());
 	}
 
-	/**
-	 * 
-	 * @param tileEntity
-	 * @param matrixStack
-	 * @param builder
-	 * @param overlapBox
-	 * @param red
-	 * @param green
-	 * @param blue
-	 * @param alpha
-	 */
-	public void renderOverlap(AbstractClaimTileEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
-			Box overlapBox, float red, float green, float blue, float alpha) {
-		// calculate render pos -> delta of b & pos
-		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
-		// calculate size of b
-		ICoords size = overlapBox.getSize();
-
-		matrixStack.pushPose(); 
-		updateTranslation(matrixStack, offsetCoords);
-		WorldRenderer.renderLineBox(matrixStack, builder, 0, 0, 0,
-				size.getX(),
-				size.getY(),
-				size.getZ(),
-				red, 0, 0, 1.0f, red, 0, 0);
-		matrixStack.popPose();
-	}
+//	/**
+//	 * 
+//	 * @param tileEntity
+//	 * @param matrixStack
+//	 * @param builder
+//	 * @param overlapBox
+//	 * @param red
+//	 * @param green
+//	 * @param blue
+//	 * @param alpha
+//	 */
+//	public void renderOverlap(AbstractClaimTileEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
+//			Box overlapBox, float red, float green, float blue, float alpha) {
+//		// calculate render pos -> delta of b & pos
+//		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
+//		// calculate size of b
+//		ICoords size = overlapBox.getSize();
+//
+//		matrixStack.pushPose(); 
+//		updateTranslation(matrixStack, offsetCoords);
+//		WorldRenderer.renderLineBox(matrixStack, builder, 0, 0, 0,
+//				size.getX(),
+//				size.getY(),
+//				size.getZ(),
+//				red, 0, 0, 1.0f, red, 0, 0);
+//		matrixStack.popPose();
+//	}
 	
-	/**
-	 * 
-	 * @param tileEntity
-	 * @param partialTicks
-	 * @param matrixStack
-	 * @param renderBuffers
-	 * @param overlapBox
-	 * @param color
-	 * @param combinedLight
-	 * @param combinedOverlay
-	 */
-	public void renderOverlapHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, 
-			Box overlapBox, Color color, int combinedLight, int combinedOverlay) {
-
-		// calculate render pos -> delta of b & pos
-		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
-		// calculate size of b
-		ICoords size = overlapBox.getSize();
-		
-		// push the current transformation matrix + normals matrix
-		matrixStack.pushPose();
-		
-		updateTranslation(matrixStack, offsetCoords.withY(0));
-		drawQuads(matrixStack, renderBuffers, size, color, combinedLight);
-		
-		// restore the original transformation matrix + normals matrix
-		matrixStack.popPose();
-	}
+//	/**
+//	 * 
+//	 * @param tileEntity
+//	 * @param partialTicks
+//	 * @param matrixStack
+//	 * @param renderBuffers
+//	 * @param overlapBox
+//	 * @param color
+//	 * @param combinedLight
+//	 * @param combinedOverlay
+//	 */
+//	public void renderOverlapHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, 
+//			Box overlapBox, Color color, int combinedLight, int combinedOverlay) {
+//
+//		// calculate render pos -> delta of b & pos
+//		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
+//		// calculate size of b
+//		ICoords size = overlapBox.getSize();
+//		
+//		// push the current transformation matrix + normals matrix
+//		matrixStack.pushPose();
+//		
+//		updateTranslation(matrixStack, offsetCoords.withY(0));
+//		drawQuads(matrixStack, renderBuffers, size, color, combinedLight);
+//		
+//		// restore the original transformation matrix + normals matrix
+//		matrixStack.popPose();
+//	}
 }

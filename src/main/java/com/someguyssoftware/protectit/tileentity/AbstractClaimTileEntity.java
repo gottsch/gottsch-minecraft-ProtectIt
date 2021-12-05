@@ -25,6 +25,8 @@ import java.util.List;
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
 
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.TileEntityType;
 
 /**
@@ -47,7 +49,14 @@ public abstract class AbstractClaimTileEntity extends AbstractModTileEntity impl
 		super(type);
 	}
 
-
+	/**
+	 * NOTE this method is wrong in GottschCore v.1.4.0.
+	 */
+	@Override
+	public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
+		handleUpdateTag(this.getLevel().getBlockState(pkt.getPos()), pkt.getTag());
+	}
+	
 	@Override
 	public String getOwnerUuid() {
 		return ownerUuid;
