@@ -21,6 +21,8 @@ package com.someguyssoftware.protectit.gui.render.tileentity;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.tileentity.ClaimLecternTileEntity;
 
 import net.minecraft.block.BlockState;
@@ -43,7 +45,7 @@ import net.minecraft.util.math.vector.Vector3f;
  */
 public class ClaimLecternTileEntityRenderer extends TileEntityRenderer<ClaimLecternTileEntity> {
 	private final BookModel bookModel = new BookModel();
-	public static final RenderMaterial BOOK_LOCATION = new RenderMaterial(AtlasTexture.LOCATION_BLOCKS, new ResourceLocation("entity/enchanting_table_book"));
+	public static final RenderMaterial BOOK_LOCATION = new RenderMaterial(AtlasTexture.LOCATION_BLOCKS, new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
 
 	public ClaimLecternTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
 		super(dispatcher);

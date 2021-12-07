@@ -19,7 +19,6 @@
  */
 package com.someguyssoftware.protectit.inventory;
 
-import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 
 import net.minecraft.entity.player.PlayerEntity;
@@ -32,10 +31,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.IIntArray;
 import net.minecraft.util.IntArray;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 
@@ -79,7 +75,6 @@ public class ClaimLecternContainer extends Container {
 	 */
 	public ClaimLecternContainer(int windowID, IInventory inventory, IIntArray data) {
 		super(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE, windowID);
-		ProtectIt.LOGGER.debug("creating lectern container");
 		checkContainerSize(inventory, 1);
 		checkContainerDataCount(data, 1);
 		this.lectern = inventory;

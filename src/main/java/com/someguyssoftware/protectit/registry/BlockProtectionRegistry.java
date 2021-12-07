@@ -104,7 +104,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	}
 
 	/**
-	 * TODO not part of IBlockProtectionRegistry... need to abstract it out.
+	 * 
 	 * @param coords1
 	 * @param coords2
 	 * @param owner
@@ -128,14 +128,6 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 	@Override
 	public void removeProtection(ICoords coords) {
-//		List<Claim> claims = CLAIMS_BY_OWNER.get(claim.getOwner().getUuid());
-//		if (claims != null) {
-//			boolean isRemoved = claims.remove(claim);
-//			if (isRemoved) {
-//				ProtectIt.LOGGER.debug("claim was removed from BY_OWNER -> {}", claim);
-//			}
-//		}
-//		tree.delete(new Interval(coords, coords));
 		removeProtection(coords, coords);
 	}
 
@@ -236,8 +228,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		}
 		return claims;
 	}
-	
-	// TODO add new method to get claims - getClaim(ICoords), getClaims(ICoords, ICoords)
+
 	/**
 	 * A list is returned, but only one element should be returned
 	 * (else something went wrong)
@@ -249,23 +240,11 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 	@Override
 	public List<Box> getProtections(ICoords coords1, ICoords coords2) {
-//		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), false);
-//		List<Box> boxes = new ArrayList<>();
-//		protections.forEach(p -> {
-//			boxes.add(p.toBox());
-//		});
-//		return boxes;
 		return getProtections(coords1, coords2, false);
 	}
 
 	@Override
 	public List<Box> getProtections(ICoords coords1, ICoords coords2, boolean findFast) {
-//		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), findFast);
-//		List<Box> boxes = new ArrayList<>();
-//		protections.forEach(p -> {
-//			boxes.add(p.toBox());
-//		});
-//		return boxes;
 		return getProtections(coords1, coords2, findFast, true);
 	}
 	
@@ -298,11 +277,6 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	@Override
 	public boolean isProtected(ICoords coords1, ICoords coords2) {
-//		List<Box> protections = getProtections(coords1, coords2, true);
-//		if (protections.isEmpty()) {
-//			return false;
-//		}		 
-//		return true;
 		return isProtected(coords1, coords2, true);
 	}
 
@@ -398,13 +372,6 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	
 	@Override
 	public List<Claim> findByClaim(Predicate<Claim> predicate) {
-//		List<Interval> protections = new ArrayList<>();
-//		tree.find(tree.getRoot(), predicate, protections);
-//		List<Box> boxes = new ArrayList<>();
-//		protections.forEach(p -> {
-//			boxes.add(p.toBox());
-//		});
-//		return boxes;
 		List<Claim> claims = new ArrayList<>();
 		CLAIMS_BY_COORDS.values().forEach(claim -> {
 			if (predicate.test(claim)) {
@@ -442,9 +409,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * @return
 	 */
 	public CompoundNBT save(CompoundNBT nbt) {
-		// TODO save CLAIMS_BY_COORDS instead
 		ProtectIt.LOGGER.info("saving registry...");
-//		tree.save(nbt);
 
 		ListNBT list = new ListNBT();
 		CLAIMS_BY_COORDS.forEach((coords, claim) -> {

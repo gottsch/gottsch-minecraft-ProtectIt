@@ -152,7 +152,6 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	 */
 	@Override
 	public CompoundNBT save(CompoundNBT nbt) {
-		ProtectIt.LOGGER.debug("saving ClaimLecternTileEntity");
 		super.save(nbt);
 
 		if (getClaimCoords() != null) {

@@ -7,7 +7,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "protectit:small_stake"
+          "name": "protectit:small_claim"
         }
       ],
       "conditions": [

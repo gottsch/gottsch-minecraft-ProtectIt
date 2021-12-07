@@ -77,7 +77,7 @@ import net.minecraft.util.text.TranslationTextComponent;
  */
 public class EditClaimBookScreen extends Screen {
 	private static final String PLAYER_DATA_TAG = "playerData";
-	
+
 	// context properties
 	private final PlayerEntity owner;
 	private final ItemStack book;
@@ -88,12 +88,12 @@ public class EditClaimBookScreen extends Screen {
 
 	// transient book state properties
 	private final List<String> pages = Lists.newArrayList();
-//	private boolean isModified;
+	//	private boolean isModified;
 	private int frameTick;
 	private int currentPage;
 	private long lastClickTime;
 	private int lastIndex = -1;
-	
+
 	// persistent book state properties
 	private final List<PlayerData> playerDataCache = Lists.newArrayList();
 	private Claim claim;
@@ -117,26 +117,15 @@ public class EditClaimBookScreen extends Screen {
 		this.book = itemStack;
 		this.hand = hand;
 
-//		CompoundNBT nbt = itemStack.getTag();
-//		if (nbt != null) {
-//			// TODO separate method
-//			// load the PlayerData			
-//			ListNBT playerDataList = nbt.getList(PLAYER_DATA_TAG, 10);
-//			playerDataList.forEach(element -> {
-//				PlayerData playerData = new PlayerData("");
-//				playerData.load((CompoundNBT)element);
-//				getPlayerDataCache().add(playerData);
-//			});
-			// load the data from the item
-			getPlayerDataCache().addAll(ClaimBook.loadPlayerData(itemStack));
-			// update the cache
-			if (!getPlayerDataCache().isEmpty()) {
-				this.pages.add(getPlayerDataCache().stream().map(data -> data.getName()).collect(Collectors.joining("\n")));
-			}
-			
-			// load the claim
-			setClaim(ClaimBook.loadClaim(itemStack));
-//		}
+		// load the data from the item
+		getPlayerDataCache().addAll(ClaimBook.loadPlayerData(itemStack));
+		// update the cache
+		if (!getPlayerDataCache().isEmpty()) {
+			this.pages.add(getPlayerDataCache().stream().map(data -> data.getName()).collect(Collectors.joining("\n")));
+		}
+
+		// load the claim
+		setClaim(ClaimBook.loadClaim(itemStack));
 
 		if (this.pages.isEmpty()) {
 			this.pages.add("");
@@ -189,57 +178,53 @@ public class EditClaimBookScreen extends Screen {
 	 * @param finalize
 	 */
 	private void saveChanges() {
-//		if (this.isModified) { 
 		// always perform the name checks
-			this.eraseEmptyTrailingPages();
+		this.eraseEmptyTrailingPages();
 
-			// save the player data
-			List<PlayerData> workingData = Lists.newArrayList();
-			this.pages.forEach(entry -> {
-				List<String> playerNames = Arrays.asList(entry.split("\n"));
-				playerNames.forEach(playerName -> {
-					ProtectIt.LOGGER.debug("line output -> {}", playerName);
-					// check if playerName already exists in playerData
-					boolean playerDataAdded = false;
-					for (PlayerData playerData : getPlayerDataCache()) {
-						if (playerData.getName().equalsIgnoreCase(playerName)) {
-							ProtectIt.LOGGER.debug("line player was in the cache -> {}", playerName);
-							playerDataAdded = workingData.add(playerData);
-							break;
-						}
+		// save the player data
+		List<PlayerData> workingData = Lists.newArrayList();
+		this.pages.forEach(entry -> {
+			List<String> playerNames = Arrays.asList(entry.split("\n"));
+			playerNames.forEach(playerName -> {
+				// check if playerName already exists in playerData
+				boolean playerDataAdded = false;
+				for (PlayerData playerData : getPlayerDataCache()) {
+					if (playerData.getName().equalsIgnoreCase(playerName)) {
+						playerDataAdded = workingData.add(playerData);
+						break;
 					}
-					// player name was not found in list
-					if (!playerDataAdded) {
-						ProtectIt.LOGGER.debug("line player was NOT in the cache -> {}", playerName);
-						PlayerData playerData = new PlayerData("", playerName);
-						workingData.add(playerData);
-					}
-				});
+				}
+				// player name was not found in list
+				if (!playerDataAdded) {
+					PlayerData playerData = new PlayerData("", playerName);
+					workingData.add(playerData);
+				}
 			});
+		});
 
-			// clear the player data cache
-			getPlayerDataCache().clear();
-			// copy all from working to cache
-			getPlayerDataCache().addAll(workingData);
-			ProtectIt.LOGGER.debug("playerDataCache.size -> {}", getPlayerDataCache().size());
+		// clear the player data cache
+		getPlayerDataCache().clear();
+		// copy all from working to cache
+		getPlayerDataCache().addAll(workingData);
+		ProtectIt.LOGGER.debug("playerDataCache.size -> {}", getPlayerDataCache().size());
 
-			// save the data cache to the item
-			ListNBT playerDataList = new ListNBT();
-			getPlayerDataCache().forEach(playerData -> {
-				CompoundNBT nbt = new CompoundNBT();
-				ProtectIt.LOGGER.debug("saving/adding player data -> {}", playerData);
-				playerData.save(nbt);
-				ProtectIt.LOGGER.info("result nbt uuid -> {}", nbt.getString("uuid"));
-				ProtectIt.LOGGER.info("result nbt name -> {}", nbt.getString("name"));
-				playerDataList.add(nbt);
-				ProtectIt.LOGGER.debug("playerDataList.size -> {}", playerDataList.size());
-			});
-			this.book.addTagElement(PLAYER_DATA_TAG, playerDataList);
-			
-			int slot = this.hand == Hand.MAIN_HAND ? this.owner.inventory.selected : 40;
-			ClaimBookMessageToServer messageToServer = new ClaimBookMessageToServer(this.book, slot);
-			ProtectItNetworking.simpleChannel.sendToServer(messageToServer);
-//		}
+		// save the data cache to the item
+		ListNBT playerDataList = new ListNBT();
+		getPlayerDataCache().forEach(playerData -> {
+			CompoundNBT nbt = new CompoundNBT();
+			ProtectIt.LOGGER.debug("saving/adding player data -> {}", playerData);
+			playerData.save(nbt);
+			ProtectIt.LOGGER.info("result nbt uuid -> {}", nbt.getString("uuid"));
+			ProtectIt.LOGGER.info("result nbt name -> {}", nbt.getString("name"));
+			playerDataList.add(nbt);
+			ProtectIt.LOGGER.debug("playerDataList.size -> {}", playerDataList.size());
+		});
+		this.book.addTagElement(PLAYER_DATA_TAG, playerDataList);
+
+		int slot = this.hand == Hand.MAIN_HAND ? this.owner.inventory.selected : 40;
+		ClaimBookMessageToServer messageToServer = new ClaimBookMessageToServer(this.book, slot);
+		ProtectItNetworking.simpleChannel.sendToServer(messageToServer);
+
 	}
 
 	public void removed() {
@@ -365,7 +350,7 @@ public class EditClaimBookScreen extends Screen {
 	private void setCurrentPageText(String text) {
 		if (this.currentPage >= 0 && this.currentPage < this.pages.size()) {
 			this.pages.set(this.currentPage, text);
-//			this.isModified = true;
+			//			this.isModified = true;
 			this.clearDisplayCache();
 		}
 	}
@@ -386,16 +371,16 @@ public class EditClaimBookScreen extends Screen {
 		IFormattableTextComponent title = new TranslationTextComponent("label.protectit.claim_book.title", TextFormatting.GOLD);
 		int titleWidth = this.font.width(title);
 		this.font.draw(matrixStack, title, (float)((this.width/2) - (titleWidth/2)), 18.0F, 0);
-		
+
 		EditClaimBookScreen.BookPage page = this.getDisplayCache();
 		for(EditClaimBookScreen.BookLine line : page.lines) {
-//			String name = line.contents;
-//			Optional<String> uuid = getPlayerDataCache().stream().filter(data -> data.getName().equals(name)).map(data -> data.getUuid()).findAny();
+			//			String name = line.contents;
+			//			Optional<String> uuid = getPlayerDataCache().stream().filter(data -> data.getName().equals(name)).map(data -> data.getUuid()).findAny();
 
-//			IFormattableTextComponent nameText = new StringTextComponent(name);
-//			if (!uuid.isPresent() || (uuid.isPresent() && uuid.get().isEmpty())) {
-//				nameText = nameText.withStyle(TextFormatting.RED);
-//			}
+			//			IFormattableTextComponent nameText = new StringTextComponent(name);
+			//			if (!uuid.isPresent() || (uuid.isPresent() && uuid.get().isEmpty())) {
+			//				nameText = nameText.withStyle(TextFormatting.RED);
+			//			}
 			this.font.draw(matrixStack, line.asComponent, (float)line.x, (float)line.y, -16777216);
 		}
 

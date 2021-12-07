@@ -33,11 +33,13 @@ import com.someguyssoftware.protectit.item.RemoveClaimBlockItem;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.material.MaterialColor;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -71,7 +73,7 @@ public class ProtectItBlocks {
 		@SubscribeEvent
 		public static void registerBlocks(RegistryEvent.Register<Block> event) {
 			VoxelShape smallClaimShape = Block.box(7, 0, 7, 9, 10, 9);
-			SMALL_CLAIM = new ClaimBlock(ProtectIt.MODID, "small_stake", ClaimSizes.SMALL_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+			SMALL_CLAIM = new ClaimBlock(ProtectIt.MODID, "small_claim", ClaimSizes.SMALL_CLAIM_SIZE, Block.Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 					.setBounds(new VoxelShape[] {  smallClaimShape, smallClaimShape, smallClaimShape, smallClaimShape });
 			
 			VoxelShape mediumClaimShape = Block.box(7, 0, 7, 9, 13, 9);
@@ -110,15 +112,12 @@ public class ProtectItBlocks {
 		@SubscribeEvent
 		public static void registerItemBlocks(final RegistryEvent.Register<Item> event) {
 			final IForgeRegistry<Item> registry = event.getRegistry();
-			
-			List<Block> blocks = new ArrayList<>(3);
+
 			List<Block> claimBlocks = new ArrayList<>(3);
 			
 			claimBlocks.add(SMALL_CLAIM);
 			claimBlocks.add(MEDIUM_CLAIM);
 			claimBlocks.add(LARGE_CLAIM);
-//			blocks.add(CLAIM_LEVER);
-//			blocks.add(CLAIM_LECTERN);
 			
 			// claim blocks must use the ClaimBlockItem class
 			for (Block b : claimBlocks) {
@@ -127,13 +126,6 @@ public class ProtectItBlocks {
 						"Block %s has null registry name", b);
 				registry.register(blockItem.setRegistryName(registryName));
 			}
-						
-//			for (Block b : blocks) {
-//				BlockItem blockItem = new BlockItem(b, new Item.Properties().tab(ItemGroup.TAB_MISC));
-//				final ResourceLocation registryName = Preconditions.checkNotNull(b.getRegistryName(),
-//						"Block %s has null registry name", b);
-//				registry.register(blockItem.setRegistryName(registryName));
-//			}
 			
 			RemoveClaimBlockItem blockItem = new RemoveClaimBlockItem(REMOVE_CLAIM, new Item.Properties().tab(ItemGroup.TAB_MISC));
 			register(registry, blockItem, REMOVE_CLAIM);
@@ -155,6 +147,16 @@ public class ProtectItBlocks {
 			final ResourceLocation registryName = Preconditions.checkNotNull(block.getRegistryName(),
 					"Block %s has null registry name", block);
 			registry.register(blockItem.setRegistryName(registryName));
+		}
+		
+		// TODO move to it's own class
+		@SubscribeEvent
+		public static void onTextureStitchEvent(TextureStitchEvent.Pre event) {
+			AtlasTexture map = event.getMap();
+			ProtectIt.LOGGER.info("atlas texture -> {} vs {}", map.location().toString(), AtlasTexture.LOCATION_BLOCKS.toString());
+			if (!map.location().equals( AtlasTexture.LOCATION_BLOCKS)) return;
+			ProtectIt.LOGGER.info("adding sprite location");
+			event.addSprite(new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
 		}
 	}
 }

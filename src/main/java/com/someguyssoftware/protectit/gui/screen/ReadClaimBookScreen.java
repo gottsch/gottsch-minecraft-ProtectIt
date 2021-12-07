@@ -48,10 +48,6 @@ import net.minecraft.util.text.TranslationTextComponent;
 public class ReadClaimBookScreen extends Screen {
 	public static final ResourceLocation BOOK_LOCATION = new ResourceLocation("textures/gui/book.png");
 
-	// NOTES
-	// MC send a List<String> representing pages, in each in line there are LF
-	// delimiters for each line on the page.
-
 	private List<PlayerData> playerDataCache = Lists.newArrayList();
 	private Claim claim;
 

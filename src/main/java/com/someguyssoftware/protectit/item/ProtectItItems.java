@@ -53,7 +53,7 @@ public class ProtectItItems {
 		 */
 
 		// ITEMS
-//		SMALL_STAKE = new Item(new Item.Properties()).setRegistryName(new ResourceLocation(ProtectIt.MODID, "small_stake"));
+//		SMALL_STAKE = new Item(new Item.Properties()).setRegistryName(new ResourceLocation(ProtectIt.MODID, "small_claim"));
 		CLAIM_BOOK = new ClaimBook(ProtectIt.MODID, "claim_book", new Item.Properties().stacksTo(1).tab(ItemGroup.TAB_MISC)); // TODO may remove from tabs
 		
 		/*
