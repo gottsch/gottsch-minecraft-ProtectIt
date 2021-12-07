@@ -192,7 +192,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 				ProtectIt.LOGGER.debug("net new list -> {}", netNew);
 				// add net new to registryClaim
 				registryClaim.getWhitelist()
-				.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
+					.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
 				ProtectIt.LOGGER.debug("registry claim white list after ADD net new -> {}", registryClaim.getWhitelist());
 
 				// remove from registryClaim that are no longer contained in bookPlayerDataList.
@@ -208,9 +208,9 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 					savedData.setDirty();
 				}
 
-				// update bookStack
-				bookStack.removeTagKey("playerData");
+				// update bookStack				
 				ClaimBook.savePlayerData(bookStack, bookPlayerDataList);
+				ClaimBook.saveClaim(bookStack, registryClaim);
 			}
 			else {
 				registryClaim.getWhitelist().clear();

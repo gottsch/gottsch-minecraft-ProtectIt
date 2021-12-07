@@ -21,6 +21,8 @@ package com.someguyssoftware.protectit.gui.render.tileentity;
 
 import java.awt.Color;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.gottschcore.spatial.Coords;
@@ -31,10 +33,12 @@ import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeverBlock;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 
@@ -58,6 +62,13 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		Claim claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 		
 		if (!state.getValue(LeverBlock.POWERED) || claim == null) {
+			return;
+		}
+		
+		// only render for the owner and whitelist
+		if (StringUtils.isBlank(claim.getOwner().getUuid()) ||
+				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
+				!claim.getWhitelist().contains(Minecraft.getInstance().player.getStringUUID()))) {
 			return;
 		}
 

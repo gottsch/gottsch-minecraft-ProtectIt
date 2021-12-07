@@ -24,6 +24,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
+import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
@@ -89,17 +90,14 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 			this.addButton(new Button(this.width / 2 - 100, 196, 98, 20, DialogTexts.GUI_DONE, (p_214181_1_) -> {
 				this.minecraft.setScreen((Screen) null);
 			}));
-			// add if owner of claim
-			if (getMenu().getClaim() == null || player.getStringUUID().equalsIgnoreCase(getMenu().getClaim().getOwner().getUuid())) {
-				this.addButton(new Button(this.width / 2 + 2, 196, 98, 20,
-						new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
-							this.sendButtonClick(3);
-						}));
-			}
+			this.addButton(new Button(this.width / 2 + 2, 196, 98, 20,
+					new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
+						this.sendButtonClick(3);
+					}));
+
 		} else {
 			super.createMenuControls();
 		}
-
 	}
 
 	private void sendButtonClick(int p_214179_1_) {
@@ -137,6 +135,7 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 		ProtectIt.LOGGER.debug("book item? -> {}", bookStack);
 		try {
 			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
+				// TODO replace with ClaimBook.loadPlayerData()
 				CompoundNBT bookNbt = bookStack.getTag();
 				ListNBT list = bookNbt.getList("playerData", 10).copy();
 				List<PlayerData> playerDataList = Lists.newArrayList();
@@ -146,6 +145,7 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 					playerDataList.add(playerData);
 				});
 				this.setPlayerDataCache(playerDataList);
+				this.setClaim(ClaimBook.loadClaim(bookStack));
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("An error occurred reading the Claim Book data", e);

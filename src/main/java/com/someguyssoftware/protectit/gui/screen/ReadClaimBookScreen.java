@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.client.gui.DialogTexts;
@@ -52,6 +53,7 @@ public class ReadClaimBookScreen extends Screen {
 	// delimiters for each line on the page.
 
 	private List<PlayerData> playerDataCache = Lists.newArrayList();
+	private Claim claim;
 
 	/**
 	 * 
@@ -106,7 +108,7 @@ public class ReadClaimBookScreen extends Screen {
 			if (StringUtils.isBlank(playerData.getUuid())) {
 				nameText = nameText.withStyle(TextFormatting.RED);
 			}			
-			this.font.draw(matrixStack, /*getPlayerNames().get(index)*/nameText, (float) (i + 36), (float) (32 + index * 9), 0);
+			this.font.draw(matrixStack, nameText, (float) (i + 36), (float) (32 + index * 9), 0);
 		}
 		super.render(matrixStack, xPos, yPos, p_230430_4_);
 	}
@@ -117,5 +119,13 @@ public class ReadClaimBookScreen extends Screen {
 
 	public void setPlayerDataCache(List<PlayerData> playerDataCache) {
 		this.playerDataCache = playerDataCache;
+	}
+
+	public Claim getClaim() {
+		return claim;
+	}
+
+	public void setClaim(Claim claim) {
+		this.claim = claim;
 	}
 }

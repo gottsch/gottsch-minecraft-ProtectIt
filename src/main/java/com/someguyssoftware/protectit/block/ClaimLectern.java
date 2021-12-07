@@ -106,9 +106,11 @@ public class ClaimLectern extends LecternBlock {
 	@Override
 	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
+		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
 		if (tileEntity instanceof ClaimLecternTileEntity) {
 			// get the claim for this position
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+			ProtectIt.LOGGER.debug("found claim list -> {}", list);
 			if (!list.isEmpty()) {
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.debug("found claim -> {}", claim);
@@ -163,12 +165,17 @@ public class ClaimLectern extends LecternBlock {
 				TileEntity tileEntity = world.getBlockEntity(pos);
 				
 				if (tileEntity instanceof ClaimLecternTileEntity) {
+					ProtectIt.LOGGER.debug("it is a claim lectern TE");
 					ClaimLecternTileEntity lecternTileEntity = (ClaimLecternTileEntity)tileEntity;
+					ProtectIt.LOGGER.debug("claim coords -> {}", lecternTileEntity.getClaimCoords());
 					Claim lecternClaim = ProtectionRegistries.block().getClaimByCoords(lecternTileEntity.getClaimCoords());
+					ProtectIt.LOGGER.debug("lectern claim -> {}", lecternClaim);
 					if (lecternClaim == null || !lecternClaim.getOwner().getUuid().equalsIgnoreCase(player.getStringUUID())) {
+						ProtectIt.LOGGER.debug("claim is null or not owner");
 						// TODO display a message to the user
 						return false;
 					}
+					ProtectIt.LOGGER.debug("claim owner -> {}", lecternClaim.getOwner().getUuid() );
 				}
 				else {
 					return false;

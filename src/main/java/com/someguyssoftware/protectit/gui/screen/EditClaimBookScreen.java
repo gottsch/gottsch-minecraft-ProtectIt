@@ -35,6 +35,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.network.ClaimBookMessageToServer;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
@@ -95,6 +96,7 @@ public class EditClaimBookScreen extends Screen {
 	
 	// persistent book state properties
 	private final List<PlayerData> playerDataCache = Lists.newArrayList();
+	private Claim claim;
 
 	private final TextInputUtil pageEdit = new TextInputUtil(this::getCurrentPageText, this::setCurrentPageText, this::getClipboard, this::setClipboard, (p_238774_1_) -> {
 		return p_238774_1_.length() < 1024 && this.font.wordWrapHeight(p_238774_1_, 114) <= 128;
@@ -131,6 +133,9 @@ public class EditClaimBookScreen extends Screen {
 			if (!getPlayerDataCache().isEmpty()) {
 				this.pages.add(getPlayerDataCache().stream().map(data -> data.getName()).collect(Collectors.joining("\n")));
 			}
+			
+			// load the claim
+			setClaim(ClaimBook.loadClaim(itemStack));
 //		}
 
 		if (this.pages.isEmpty()) {
@@ -698,5 +703,13 @@ public class EditClaimBookScreen extends Screen {
 
 	protected List<PlayerData> getPlayerDataCache() {
 		return playerDataCache;
+	}
+
+	protected Claim getClaim() {
+		return claim;
+	}
+
+	protected void setClaim(Claim claim) {
+		this.claim = claim;
 	}
 }

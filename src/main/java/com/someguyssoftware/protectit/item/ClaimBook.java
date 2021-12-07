@@ -28,6 +28,7 @@ import com.someguyssoftware.gottschcore.item.ModItem;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.gui.screen.EditClaimBookScreen;
 import com.someguyssoftware.protectit.gui.screen.OpenScreenUtil;
 import com.someguyssoftware.protectit.registry.PlayerData;
@@ -164,6 +165,22 @@ public class ClaimBook extends ModItem {
 	/**
 	 * 
 	 * @param itemStack
+	 * @return
+	 */
+	public static Claim loadClaim(ItemStack itemStack) {
+		Claim claim = null;
+		CompoundNBT nbt = itemStack.getTag();
+		if (nbt != null) {
+			CompoundNBT claimNbt = nbt.getCompound("claim");
+			claim = new Claim();
+			claim.load(claimNbt);
+		}
+		return claim;
+	}
+	
+	/**
+	 * 
+	 * @param itemStack
 	 * @param data
 	 * @return
 	 */
@@ -174,7 +191,22 @@ public class ClaimBook extends ModItem {
 			playerData.save(nbt);
 			playerDataList.add(nbt);
 		});
+		itemStack.removeTagKey(PLAYER_DATA_TAG);
 		itemStack.addTagElement(PLAYER_DATA_TAG, playerDataList);
 		return playerDataList;
+	}
+
+	/**
+	 * 
+	 * @param itemStack
+	 * @param registryClaim
+	 * @return
+	 */
+	public static CompoundNBT saveClaim(ItemStack itemStack, Claim registryClaim) {
+		CompoundNBT claimNbt = new CompoundNBT();
+		registryClaim.save(claimNbt);
+		itemStack.removeTagKey("claim");
+		itemStack.addTagElement("claim", claimNbt);
+		return claimNbt;
 	}
 }
