@@ -65,10 +65,10 @@ public class ProtectItNetworking {
 				RegistryMutatorMessageHandlerOnClient::onMessageReceived,
 		            Optional.of(PLAY_TO_CLIENT));
 		
-//		simpleChannel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, RegistryWhitelistMutatorMessageToClient.class,
-//				RegistryWhitelistMutatorMessageToClient::encode, RegistryWhitelistMutatorMessageToClient::decode,
-//				RegistryWhitelistMutatorMessageHandlerOnClient::onMessageReceived,
-//		            Optional.of(PLAY_TO_CLIENT));
+		simpleChannel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, RegistryWhitelistMutatorMessageToClient.class,
+				RegistryWhitelistMutatorMessageToClient::encode, RegistryWhitelistMutatorMessageToClient::decode,
+				RegistryWhitelistMutatorMessageHandlerOnClient::onMessageReceived,
+		            Optional.of(PLAY_TO_CLIENT));
 		
 		simpleChannel.registerMessage(REGISTRY_LOAD_MESSAGE_ID, RegistryLoadMessageToClient.class,
 				RegistryLoadMessageToClient::encode, RegistryLoadMessageToClient::decode,

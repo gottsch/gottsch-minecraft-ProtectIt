@@ -316,7 +316,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 			// interrogate each interval to determine if the uuid is the owner
 			for (Interval p : protections) {
-				ProtectIt.LOGGER.debug("protection -> {}", p);
+				ProtectIt.LOGGER.debug("isProtectedAgainst -> {}, protection -> {}", uuid, p);
 				// short circuit if owner or no owner
 				if (p.getData().getOwner().getUuid().equalsIgnoreCase(uuid)) {
 					break;
@@ -327,14 +327,14 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 				
 				// get the claim
 				Claim claim = CLAIMS_BY_COORDS.get(p.getCoords1());
-				ProtectIt.LOGGER.debug("claim -> {}", claim);
+				ProtectIt.LOGGER.debug("isProtectedAgainst.claimsByCoords -> {}, claim -> {}", p.getCoords1(), claim);
 				// cycle through whitelist
 //				boolean isWhitelist = false;
-				if (!/*p.getData()*/claim.getWhitelist().isEmpty()) {
-					ProtectIt.LOGGER.debug("whitelist is not null");
+				if (!claim.getWhitelist().isEmpty()) {
+					ProtectIt.LOGGER.debug("isProtectedAgainst whitelist is not null");
 //					for(IdentifierData id : p.getData().getWhitelist()) {
 					for (PlayerData id : claim.getWhitelist()) {
-						ProtectIt.LOGGER.debug("compare whitelist id -> {} to uuid -> {}", id.getUuid(), uuid);
+						ProtectIt.LOGGER.debug("isProtectedAgainst compare whitelist id -> {} to uuid -> {}", id.getUuid(), uuid);
 						if (id.getUuid().equalsIgnoreCase(uuid)) {
 //							isWhitelist = true;
 //							break;
@@ -408,12 +408,12 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * @param nbt
 	 * @return
 	 */
-	public CompoundNBT save(CompoundNBT nbt) {
+	public synchronized CompoundNBT save(CompoundNBT nbt) {
 		ProtectIt.LOGGER.info("saving registry...");
 
 		ListNBT list = new ListNBT();
 		CLAIMS_BY_COORDS.forEach((coords, claim) -> {
-			ProtectIt.LOGGER.info("registry saving claim -> {}", claim);
+//			ProtectIt.LOGGER.info("registry saving claim -> {}", claim);
 			CompoundNBT claimNbt = new CompoundNBT();
 			claim.save(claimNbt);
 			list.add(claimNbt);
@@ -426,7 +426,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	/**
 	 * 
 	 */
-	public void load(CompoundNBT nbt) {
+	public synchronized void load(CompoundNBT nbt) {
 		ProtectIt.LOGGER.debug("loading registry...");
 		clear();
 
@@ -435,19 +435,27 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		if (nbt.contains(CLAIMS_KEY)) {
 			ListNBT list = nbt.getList(CLAIMS_KEY, 10);
 			list.forEach(element -> {
+//			for (CompoundNBT compound : list.listIterator().
 				Claim claim = new Claim().load((CompoundNBT)element);
-				ProtectIt.LOGGER.debug("loaded claim -> {}", claim);
+//				ProtectIt.LOGGER.debug("loaded claim -> {}", claim);
 				CLAIMS_BY_COORDS.put(claim.getCoords(), claim);
+//				ProtectIt.LOGGER.debug("coords mapped claim -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
 				
 				if (!CLAIMS_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
 					// create new list entry
 					CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
 				}
 				CLAIMS_BY_OWNER.get(claim.getOwner().getUuid()).add(claim);
-
+//				ProtectIt.LOGGER.debug("claim BEFORE inserting into tree -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
 				tree.insert(new Interval(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), new OwnershipData(claim.getOwner().getUuid(), claim.getOwner().getName())));
+//				ProtectIt.LOGGER.debug("claim AFTER inserting into tree -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
+//				ProtectIt.LOGGER.debug("running loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
 			});
+//			ProtectIt.LOGGER.debug("0.all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
 		}
+		// print the loaded claim again
+//		ProtectIt.LOGGER.debug("1. all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
+//		ProtectIt.LOGGER.debug("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
 	}
 
 	/**

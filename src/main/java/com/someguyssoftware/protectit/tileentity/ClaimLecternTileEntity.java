@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Lists;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
@@ -34,6 +35,9 @@ import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
 import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.item.ProtectItItems;
+import com.someguyssoftware.protectit.network.ProtectItNetworking;
+import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
+import com.someguyssoftware.protectit.network.RegistryWhitelistMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -51,6 +55,9 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.IIntArray;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 /**
  * 
@@ -201,6 +208,19 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 				registryClaim.getWhitelist().removeIf(data -> !newNames.contains(data.getName()));
 				ProtectIt.LOGGER.debug("registry claim white list after REMOVE names -> {}", registryClaim.getWhitelist());
 
+				// update registry on client side
+				List<Claim> claims = Lists.newArrayList();
+				claims.add(registryClaim);
+				if(((ServerWorld)this.level).getServer().isDedicatedServer()) {
+					// send message to add protection on all clients
+					RegistryWhitelistMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
+							RegistryMutatorMessageToClient.BLOCK_TYPE, 
+							RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION, 
+							claims).build();
+					ProtectIt.LOGGER.info("sending message to sync client side ");
+					ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+				}
+				
 				// update this claim - mark as dirty
 				ProtectItSavedData savedData = ProtectItSavedData.get(getLevel());
 				if (savedData != null) {

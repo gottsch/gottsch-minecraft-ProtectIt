@@ -148,15 +148,5 @@ public class ProtectItBlocks {
 					"Block %s has null registry name", block);
 			registry.register(blockItem.setRegistryName(registryName));
 		}
-		
-		// TODO move to it's own class
-		@SubscribeEvent
-		public static void onTextureStitchEvent(TextureStitchEvent.Pre event) {
-			AtlasTexture map = event.getMap();
-			ProtectIt.LOGGER.info("atlas texture -> {} vs {}", map.location().toString(), AtlasTexture.LOCATION_BLOCKS.toString());
-			if (!map.location().equals( AtlasTexture.LOCATION_BLOCKS)) return;
-			ProtectIt.LOGGER.info("adding sprite location");
-			event.addSprite(new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
-		}
 	}
 }

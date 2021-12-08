@@ -33,6 +33,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeverBlock;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -163,7 +164,8 @@ public class ClaimLever extends LeverBlock {
 		// prevent use if not the owner
 		if (tileEntity instanceof ClaimLeverTileEntity) {
 			Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverTileEntity)tileEntity).getClaimCoords());
-			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
+			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
+					claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return ActionResultType.FAIL;
 			}
 		}	

@@ -27,6 +27,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
@@ -67,7 +68,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		// only render for the owner and whitelist
 		if (StringUtils.isBlank(claim.getOwner().getUuid()) ||
 				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
-				!claim.getWhitelist().contains(Minecraft.getInstance().player.getStringUUID()))) {
+				claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {
 			return;
 		}
 

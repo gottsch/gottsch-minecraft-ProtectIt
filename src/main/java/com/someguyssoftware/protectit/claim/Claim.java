@@ -70,7 +70,7 @@ public class Claim {
 	public Claim(ICoords coords, Box box) {
 		setCoords(coords);
 		setBox(box);
-		setOwner(PlayerData.EMPTY);
+		setOwner(new PlayerData());
 		setName(NO_NAME);
 	}
 
@@ -89,7 +89,7 @@ public class Claim {
 	 * @param nbt
 	 */
 	public void save(CompoundNBT nbt) {
-//		ProtectIt.LOGGER.debug("saving claim -> {}", this);
+		ProtectIt.LOGGER.debug("saving claim -> {}", this);
 
 		CompoundNBT ownerNbt = new CompoundNBT();
 		getOwner().save(ownerNbt);
@@ -120,7 +120,7 @@ public class Claim {
 	 * @return
 	 */
 	public Claim load(CompoundNBT nbt) {
-		ProtectIt.LOGGER.debug("loading claim...");
+//		ProtectIt.LOGGER.debug("loading claim...");
 
 		if (nbt.contains(OWNER_KEY)) {
 			getOwner().load(nbt.getCompound(OWNER_KEY));
@@ -192,5 +192,54 @@ public class Claim {
 	public String toString() {
 		return "Claim [name=" + name + ", owner=" + owner + ", whitelist=" + whitelist + ", coords=" + coords + ", box="
 				+ box + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((box == null) ? 0 : box.hashCode());
+		result = prime * result + ((coords == null) ? 0 : coords.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((owner == null) ? 0 : owner.hashCode());
+		result = prime * result + ((whitelist == null) ? 0 : whitelist.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Claim other = (Claim) obj;
+		if (box == null) {
+			if (other.box != null)
+				return false;
+		} else if (!box.equals(other.box))
+			return false;
+		if (coords == null) {
+			if (other.coords != null)
+				return false;
+		} else if (!coords.equals(other.coords))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (owner == null) {
+			if (other.owner != null)
+				return false;
+		} else if (!owner.equals(other.owner))
+			return false;
+		if (whitelist == null) {
+			if (other.whitelist != null)
+				return false;
+		} else if (!whitelist.equals(other.whitelist))
+			return false;
+		return true;
 	}
 }

@@ -147,17 +147,21 @@ public class ProtectIt implements IMod {
 	public void onWorldLoad(PlayerLoggedInEvent event) {
 		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
 		if(player.getServer().isDedicatedServer()) {
+			LOGGER.debug("player logged in -> {}, sending registry data...", player.getDisplayName().getString());
 			// TODO will need two different message types now - block & pvp
 			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
 			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().getAll());
+			ProtectIt.LOGGER.debug("player logged in, sending all claim data -> {}", ProtectionRegistries.block().getAll());
 			ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
 
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
+		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 		// prevent protected blocks from breaking
 		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			event.setCanceled(true);
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}

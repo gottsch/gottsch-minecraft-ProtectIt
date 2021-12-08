@@ -125,6 +125,7 @@ public class RegistryLoadMessageToClient {
 		buf.writeUtf(StringUtils.defaultString(claim.getName(), ""));
 
 		if (claim.getWhitelist().isEmpty()) {
+			ProtectIt.LOGGER.debug("claim has no whitelist-> {}", claim);
 			buf.writeInt(0);
 			// buf.writeUtf(NULL_UUID));
 			// buf.writeUtf(NULL_NAME);
@@ -132,6 +133,7 @@ public class RegistryLoadMessageToClient {
 		else {
 			buf.writeInt(claim.getWhitelist().size());
 			claim.getWhitelist().forEach(player -> {
+				ProtectIt.LOGGER.debug("writing whitelist playerdata -> {}", player);
 				buf.writeUtf(StringUtils.defaultString(player.getUuid(), NULL_UUID));
 				buf.writeUtf(StringUtils.defaultString(player.getName(), ""));
 			});
@@ -191,10 +193,11 @@ public class RegistryLoadMessageToClient {
 		for (int index = 0; index < size; index++) {
 			String playerUuid = buf.readUtf();
 			String playerName = buf.readUtf();
-			whitelist.add(new PlayerData(playerName, playerUuid));
+			whitelist.add(new PlayerData(playerUuid, playerName));
 		}
 		Claim claim = new Claim(coords, new Box(coords1, coords2), new PlayerData(ownerUuid, ownerName), name);
 		claim.setWhitelist(whitelist);
+		ProtectIt.LOGGER.debug("decoded claim -> {}", claim);
 		return claim;
 	}
 	
@@ -250,5 +253,11 @@ public class RegistryLoadMessageToClient {
 
 	protected void setClaims(List<Claim> claims) {
 		this.claims = claims;
+	}
+
+	@Override
+	public String toString() {
+		return "RegistryLoadMessageToClient [valid=" + valid + ", type=" + type + ", size=" + size + ", claims="
+				+ claims + "]";
 	}
 }

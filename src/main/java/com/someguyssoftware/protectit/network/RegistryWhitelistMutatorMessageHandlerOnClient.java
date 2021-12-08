@@ -22,31 +22,31 @@ package com.someguyssoftware.protectit.network;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.registry.bst.Interval;
 
 import net.minecraft.client.world.ClientWorld;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.LogicalSidedProvider;
 import net.minecraftforge.fml.network.NetworkEvent;
 
+
 /**
  * 
- * @author Mark Gottschling on Oct 14, 2021
+ * @author Mark Gottschling on Dec 8, 2021
  *
  */
-public class RegistryLoadMessageHandlerOnClient {
+public class RegistryWhitelistMutatorMessageHandlerOnClient {
 	
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
 		return ProtectItNetworking.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
-	public static void onMessageReceived(final RegistryLoadMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
-		ProtectIt.LOGGER.debug("registry load message received");
+	public static void onMessageReceived(final RegistryWhitelistMutatorMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 		ctx.setPacketHandled(true);
@@ -80,8 +80,8 @@ public class RegistryLoadMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(ClientWorld worldClient, RegistryLoadMessageToClient message) {
-		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
+	private static void processMessage(ClientWorld worldClient, RegistryWhitelistMutatorMessageToClient message) {
+		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
 			switch(message.getType()) {
@@ -93,19 +93,45 @@ public class RegistryLoadMessageHandlerOnClient {
 				// TODO
 				break;
 			}
-			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
-			// load registry from interval list
-//			for(Interval interval : message.getIntervals()) {
-//				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
-//				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
-//						new PlayerData(interval.getData().getOwner().getUuid(), interval.getData().getOwner().getName()));
+//			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
+//				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
+//				Claim claim = new Claim(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
+//				registry.addProtection(claim);
 //			}
-			for(Claim claim : message.getClaims()) {
-				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
-//				registry.addProtection(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), 
-//						new PlayerData(claim.getOwner().getUuid(), claim.getOwner().getName()));
-				registry.addProtection(claim);
+//			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
+//				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
+//					ProtectIt.LOGGER.info("has coords");
+//					// use methods that take coords
+//					if (message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
+//						ProtectIt.LOGGER.info("doesn't have uuid");
+//						registry.removeProtection(message.getCoords1(), message.getCoords2());
+//					}
+//					else {
+//						ProtectIt.LOGGER.info("has uuid");
+//						registry.removeProtection(message.getCoords1(), message.getCoords2(), message.getUuid());
+//					}
+//				}
+//				else {
+//					if (!message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
+//						ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
+//						registry.removeProtection(message.getUuid());
+//					}
+//				}
+//			}
+			if (message.getAction().equals(RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION)) {
+				if (!message.getClaims().isEmpty()) {
+					message.getClaims().forEach(c -> {
+						// update the claim - NOTE this should update the CLAIMS_BY_COORDS and CLAIMS_BY_OWNER as
+						// they both reference the same object.
+						Claim claim = ProtectionRegistries.block().getClaimByCoords(c.getBox().getMinCoords());
+						if (claim != null) {
+							claim.getWhitelist().clear();
+							claim.getWhitelist().addAll(c.getWhitelist());
+							ProtectIt.LOGGER.debug("updated claim on client -> {}", claim);
+						}
+					});
+				}
 			}
 		}
 		catch(Exception e) {

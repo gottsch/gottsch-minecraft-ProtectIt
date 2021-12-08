@@ -731,6 +731,7 @@ public class ProtectCommand {
 			if (whitelisted.isEmpty()) {
 				return 1;
 			}
+			// TODO convert to claims
 
 			// save world data
 			ServerWorld world = source.getLevel();
@@ -740,17 +741,17 @@ public class ProtectCommand {
 			}
 
 			// send message to add protection on all clients
-			if(((ServerWorld)world).getServer().isDedicatedServer()) {
-				RegistryMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
-						RegistryMutatorMessageToClient.BLOCK_TYPE, 
-						RegistryWhitelistMutatorMessageToClient.WHITELIST_ADD_ACTION,
-						uuid).with($ -> {
-							$.coords1 = validCoords.get().getA();
-							$.coords2 = validCoords.get().getB();
-							$.playerName = name.get();
-						}).build();
-				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
-			}
+//			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+//				RegistryMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
+//						RegistryMutatorMessageToClient.BLOCK_TYPE, 
+//						RegistryWhitelistMutatorMessageToClient.WHITELIST_ADD_ACTION,
+//						uuid).with($ -> {
+//							$.coords1 = validCoords.get().getA();
+//							$.coords2 = validCoords.get().getB();
+//							$.playerName = name.get();
+//						}).build();
+//				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+//			}
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute protect command:", e);

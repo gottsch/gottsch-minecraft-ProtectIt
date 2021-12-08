@@ -34,6 +34,7 @@ import net.minecraft.nbt.ListNBT;
  */
 public class OwnershipData {
 	private IdentifierData owner;
+	@Deprecated
 	private List<IdentifierData> whitelist;
 		
 	public OwnershipData() {

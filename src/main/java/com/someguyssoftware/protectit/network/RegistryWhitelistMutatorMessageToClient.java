@@ -24,11 +24,13 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.collect.Lists;
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient.Builder;
-import com.someguyssoftware.protectit.registry.bst.Interval;
+import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.network.PacketBuffer;
 
@@ -37,37 +39,40 @@ import net.minecraft.network.PacketBuffer;
  * @author Mark Gottschling on Nov 5, 2021
  *
  */
-public class RegistryWhitelistMutatorMessageToClient extends RegistryMutatorMessageToClient {
+public class RegistryWhitelistMutatorMessageToClient {
 	public static final String WHITELIST_ADD_ACTION = "whitelist add";
 	public static final String WHITELIST_REMOVE_ACTION = "whitelist remove";
+	public static final String WHITELIST_REPLACE_ACTION = "whitelist replace";
 
-	private List<Interval> intervals	;					// 6
+	public static final ICoords EMPTY_COORDS = new Coords(0, -255, 0);
+	public static final String NULL_UUID = "NULL";	
+	
+	private boolean valid;
+	public String type;						// 0
+	public String action;					// 1
+	public List<Claim> claims;	// 2
 
 	public static class Builder {
 		public String type;
 		public String action;
-		public String uuid;
-		public ICoords coords1;
-		public ICoords coords2;		
-		public String playerName; 
-		public List<Interval> intervals;
-		
-		public Builder(String type, String action, String uuid) {
+		public List<Claim> claims;
+
+		public Builder(String type, String action, List<Claim> claims) {
 			this.type = type;
 			this.action = action;
-			this.uuid = uuid;
+			this.claims = claims;
 		}
-		
+
 		public Builder with(Consumer<Builder> builder)  {
 			builder.accept(this);
 			return this;
 		}
-		
+
 		public RegistryWhitelistMutatorMessageToClient build() {
 			return  new RegistryWhitelistMutatorMessageToClient(this);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param builder
@@ -76,70 +81,47 @@ public class RegistryWhitelistMutatorMessageToClient extends RegistryMutatorMess
 		setValid(true);
 		setType(builder.type);
 		setAction(builder.action);
-		setUuid(builder.uuid);
-		setCoords1(builder.coords1);
-		setCoords2(builder.coords2);
-		setPlayerName(builder.playerName);
-		this.intervals = builder.intervals;
+		setClaims(builder.claims);
 	}
-	
+
 	/**
 	 * 
 	 */
 	public RegistryWhitelistMutatorMessageToClient() {
 		setValid(false);
 	}
-	
+
 	/**
 	 * 
 	 * @param buf
 	 */
 	public void encode(PacketBuffer buf) {
-//		if (!isValid()) {
-//			return;
-//		}
-//
-//		buf.writeUtf(StringUtils.defaultString(type, ""));
-//		buf.writeUtf(StringUtils.defaultString(action, ""));
-//		buf.writeUtf(StringUtils.defaultString(uuid, NULL_UUID));
-//
-//		if (coords1 == null) {
-//			writeCoords(EMPTY_COORDS, buf);
-//		}
-//		else {
-//			writeCoords(coords1, buf);
-//		}
-//		if (coords2 == null) {
-//			writeCoords(EMPTY_COORDS, buf);
-//		}
-//		else {
-//			writeCoords(coords2, buf);
-//		}
-//
-//		buf.writeUtf(StringUtils.defaultString(playerName, ""));
-		super.encode(buf);
-		
-		buf.writeInt(intervals.size());
-		
-		intervals.forEach(interval -> {
-			if (interval.getCoords1() == null) {
-				writeCoords(EMPTY_COORDS, buf);
-			}
-			else {
-				writeCoords(interval.getCoords1(), buf);
-			}
-			if (interval.getCoords2() == null) {
-				writeCoords(EMPTY_COORDS, buf);
-			}
-			else {
-				writeCoords(interval.getCoords2(), buf);
-			}
-			buf.writeUtf(StringUtils.defaultString(interval.getData().getOwner().getUuid(), NULL_UUID));
-			buf.writeUtf(StringUtils.defaultString(interval.getData().getOwner().getName(), ""));
+		if (!isValid()) {
+			return;
+		}
 
+		buf.writeUtf(StringUtils.defaultString(type, ""));
+		buf.writeUtf(StringUtils.defaultString(action, ""));
+
+		buf.writeInt(claims.size());
+
+		claims.forEach(claim -> {
+
+			if (claim.getBox().getMinCoords() == null) {
+				writeCoords(EMPTY_COORDS, buf);
+			}
+			else {
+				writeCoords(claim.getBox().getMinCoords(), buf);
+			}
+
+			buf.writeInt(claim.getWhitelist().size());
+			claim.getWhitelist().forEach(playerData -> {
+				buf.writeUtf(StringUtils.defaultString(playerData.getUuid(), NULL_UUID));
+				buf.writeUtf(StringUtils.defaultString(playerData.getName(), ""));
+			});
 		});
 	}
-	
+
 	/**
 	 * 
 	 * @param buf
@@ -147,28 +129,30 @@ public class RegistryWhitelistMutatorMessageToClient extends RegistryMutatorMess
 	 */
 	public static RegistryWhitelistMutatorMessageToClient decode(PacketBuffer buf) {
 		RegistryWhitelistMutatorMessageToClient message;
+
+		List<Claim> claims = Lists.newArrayList();
 		
 		try {
 			String type = buf.readUtf();
 			String action = buf.readUtf();
-			String uuid = buf.readUtf();
-			
-			ICoords coords1 = readCoords(buf);
-			ICoords coords2 = readCoords(buf);
 
-			String playerName = buf.readUtf();
-			
-			// TODO add interval decode here
-			List<Interval> intervals = null;
-			//////
-			
-			message = new RegistryWhitelistMutatorMessageToClient.Builder(type, action, uuid)
-					.with($ -> {
-						$.coords1 = coords1;
-						$.coords2 = coords2;
-						$.playerName = playerName;
-						$.intervals = intervals;
-					}).build();
+			int numOfClaims = buf.readInt();
+			for (int index = 0; index < numOfClaims; index++) {
+				ICoords coords = readCoords(buf);
+				int numOfPlayerData = buf.readInt();
+				List<PlayerData> whitelist = Lists.newArrayList();
+				for (int playerIndex = 0; playerIndex < numOfPlayerData; playerIndex++) {
+					String uuid = buf.readUtf();
+					String name = buf.readUtf();
+					PlayerData data = new PlayerData(uuid, name);
+					whitelist.add(data);
+				}
+				Claim claim = new Claim(coords, new Box(coords, coords));
+				claim.setWhitelist(whitelist);
+				claims.add(claim);
+			}
+
+			message = new RegistryWhitelistMutatorMessageToClient.Builder(type, action, claims).build();
 			message.setValid(true);
 		}
 		catch(Exception e) {
@@ -177,14 +161,49 @@ public class RegistryWhitelistMutatorMessageToClient extends RegistryMutatorMess
 		}
 		return message;
 	}
+
+	protected void writeCoords(ICoords coords, PacketBuffer buf) {
+		if (coords != null) {
+			buf.writeInt(coords.getX());
+			buf.writeInt(coords.getY());
+			buf.writeInt(coords.getZ());
+		}
+	}
 	
-
-	protected List<Interval> getIntervals() {
-		return intervals;
+	protected static ICoords readCoords(PacketBuffer buf) {
+		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
+		return coords;
+	}
+	
+	public String getType() {
+		return type;
 	}
 
-	protected void setIntervals(List<Interval> intervals) {
-		this.intervals = intervals;
+	public void setType(String type) {
+		this.type = type;
 	}
 
+	public String getAction() {
+		return action;
+	}
+
+	public void setAction(String action) {
+		this.action = action;
+	}
+
+	public List<Claim> getClaims() {
+		return claims;
+	}
+
+	public void setClaims(List<Claim> claims) {
+		this.claims = claims;
+	}
+
+	public boolean isValid() {
+		return valid;
+	}
+
+	public void setValid(boolean valid) {
+		this.valid = valid;
+	}
 }
