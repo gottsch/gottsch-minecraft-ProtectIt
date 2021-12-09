@@ -21,7 +21,6 @@ package com.someguyssoftware.protectit.persistence;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.registry.ProtectionRegistry;
 
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.IWorld;
@@ -50,21 +49,23 @@ public class ProtectItSavedData extends WorldSavedData {
 
 	@Override
 	public void load(CompoundNBT nbt) {
-		ProtectIt.LOGGER.info("loading...");
+		ProtectIt.LOGGER.info("world data loading...");
 		CompoundNBT protectIt = nbt.getCompound(PROTECT_IT);
 		if (protectIt.contains(PROTECTION_REGISTRY)) {
 //			ProtectionRegistry.load(protectIt.getCompound(PROTECTION_REGISTRY));
-			ProtectionRegistries.getRegistry().load(protectIt.getCompound(PROTECTION_REGISTRY));
+			ProtectionRegistries.block().load(protectIt.getCompound(PROTECTION_REGISTRY));
 		}
 	}
 
 	@Override
 	public CompoundNBT save(CompoundNBT nbt) {
+		ProtectIt.LOGGER.info("world data saving...");
 		// create a treasure compound			
 		CompoundNBT protectIt = new CompoundNBT();
 		nbt.put(PROTECT_IT, protectIt);
 //		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistry.save(new CompoundNBT()));
-		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistries.getRegistry().save(new CompoundNBT()));
+		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundNBT()));
+		// TODO save pvp registry
 		return nbt;
 	}
 	

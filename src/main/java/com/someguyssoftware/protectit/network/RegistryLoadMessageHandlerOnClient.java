@@ -23,10 +23,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
-import com.someguyssoftware.protectit.registry.Interval;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
+import com.someguyssoftware.protectit.registry.bst.Interval;
 
 import net.minecraft.client.world.ClientWorld;
 import net.minecraftforge.fml.LogicalSide;
@@ -86,7 +87,7 @@ public class RegistryLoadMessageHandlerOnClient {
 			switch(message.getType()) {
 			default:
 			case RegistryMutatorMessageToClient.BLOCK_TYPE:
-				registry = ProtectionRegistries.getRegistry();
+				registry = ProtectionRegistries.block();
 				break;
 			case RegistryMutatorMessageToClient.PVP_TYPE:
 				// TODO
@@ -95,10 +96,16 @@ public class RegistryLoadMessageHandlerOnClient {
 			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
 			// load registry from interval list
-			for(Interval interval : message.getIntervals()) {
-				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
-				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
-						new PlayerData(interval.getData().getUuid(), interval.getData().getPlayerName()));
+//			for(Interval interval : message.getIntervals()) {
+//				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
+//				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
+//						new PlayerData(interval.getData().getOwner().getUuid(), interval.getData().getOwner().getName()));
+//			}
+			for(Claim claim : message.getClaims()) {
+				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
+//				registry.addProtection(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), 
+//						new PlayerData(claim.getOwner().getUuid(), claim.getOwner().getName()));
+				registry.addProtection(claim);
 			}
 		}
 		catch(Exception e) {

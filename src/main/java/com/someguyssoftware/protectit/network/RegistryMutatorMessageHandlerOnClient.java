@@ -20,17 +20,16 @@
 package com.someguyssoftware.protectit.network;
 
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 
+import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.LogicalSidedProvider;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -82,35 +81,40 @@ public class RegistryMutatorMessageHandlerOnClient {
 	 * @param message
 	 */
 	private static void processMessage(ClientWorld worldClient, RegistryMutatorMessageToClient message) {
-		ProtectIt.LOGGER.debug("received registry mutator message -> {}", message);
+		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
 			switch(message.getType()) {
 			default:
 			case RegistryMutatorMessageToClient.BLOCK_TYPE:
-				registry = ProtectionRegistries.getRegistry();
+				registry = ProtectionRegistries.block();
 				break;
 			case RegistryMutatorMessageToClient.PVP_TYPE:
 				// TODO
 				break;
 			}
 			
-			if (message.getAction().equals(RegistryMutatorMessageToClient.ADD_ACTION)) {
+			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
 				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
-				registry.addProtection(message.getCoords1(), message.getCoords2(), data);
+				Claim claim = new Claim(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
+				registry.addProtection(claim);
 			}
-			else if (message.getAction().equals(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
+			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
 				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
+					ProtectIt.LOGGER.info("has coords");
 					// use methods that take coords
 					if (message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
+						ProtectIt.LOGGER.info("doesn't have uuid");
 						registry.removeProtection(message.getCoords1(), message.getCoords2());
 					}
 					else {
+						ProtectIt.LOGGER.info("has uuid");
 						registry.removeProtection(message.getCoords1(), message.getCoords2(), message.getUuid());
 					}
 				}
 				else {
 					if (!message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
+						ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
 						registry.removeProtection(message.getUuid());
 					}
 				}

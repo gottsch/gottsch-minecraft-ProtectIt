@@ -44,23 +44,26 @@ public class RegistryMutatorMessageToClient {
 	public static final String NULL_UUID = "NULL";	
 	public static final ICoords EMPTY_COORDS = new Coords(0, -255, 0);
 	
-
-	
 	private boolean valid;
 	private String type;												//0
 	private String action;											//1
 	private String uuid;												//2
-	private ICoords coords1;									//3
-	private ICoords coords2;									//4
-	private String playerName; 								//5
+	private String playerName; 								//3
+	private ICoords coords;										//4
+	private ICoords coords1;									//5
+	private ICoords coords2;									//6
+	private String name;												//7
+	
 
 	public static class Builder {
 		public String type;
 		public String action;
 		public String uuid;
-		public ICoords coords1;
-		public ICoords coords2;		
 		public String playerName; 
+		public ICoords coords;
+		public ICoords coords1;
+		public ICoords coords2;
+		public String name;
 		
 		public Builder(String type, String action, String uuid) {
 			this.type = type;
@@ -87,9 +90,11 @@ public class RegistryMutatorMessageToClient {
 		this.type = builder.type;
 		this.action = builder.action;
 		this.uuid = builder.uuid;
+		this.playerName = builder.playerName;
+		this.coords = builder.coords;
 		this.coords1 = builder.coords1;
 		this.coords2 = builder.coords2;
-		this.playerName = builder.playerName;
+		this.name = builder.name;		
 	}
 	
 	/**
@@ -111,7 +116,15 @@ public class RegistryMutatorMessageToClient {
 		buf.writeUtf(StringUtils.defaultString(type, ""));
 		buf.writeUtf(StringUtils.defaultString(action, ""));
 		buf.writeUtf(StringUtils.defaultString(uuid, NULL_UUID));
-
+		buf.writeUtf(StringUtils.defaultString(playerName, ""));
+		
+		if (coords == null) {
+			writeCoords(EMPTY_COORDS, buf);
+		}
+		else {
+			writeCoords(coords, buf);
+		}
+		
 		if (coords1 == null) {
 			writeCoords(EMPTY_COORDS, buf);
 		}
@@ -124,8 +137,7 @@ public class RegistryMutatorMessageToClient {
 		else {
 			writeCoords(coords2, buf);
 		}
-
-		buf.writeUtf(StringUtils.defaultString(playerName, ""));
+		buf.writeUtf(StringUtils.defaultString(name, ""));		
 	}
 	
 	/**
@@ -140,17 +152,20 @@ public class RegistryMutatorMessageToClient {
 			String type = buf.readUtf();
 			String action = buf.readUtf();
 			String uuid = buf.readUtf();
-			
+			String playerName = buf.readUtf();
+			ICoords coords = readCoords(buf);
 			ICoords coords1 = readCoords(buf);
 			ICoords coords2 = readCoords(buf);
 
-			String playerName = buf.readUtf();
+			String name = buf.readUtf();
 			
 			message = new RegistryMutatorMessageToClient.Builder(type, action, uuid)
 					.with($ -> {
+						$.playerName = playerName;
+						$.coords = coords;
 						$.coords1 = coords1;
 						$.coords2 = coords2;
-						$.playerName = playerName;
+						$.name = name;
 					}).build();
 			message.setValid(true);
 		}
@@ -161,7 +176,7 @@ public class RegistryMutatorMessageToClient {
 		return message;
 	}
 		
-	private void writeCoords(ICoords coords, PacketBuffer buf) {
+	protected void writeCoords(ICoords coords, PacketBuffer buf) {
 		if (coords != null) {
 			buf.writeInt(coords.getX());
 			buf.writeInt(coords.getY());
@@ -169,7 +184,7 @@ public class RegistryMutatorMessageToClient {
 		}
 	}
 	
-	private static ICoords readCoords(PacketBuffer buf) {
+	protected static ICoords readCoords(PacketBuffer buf) {
 		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
 		return coords;
 	}
@@ -233,6 +248,22 @@ public class RegistryMutatorMessageToClient {
 	public String toString() {
 		return "RegistryMutatorMessageToClient [valid=" + valid + ", type=" + type + ", action=" + action + ", uuid="
 				+ uuid + ", coords1=" + coords1 + ", coords2=" + coords2 + ", playerName=" + playerName + "]";
+	}
+
+	protected ICoords getCoords() {
+		return coords;
+	}
+
+	protected void setCoords(ICoords coords) {
+		this.coords = coords;
+	}
+
+	protected String getName() {
+		return name;
+	}
+
+	protected void setName(String name) {
+		this.name = name;
 	}
 
 }
