@@ -1,51 +1,43 @@
+/*
+ * This file is part of  Protect It.
+ * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * 
+ * All rights reserved.
+ *
+ * Protect It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Protect It is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
 package com.someguyssoftware.protectit.registry;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 import com.someguyssoftware.gottschcore.spatial.ICoords;
-
-import net.minecraft.entity.Entity;
-import net.minecraft.nbt.CompoundNBT;
+import com.someguyssoftware.protectit.claim.Claim;
 
 /**
- * 
+ * Protection Registry more specific to land claim ownership / block protections ie can't alter blocks in area unless you are the owner.
  * @author Mark Gottschling on Oct 5, 2021
  *
  */
-public interface IBlockProtectionRegistry {
-	public void addProtection(ICoords coords);
-	
-	/**
-	 * add protection for the region specified by coords1 -> coords2
-	 * @param coords1
-	 * @param coords2
-	 */
-	public void addProtection(ICoords coords1, ICoords coords2);
-	
-//	public void addProtection(ICoords coords, String uuid);
-//	public void addProtection(ICoords coords1, ICoords coords2, String uuid);
+public interface IBlockProtectionRegistry extends IProtectionRegistry {
+
 	public void addProtection(ICoords coords, PlayerData data);
 	public void addProtection(ICoords coords1, ICoords coords2, PlayerData data);
-	
-	/**
-	 * removes any protection intervals that coords intersects with
-	 */
-	public void removeProtection(ICoords coords);
-	public void removeProtection(ICoords coords1, ICoords coords2);
+
 	public void removeProtection(ICoords coords1, ICoords coords2, String uuid);
 	public void removeProtection(String uuid);
-	
-	/**
-	 * determines if the point at coords is a protected region
-	 * @param coords
-	 * @return
-	 */
-	public boolean isProtected(ICoords coords);
-	public boolean isProtected(ICoords coords1, ICoords coords2);
-	
+
 	/**
 	  * is protected against player uuid
 	  * @param coords1
@@ -57,17 +49,11 @@ public interface IBlockProtectionRegistry {
 	boolean isProtectedAgainst(ICoords coords, String uuid);
 	boolean isProtectedAgainst(ICoords coords1, ICoords coords2, String uuid);
 	
-	public List<Interval> getProtections(ICoords coords);
-	public List<Interval> getProtections(ICoords coords1, ICoords coords2);
-	
-	public void load(CompoundNBT nbt);	
-	public CompoundNBT save(CompoundNBT nbt);
+	// TODO this replaces old PlayerData methods
+	public void addProtection(Claim claim);
+	public List<Claim> getAll();
+	public List<Claim> getProtections(String uuid);
+	public List<Claim> findByClaim(Predicate<Claim> predicate);
+	public Claim getClaimByCoords(ICoords coords);
 
-
-
-	public void clear();
-	public List<Interval> list();
-	public List<Interval> find(Predicate<Interval> predicate);
-	
-	public List<String> toStringList();
 }

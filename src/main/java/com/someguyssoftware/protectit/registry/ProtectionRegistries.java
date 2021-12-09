@@ -25,11 +25,24 @@ package com.someguyssoftware.protectit.registry;
  *
  */
 public class ProtectionRegistries {
-	// single for now, change to map if required
-	private static final IBlockProtectionRegistry REGISTRY = new ProtectionRegistry2();
+	/*
+	 * block protection registry - ie. land claims
+	 */
+	private static final IBlockProtectionRegistry REGISTRY = new BlockProtectionRegistry();
 	
-	// use a getter instead of directly accessing static property because the backing may change
-	public static IBlockProtectionRegistry getRegistry() {
+	/*
+	 * PVP protection registry - player vs player protection areas ie. safe zones
+	 */
+	private static final IPvpProtectionRegistry PVP_REGISTRY = new PvpProtectionRegistry();
+	
+	/*
+	 *  use accessors instead of directly accessing static property because the backing may change
+	 */
+	public static IBlockProtectionRegistry block() {
 		return REGISTRY;
+	}
+	
+	public static IPvpProtectionRegistry pvp() {
+		return PVP_REGISTRY;
 	}
 }

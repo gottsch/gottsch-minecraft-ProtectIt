@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+	"   ",
+	"S S",
+	" C "
+  ],
+  "key": {
+    "C": {
+		"item": "minecraft:cobblestone"
+	},
+	"S": {
+		"item": "minecraft:stick"
+	}
+  },
+  "result": {
+    "item": "protectit:claim_lever",
+    "count": 1
+  }
+}
