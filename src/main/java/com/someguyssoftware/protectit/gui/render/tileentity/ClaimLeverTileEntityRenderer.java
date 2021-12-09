@@ -28,7 +28,9 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.registry.BlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
@@ -57,18 +59,28 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 	public void render(ClaimLeverTileEntity tileEntity, float partialTicks, MatrixStack matrixStack,
 			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		
+		if (tileEntity == null) {
+			return;
+		}
+		
 		BlockPos pos = tileEntity.getBlockPos();
 		BlockState state =  tileEntity.getLevel().getBlockState(pos);
 		Claim claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
-		
-		if (!state.getValue(LeverBlock.POWERED) || claim == null) {
+
+		if (!state.is(ProtectItBlocks.CLAIM_LEVER) || !state.getValue(LeverBlock.POWERED) || claim == null) {
 			return;
 		}
 		
 		// only render for the owner and whitelist
+//		ProtectIt.LOGGER.debug("claim -> {}", claim);
+		if (!StringUtils.isBlank(claim.getOwner().getUuid())) {
+//			ProtectIt.LOGGER.debug("player -> {}", Minecraft.getInstance().player.getStringUUID());
+//			ProtectIt.LOGGER.debug("whitelist -> {}", claim.getWhitelist());
+		}
 		if (StringUtils.isBlank(claim.getOwner().getUuid()) ||
 				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
-				claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {
+				claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {	
+//			ProtectIt.LOGGER.debug("not owner nor whitelist -> {}, {}", Minecraft.getInstance().player.getDisplayName().getString(), Minecraft.getInstance().player.getStringUUID());
 			return;
 		}
 

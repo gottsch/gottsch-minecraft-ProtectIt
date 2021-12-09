@@ -217,7 +217,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 							RegistryMutatorMessageToClient.BLOCK_TYPE, 
 							RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION, 
 							claims).build();
-					ProtectIt.LOGGER.info("sending message to sync client side ");
+					ProtectIt.LOGGER.info("sending message to sync client side -> {}", message);
 					ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
 				}
 				

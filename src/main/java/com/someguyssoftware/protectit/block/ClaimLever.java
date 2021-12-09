@@ -24,8 +24,11 @@ import java.util.Random;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
+import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.network.ClaimLeverMessageToClient;
+import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
@@ -33,7 +36,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeverBlock;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -52,8 +54,10 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 /**
  * 
@@ -168,35 +172,67 @@ public class ClaimLever extends LeverBlock {
 					claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return ActionResultType.FAIL;
 			}
-		}	
-
-		if (world.isClientSide) {
-			BlockState blockstate1 = state.cycle(POWERED);
-			if (blockstate1.getValue(POWERED)) {
-				makeParticle(blockstate1, world, pos, 1.0F);
+			
+			if (world.isClientSide) {
+				BlockState blockstate1 = state.cycle(POWERED);
+				if (blockstate1.getValue(POWERED)) {
+					if (((ClaimLeverTileEntity)tileEntity).getClaimCoords() == null) {
+						if (claim != null) {
+							((ClaimLeverTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+						}
+					}
+					makeParticle(blockstate1, world, pos, 1.0F);
+				}
+				return ActionResultType.SUCCESS;
+			} else {
+				BlockState blockstate = this.pull(state, world, pos);
+				float f = blockstate.getValue(POWERED) ? 0.6F : 0.5F;
+				world.playSound((PlayerEntity)null, pos, SoundEvents.LEVER_CLICK, SoundCategory.BLOCKS, 0.3F, f);
+				// send message to clients
+				if (claim != null) {
+					sendToClient(world, new Coords(pos), claim.getBox().getMinCoords());
+				}
+				return ActionResultType.CONSUME;
 			}
-			return ActionResultType.SUCCESS;
-		} else {
-			BlockState blockstate = this.pull(state, world, pos);
-			float f = blockstate.getValue(POWERED) ? 0.6F : 0.5F;
-			world.playSound((PlayerEntity)null, pos, SoundEvents.LEVER_CLICK, SoundCategory.BLOCKS, 0.3F, f);
-			return ActionResultType.CONSUME;
 		}
+		
+		return ActionResultType.PASS;
 	}
 
+	/**
+	 * 
+	 */
 	@Override
 	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
 		if (tileEntity instanceof ClaimLeverTileEntity) {
 			// get the claim for this position
-			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
-			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
+//			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
+//			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
-			ProtectIt.LOGGER.debug("found protections -> {}", list);
+//			ProtectIt.LOGGER.debug("found protections -> {}", list);
 			if (!list.isEmpty()) {				
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
-				ProtectIt.LOGGER.debug("found claim -> {}", claim);
+//				ProtectIt.LOGGER.debug("found claim -> {}", claim);
 				((ClaimLeverTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+			}
+		}
+		worldIn.markAndNotifyBlock(pos, null, state, state, 0, 0);
+	}
+
+	/**
+	 * 
+	 * @param world
+	 * @param coords
+	 * @param claimCoords
+	 */
+	protected void sendToClient(World world, ICoords coords, ICoords claimCoords) {
+		if (!world.isClientSide()) {
+			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				// send message to add protection on all clients
+				ClaimLeverMessageToClient message = new ClaimLeverMessageToClient(coords, claimCoords);
+				ProtectIt.LOGGER.info("sending claim lever message to sync client side -> {}", message);
+				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		}
 	}

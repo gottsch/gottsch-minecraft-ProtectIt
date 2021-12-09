@@ -130,6 +130,9 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 							claim.getWhitelist().addAll(c.getWhitelist());
 							ProtectIt.LOGGER.debug("updated claim on client -> {}", claim);
 						}
+						else {
+							ProtectIt.LOGGER.debug("could not find claim for coords -> {}", c.getBox().getMinCoords());
+						}
 					});
 				}
 			}

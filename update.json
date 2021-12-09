@@ -7,6 +7,6 @@
     "1.16.5": {
         "1.0.0": "Initial version release.",
         "1.1.0": "Enabled ownership of protected areas.\nAdded client<-->server syncing for better game play.\nConsolidated commands into one Command class.\nDisplay message to player if attempting to interact with a Protected block.\nUpdate commands to require level 4.\nClean up.",
-        "2.0.0": "Land Claim"
+        "2.0.0": "Add GUI Land Claim ability.\nRefactored commands."
     }
 }

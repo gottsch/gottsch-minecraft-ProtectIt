@@ -151,12 +151,12 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		if (!protections.isEmpty()) {
 			protections.forEach(p -> {
 				Claim claim = CLAIMS_BY_COORDS.remove(p.getMinCoords());
-				ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
-				ProtectIt.LOGGER.debug("claims after removal from BY_COORDS -> {}", CLAIMS_BY_COORDS);
+//				ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
+//				ProtectIt.LOGGER.debug("claims after removal from BY_COORDS -> {}", CLAIMS_BY_COORDS);
 				CLAIMS_BY_OWNER.values().forEach(l -> {
 					l.removeIf(c -> c.getBox().getMinCoords().equals(p.getMinCoords()));
 				});
-				ProtectIt.LOGGER.debug("claims_by_owner -> {}", CLAIMS_BY_OWNER);
+//				ProtectIt.LOGGER.debug("claims_by_owner -> {}", CLAIMS_BY_OWNER);
 
 			});
 		}
@@ -164,25 +164,25 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	
 	@Override
 	public void removeProtection(ICoords coords1, ICoords coords2, String uuid) {
-		ProtectIt.LOGGER.debug("in remove protection for c1 -> {}, c2 -> {}, uuid -> {}", coords1, coords2, uuid);
+//		ProtectIt.LOGGER.debug("in remove protection for c1 -> {}, c2 -> {}, uuid -> {}", coords1, coords2, uuid);
 		List<Box> protections = getProtections(coords1, coords2);
-		ProtectIt.LOGGER.debug("found protections -> {}", protections);
+//		ProtectIt.LOGGER.debug("found protections -> {}", protections);
 		removeClaims(protections, uuid);
 		protections.forEach(p -> {
 			List<Interval> intervals = tree.delete(new Interval(p.getMinCoords(), p.getMaxCoords()), uuid);
-			ProtectIt.LOGGER.debug("removed from tree -> {}", intervals);
+//			ProtectIt.LOGGER.debug("removed from tree -> {}", intervals);
 		});
 	}
 
 	private void removeClaims(final List<Box> protections, final String uuid) {
 		if (!protections.isEmpty()) {
 			protections.forEach(p -> {
-				ProtectIt.LOGGER.debug("claims -> {}", CLAIMS_BY_COORDS);
+//				ProtectIt.LOGGER.debug("claims -> {}", CLAIMS_BY_COORDS);
 				Claim claim = getClaimByCoords(p.getMinCoords());
-				ProtectIt.LOGGER.debug("claim -> {}", claim);
+//				ProtectIt.LOGGER.debug("claim -> {}", claim);
 				if (claim != null && claim.getOwner().getUuid().equalsIgnoreCase(uuid)) {
 					CLAIMS_BY_COORDS.remove(p.getMinCoords());
-					ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
+//					ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
 				}
 				List<Claim> claims = CLAIMS_BY_OWNER.get(uuid);
 				if (claims != null && !claims.isEmpty()) {

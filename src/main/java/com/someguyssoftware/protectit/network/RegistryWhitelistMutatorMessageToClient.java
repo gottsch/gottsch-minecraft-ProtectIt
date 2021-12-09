@@ -206,4 +206,10 @@ public class RegistryWhitelistMutatorMessageToClient {
 	public void setValid(boolean valid) {
 		this.valid = valid;
 	}
+
+	@Override
+	public String toString() {
+		return "RegistryWhitelistMutatorMessageToClient [valid=" + valid + ", type=" + type + ", action=" + action
+				+ ", claims=" + claims + "]";
+	}
 }

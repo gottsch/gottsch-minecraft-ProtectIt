@@ -3,7 +3,7 @@
 	"textures": {
 		"1": "block/oak_log",
 		"2": "block/oak_log_top",
-		"3": "block/diamond_block",
+		"3": "block/cyan_concrete",
 		"particle": "block/oak_log"
 	},
 	"elements": [
