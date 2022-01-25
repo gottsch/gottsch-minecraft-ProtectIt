@@ -90,7 +90,7 @@ public class ProtectIt implements IMod {
 	// constants
 	public static final String MODID = "protectit";
 	public static final String NAME = "Protect It";
-	protected static final String VERSION = "2.0.0";
+	protected static final String VERSION = "2.1.0";
 
 	public static ProtectIt instance;
 	private static Config config;
@@ -160,7 +160,8 @@ public class ProtectIt implements IMod {
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
 		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 		// prevent protected blocks from breaking
-		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+		if (Config.PROTECTION.enableBlockBreakEvent.get()
+				&& ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			event.setCanceled(true);
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
@@ -169,6 +170,10 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onBlockPlace(final EntityPlaceEvent event) {
+		if (!Config.PROTECTION.enableEntityPlaceEvent.get()) {
+			return;
+		}
+		
 		// prevent protected blocks from placing
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
@@ -183,6 +188,10 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onMutliBlockPlace(final EntityMultiPlaceEvent event) {
+		if (!Config.PROTECTION.enableEntityMultiPlaceEvent.get()) {
+			return;
+		}
+		
 		// prevent protected blocks from breaking
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
@@ -198,7 +207,8 @@ public class ProtectIt implements IMod {
 	@SubscribeEvent
 	public void onToolInteract(final BlockToolInteractEvent event) {
 		// prevent protected blocks from breaking
-		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+		if (Config.PROTECTION.enableBlockToolInteractEvent.get()
+				&& ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
@@ -206,6 +216,10 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onPlayerInteract(final PlayerInteractEvent.RightClickBlock event) {
+		if (!Config.PROTECTION.enableRightClickBlockEvent.get()) {
+			return;
+		}
+		
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
 		if (event.getEntity() instanceof PlayerEntity) {
 			// get the item in the player's hand
@@ -232,16 +246,23 @@ public class ProtectIt implements IMod {
 		//			}	
 		//		}
 		//		else
-		if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
+		if (Config.PROTECTION.enableLivingDestroyBlockEvent.get()
+				&& ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
 
 	@SubscribeEvent
 	public void onPiston(final PistonEvent.Pre event) {
+		if (!Config.PROTECTION.enablePistionEvent.get()) {
+			return;
+		}
+		
 		if (event.getDirection() == Direction.UP || event.getDirection() == Direction.DOWN) {
 			return;
 		}
+		// TODO this needs to change to be, just continue, so that the movement of blocks 
+		// can be checked against an adjacent claim.
 		// check if piston itself is inside protected area - if so, exit ie. allow movement
 		if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			return;
@@ -293,7 +314,8 @@ public class ProtectIt implements IMod {
 		// remove any affected blocks that are protected
 		event.getAffectedBlocks().removeIf(block -> {
 			// prevent protected blocks from breaking
-			return ProtectionRegistries.block().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
+			return Config.PROTECTION.enableExplosionDetonateEvent.get()
+					&& ProtectionRegistries.block().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
 		});
 	}
 
