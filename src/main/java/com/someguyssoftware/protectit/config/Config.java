@@ -16,6 +16,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 @EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class Config extends AbstractConfig {
 	public static final String GENERAL_CATEGORY = "03-general";
+	public static final String PROTECTION_CATEGORY = "04-protection";
 	public static final String UNDERLINE_DIV = "------------------------------";
 
 	protected static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
@@ -29,12 +30,14 @@ public class Config extends AbstractConfig {
 	public static final Mod MOD;
 	public static final Logging LOGGING;
 	public static final General GENERAL;
+	public static final Protection PROTECTION;
 	
 	static {
 		MOD = new Mod(COMMON_BUILDER);
 		LOGGING = new Logging(COMMON_BUILDER);
 				
 		GENERAL = new General(SERVER_BUILDER);
+		PROTECTION = new Protection(SERVER_BUILDER);
 		
 		COMMON_CONFIG = COMMON_BUILDER.build();
 		SERVER_CONFIG = SERVER_BUILDER.build();
@@ -72,10 +75,65 @@ public class Config extends AbstractConfig {
 			claimsPerPlayer = builder
 					.comment(" The number of claims each player can place per world.")
 					.defineInRange("Number of claims per player:", 5, 1, 100);
-						
+			
+			builder.pop();
 		}
 		
 		public void init() {			
+		}
+	}
+	
+	public static class Protection {
+		public BooleanValue enableBlockBreakEvent;
+		public BooleanValue enableEntityPlaceEvent;
+		public BooleanValue enableEntityMultiPlaceEvent;
+		public BooleanValue enableBlockToolInteractEvent;
+		public BooleanValue enableRightClickBlockEvent;
+		public BooleanValue enableLivingDestroyBlockEvent;
+		public BooleanValue enablePistionEvent;
+		public BooleanValue enableExplosionDetonateEvent;
+		
+		Protection(final ForgeConfigSpec.Builder builder) {
+			builder.comment(CATEGORY_DIV, 
+					" Protection properties for Protect It mod.",
+					" Note: these properties are for enabling the protections in the claim, not for enabling the actions.",
+					" ex. Block break protection = true, enables the PROTECTION AGAINST breaking blocks in the claim,",
+					" it does NOT enable the player TO BREAK a block.",
+					CATEGORY_DIV).push(PROTECTION_CATEGORY);
+			
+			enableBlockBreakEvent = builder
+					.comment(" Enables block break protection. If enabled, blocks in claim are protected from being broken by others.")
+					.define("Block break proctection:", true);
+			
+			enableEntityPlaceEvent = builder
+					.comment(" Enables block placement protection. If enabled, blocks are not allowed to be placed in the claim by others.")
+					.define("Block placement proctection:", true);
+			
+			enableEntityMultiPlaceEvent = builder
+					.comment(" Enables multi-block placement protection. If enabled, multi-blocks are not allowed to be placed in the claim by others.")
+					.define("Multi-block placement proctection:", true);
+
+			enableBlockToolInteractEvent = builder					
+					.comment(" Enables block tool interaction protection. If enabled, blocks in claim will not change state when right-clicked with tool. Ex. axe will not strip a log.")
+					.define("Block tool interact proctection:", true);
+			
+			enableRightClickBlockEvent = builder					
+					.comment(" Enables right click protection. If enabled, blocks in claim will not perform any action if right-clicked. Ex. chests will not open for others.")
+					.define("Right-click block proctection:", true);
+
+			enableLivingDestroyBlockEvent = builder
+					.comment(" Enables block break protection from living entities. If enabled, blocks in claim are protected from being broken for living entities (mobs).")
+					.define("Living destory block proctection:", true);
+			
+			enablePistionEvent = builder
+					.comment(" Enables piston movement protection. If enabled, pistons outside the claim will not fire if their movement would move protected blocks.")
+					.define("Piston movement proctection:", true);
+			
+			enableExplosionDetonateEvent = builder
+					.comment(" Enables explosion protection. If enabled, explosions will not destory protected blocks.")
+					.define("Explosion proctection:", true);
+			
+			builder.pop();
 		}
 	}
 	

@@ -1,12 +1,13 @@
 {
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/protect-it",
     "promos": {
-    "1.16.5-latest": "2.0.0",
-    "1.16.5-recommended": "2.0.0"
+    "1.16.5-latest": "2.1.0",
+    "1.16.5-recommended": "2.1.0"
   },
     "1.16.5": {
         "1.0.0": "Initial version release.",
         "1.1.0": "Enabled ownership of protected areas.\nAdded client<-->server syncing for better game play.\nConsolidated commands into one Command class.\nDisplay message to player if attempting to interact with a Protected block.\nUpdate commands to require level 4.\nClean up.",
-        "2.0.0": "Add GUI Land Claim ability.\nRefactored commands."
+        "2.0.0": "Add GUI Land Claim ability.\nRefactored commands.",
+        "2.1.0": "Add config options to control what events/actions are protected.\nUpdate to forge-1.16.5-36.2.20"
     }
 }
