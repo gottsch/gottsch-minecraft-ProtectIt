@@ -19,7 +19,7 @@
  */
 package com.someguyssoftware.protectit.registry;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * 
@@ -49,18 +49,18 @@ public class PlayerData {
 		setName(name);
 	}
 	
-	public CompoundNBT save() {
-		CompoundNBT nbt = new CompoundNBT();
+	public CompoundTag save() {
+		CompoundTag nbt = new CompoundTag();
 		save(nbt);
 		return nbt;
 	}
 	
-	public void save(CompoundNBT nbt) {
+	public void save(CompoundTag nbt) {
 		nbt.putString("uuid", getUuid());
 		nbt.putString("name", (getName() == null) ? "" : getName());
 	}
 	
-	public PlayerData load(CompoundNBT nbt) {
+	public PlayerData load(CompoundTag nbt) {
 		if (nbt.contains("uuid")) {
 			setUuid(nbt.getString("uuid"));
 		}

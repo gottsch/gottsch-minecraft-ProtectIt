@@ -43,7 +43,7 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IClearable;
 import net.minecraft.inventory.IInventory;
@@ -102,7 +102,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 		return new TranslationTextComponent("container.claim_lectern");
 	}
 
-	public Container createMenu(int id, PlayerInventory playerInventory, PlayerEntity player) {
+	public Container createMenu(int id, PlayerInventory playerInventory, Player player) {
 		ClaimLecternContainer container = new ClaimLecternContainer(id, this.bookAccess, this.dataAccess);
 		Claim claim = ProtectionRegistries.block().getClaimByCoords(claimCoords);
 		container.setClaim(claim);
@@ -235,10 +235,10 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 				registryClaim.getWhitelist().clear();
 			}
 		}
-		this.setBook(bookStack, (PlayerEntity) null);
+		this.setBook(bookStack, (Player) null);
 	}
 
-	public void setBook(ItemStack itemStack, @Nullable PlayerEntity player) {
+	public void setBook(ItemStack itemStack, @Nullable Player player) {
 		this.book = itemStack;
 		this.page = 0;
 		// this.pageCount = WrittenBookItem.getPageCount(this.book);
@@ -306,7 +306,7 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 			ClaimLecternTileEntity.this.setChanged();
 		}
 
-		public boolean stillValid(PlayerEntity player) {
+		public boolean stillValid(Player player) {
 			if (ClaimLecternTileEntity.this.level
 					.getBlockEntity(ClaimLecternTileEntity.this.worldPosition) != ClaimLecternTileEntity.this) {
 				return false;

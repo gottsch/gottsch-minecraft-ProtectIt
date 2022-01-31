@@ -30,7 +30,7 @@ import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimBlock;
-import com.someguyssoftware.protectit.tileentity.ClaimTileEntity;
+import com.someguyssoftware.protectit.tileentity.ClaimBlockEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -46,7 +46,7 @@ import net.minecraft.util.math.BlockPos;
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity> implements IClaimRenderer {
+public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimBlockEntity> implements IClaimRenderer {
 
 	/**
 	 * 
@@ -57,7 +57,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 	}
 
 	@Override
-	public void render(ClaimTileEntity tileEntity, float partialTicks, MatrixStack matrixStack,
+	public void render(ClaimBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
 			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
 		BlockPos pos = tileEntity.getBlockPos();
@@ -85,7 +85,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 
 		// render the claim
 		boolean hasOverlaps = false;
-		if (!((ClaimTileEntity)tileEntity).getOverlaps().isEmpty()) {
+		if (!((ClaimBlockEntity)tileEntity).getOverlaps().isEmpty()) {
 			hasOverlaps = true;
 		}
 
@@ -93,7 +93,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 		renderClaim(tileEntity, matrixStack, builder, ((ClaimBlock)block).getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
 
 		// render all overlaps
-		((ClaimTileEntity)tileEntity).getOverlaps().forEach(b -> {
+		((ClaimBlockEntity)tileEntity).getOverlaps().forEach(b -> {
 			renderOverlap(tileEntity, matrixStack, builder, b, red, 0, 0, 1.0f);
 		});
 
@@ -107,7 +107,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimTileEntity>
 					combinedLight, combinedOverlay);
 		}
 
-		((ClaimTileEntity)tileEntity).getOverlaps().forEach(b -> {
+		((ClaimBlockEntity)tileEntity).getOverlaps().forEach(b -> {
 			renderOverlapHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, b, 
 					new Color(255, 0, 0, 100), combinedLight, combinedOverlay);
 		});

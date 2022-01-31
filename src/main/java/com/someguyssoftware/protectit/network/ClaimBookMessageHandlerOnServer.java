@@ -28,7 +28,7 @@ import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.ServerPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
@@ -60,10 +60,10 @@ public class ClaimBookMessageHandlerOnServer {
 		}
 
 		// we know for sure that this handler is only used on the server side, so it is
-		// ok to assume that the ctx handler is a serverhandler, and that ServerPlayerEntity exists.
+		// ok to assume that the ctx handler is a serverhandler, and that ServerPlayer exists.
 		// Packets received on the client side must be handled differently! See MessageHandlerOnClient
 
-		final ServerPlayerEntity sendingPlayer = ctx.getSender();
+		final ServerPlayer sendingPlayer = ctx.getSender();
 		if (sendingPlayer == null) {
 			ProtectIt.LOGGER.warn("EntityPlayerMP was null when ClaimBookMessageToServer was received");
 		}
@@ -78,7 +78,7 @@ public class ClaimBookMessageHandlerOnServer {
 	 * @param worldServer
 	 * @param message
 	 */
-	private static void processMessage(ClaimBookMessageToServer message, ServerPlayerEntity sendingPlayer) {
+	private static void processMessage(ClaimBookMessageToServer message, ServerPlayer sendingPlayer) {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			if (sendingPlayer != null) {
@@ -88,7 +88,7 @@ public class ClaimBookMessageHandlerOnServer {
 					List<PlayerData> playerDataList = Lists.newArrayList();
 					ListNBT sourceListNbt = nbt.getList(PLAYER_DATA_TAG, 10);
 					ProtectIt.LOGGER.debug("sourceListNbt.size -> {}", sourceListNbt.size());
-					List<ServerPlayerEntity> players = sendingPlayer.getLevel().players();
+					List<ServerPlayer> players = sendingPlayer.getLevel().players();
 					sourceListNbt.forEach(element -> {
 						PlayerData data = new PlayerData().load((CompoundNBT) element);
 						ProtectIt.LOGGER.debug("loaded data -> {}", data);

@@ -28,8 +28,9 @@ import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+
 
 /**
  * 
@@ -88,26 +89,26 @@ public class Claim {
 	 * 
 	 * @param nbt
 	 */
-	public void save(CompoundNBT nbt) {
+	public void save(CompoundTag nbt) {
 		ProtectIt.LOGGER.debug("saving claim -> {}", this);
 
-		CompoundNBT ownerNbt = new CompoundNBT();
+		CompoundTag ownerNbt = new CompoundTag();
 		getOwner().save(ownerNbt);
 		nbt.put(OWNER_KEY, ownerNbt);
 
-		CompoundNBT coordsNbt = new CompoundNBT();
+		CompoundTag coordsNbt = new CompoundTag();
 		getCoords().save(coordsNbt);
 		nbt.put(COORDS_KEY, coordsNbt);
 
-		CompoundNBT boxNbt = new CompoundNBT();
+		CompoundTag boxNbt = new CompoundTag();
 		getBox().save(boxNbt);
 		nbt.put(BOX_KEY, boxNbt);
 
 		nbt.putString(NAME_KEY, getName());
 
-		ListNBT list = new ListNBT();
+		ListTag list = new ListTag();
 		getWhitelist().forEach(data -> {
-			CompoundNBT playerNbt = new CompoundNBT();
+			CompoundTag playerNbt = new CompoundTag();
 			data.save(playerNbt);
 			list.add(playerNbt);
 		});
@@ -119,7 +120,7 @@ public class Claim {
 	 * @param nbt
 	 * @return
 	 */
-	public Claim load(CompoundNBT nbt) {
+	public Claim load(CompoundTag nbt) {
 //		ProtectIt.LOGGER.debug("loading claim...");
 
 		if (nbt.contains(OWNER_KEY)) {
@@ -135,10 +136,10 @@ public class Claim {
 			setName(nbt.getString(NAME_KEY));
 		}
 		if (nbt.contains(WHITELIST_KEY)) {
-			ListNBT list = nbt.getList(WHITELIST_KEY, 10);
+			ListTag list = nbt.getList(WHITELIST_KEY, 10);
 			list.forEach(element -> {
 				PlayerData playerData = new PlayerData("");
-				playerData.load((CompoundNBT)element);
+				playerData.load((CompoundTag)element);
 				getWhitelist().add(playerData);
 			});
 		}

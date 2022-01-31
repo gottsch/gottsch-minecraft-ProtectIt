@@ -9,8 +9,7 @@ import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Reloading;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 @EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
@@ -138,7 +137,7 @@ public class Config extends AbstractConfig {
 	}
 	
 	@SubscribeEvent
-	public static void onLoad(final ModConfig.Loading configEvent) {
+	public static void onLoad(final ModConfigEvent.Loading configEvent) {
 		Config.loadConfig(Config.COMMON_CONFIG,
 				FMLPaths.CONFIGDIR.get().resolve(mod.getId() + "-common.toml"));
 		Config.loadConfig(Config.SERVER_CONFIG,
@@ -146,18 +145,18 @@ public class Config extends AbstractConfig {
 	}
 
 	@SubscribeEvent
-	public static void onReload(final Reloading configEvent) {
+	public static void onReload(final ModConfigEvent.Reloading configEvent) {
 	}
 
-	@Override
-	public boolean isEnableVersionChecker() {
-		return Config.MOD.enableVersionChecker.get();
-	}
-
-	@Override
-	public void setEnableVersionChecker(boolean enableVersionChecker) {
-		Config.MOD.enableVersionChecker.set(enableVersionChecker);
-	}
+//	@Override
+//	public boolean isEnableVersionChecker() {
+//		return Config.MOD.enableVersionChecker.get();
+//	}
+//
+//	@Override
+//	public void setEnableVersionChecker(boolean enableVersionChecker) {
+//		Config.MOD.enableVersionChecker.set(enableVersionChecker);
+//	}
 
 	@Override
 	public boolean isLatestVersionReminder() {
@@ -209,7 +208,22 @@ public class Config extends AbstractConfig {
 	}
 	
 	@Override
-	public String getLoggingLevel() {
+	public String getLoggerLevel() {
 		return Config.LOGGING.level.get();
+	}
+
+	@Override
+	public void setLoggerLevel(String level) {
+		Config.LOGGING.level.set(level);
+	}
+	
+	@Override
+	public String getLoggerSize() {
+		return Config.LOGGING.size.get();
+	}
+
+	@Override
+	public void setLoggerSize(String size) {
+		Config.LOGGING.size.set(size);
 	}
 }

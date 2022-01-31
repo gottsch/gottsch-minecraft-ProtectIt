@@ -33,7 +33,7 @@ import net.minecraft.client.gui.DialogTexts;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.IContainerListener;
@@ -65,7 +65,7 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 	};
 
 	private final ClaimLecternContainer menu;
-	private final PlayerEntity player;
+	private final Player player;
 
 	/**
 	 * 

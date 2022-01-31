@@ -34,13 +34,13 @@ import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
-import com.someguyssoftware.protectit.tileentity.ClaimTileEntity;
+import com.someguyssoftware.protectit.tileentity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.tileentity.RemoveClaimTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
@@ -107,7 +107,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 	 * 
 	 */
 	@Override
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player,
+	public ActionResultType use(BlockState state, World world, BlockPos pos, Player player,
 			Hand handIn, BlockRayTraceResult hit) {
 
 		// exit if on the client

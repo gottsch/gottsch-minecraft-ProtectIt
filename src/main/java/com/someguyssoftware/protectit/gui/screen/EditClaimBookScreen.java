@@ -56,7 +56,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Rectangle2d;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
@@ -79,7 +79,7 @@ public class EditClaimBookScreen extends Screen {
 	private static final String PLAYER_DATA_TAG = "playerData";
 
 	// context properties
-	private final PlayerEntity owner;
+	private final Player owner;
 	private final ItemStack book;
 	private final Hand hand;
 
@@ -111,7 +111,7 @@ public class EditClaimBookScreen extends Screen {
 	 * @param itemStack
 	 * @param hand
 	 */
-	public EditClaimBookScreen(PlayerEntity player, ItemStack itemStack, Hand hand) {
+	public EditClaimBookScreen(Player player, ItemStack itemStack, Hand hand) {
 		super(NarratorChatListener.NO_TITLE);
 		this.owner = player;
 		this.book = itemStack;

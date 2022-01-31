@@ -24,9 +24,8 @@ import java.util.function.Predicate;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.protectit.registry.bst.Interval;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * 
@@ -48,13 +47,13 @@ public class PvpProtectionRegistry implements IPvpProtectionRegistry {
 	}
 
 	@Override
-	public void load(CompoundNBT nbt) {
+	public void load(CompoundTag nbt) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public CompoundNBT save(CompoundNBT nbt) {
+	public CompoundTag save(CompoundTag nbt) {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 // NOTE this is currently not a balanced Binary Search Tree
 public class ProtectedIntervalTree {
@@ -406,7 +406,7 @@ public class ProtectedIntervalTree {
 	 * @param interval
 	 * @return
 	 */
-	public synchronized CompoundNBT save(CompoundNBT nbt) {
+	public synchronized CompoundTag save(CompoundTag nbt) {
 		if (getRoot() == null) {
 			return nbt;
 		}
@@ -418,7 +418,7 @@ public class ProtectedIntervalTree {
 	 * 
 	 * @param nbt
 	 */
-	public synchronized void load(CompoundNBT nbt) {
+	public synchronized void load(CompoundTag nbt) {
 		Interval root = Interval.load(nbt);
 		if (!root.equals(Interval.EMPTY)) {
 			setRoot(root);

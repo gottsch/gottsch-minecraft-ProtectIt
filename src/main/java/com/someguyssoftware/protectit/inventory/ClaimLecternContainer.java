@@ -21,7 +21,7 @@ package com.someguyssoftware.protectit.inventory;
 
 import com.someguyssoftware.protectit.claim.Claim;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Inventory;
@@ -88,7 +88,7 @@ public class ClaimLecternContainer extends Container {
 		this.addDataSlots(data);
 	}
 
-	public boolean clickMenuButton(PlayerEntity player, int p_75140_2_) {
+	public boolean clickMenuButton(Player player, int p_75140_2_) {
 		if (p_75140_2_ >= 100) {
 			int k = p_75140_2_ - 100;
 			this.setData(0, k);
@@ -133,7 +133,7 @@ public class ClaimLecternContainer extends Container {
 	}
 
 	@Override
-	public boolean stillValid(PlayerEntity player) {
+	public boolean stillValid(Player player) {
 		return this.lectern.stillValid(player);
 	}
 

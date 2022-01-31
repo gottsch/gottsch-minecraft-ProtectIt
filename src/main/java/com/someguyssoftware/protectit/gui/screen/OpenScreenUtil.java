@@ -20,7 +20,7 @@
 package com.someguyssoftware.protectit.gui.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import net.minecraftforge.fml.DistExecutor;
@@ -39,7 +39,7 @@ public class OpenScreenUtil {
 	 * @param hand
 	 * @return
 	 */
-    public static DistExecutor.SafeRunnable openEditClaimBookScreen(PlayerEntity player, ItemStack itemStack, Hand hand) {
+    public static DistExecutor.SafeRunnable openEditClaimBookScreen(Player player, ItemStack itemStack, Hand hand) {
         Minecraft.getInstance().setScreen(new EditClaimBookScreen(player, itemStack, hand));
         return new DistExecutor.SafeRunnable() {
             @Override

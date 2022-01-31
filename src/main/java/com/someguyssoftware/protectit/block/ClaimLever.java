@@ -37,7 +37,7 @@ import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeverBlock;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particles.RedstoneParticleData;
 import net.minecraft.state.properties.AttachFace;
@@ -163,7 +163,7 @@ public class ClaimLever extends LeverBlock {
 	/**
 	 * 
 	 */
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult hit) {
+	public ActionResultType use(BlockState state, World world, BlockPos pos, Player player, Hand hand, BlockRayTraceResult hit) {
 		TileEntity tileEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
 		if (tileEntity instanceof ClaimLeverTileEntity) {
@@ -187,7 +187,7 @@ public class ClaimLever extends LeverBlock {
 			} else {
 				BlockState blockstate = this.pull(state, world, pos);
 				float f = blockstate.getValue(POWERED) ? 0.6F : 0.5F;
-				world.playSound((PlayerEntity)null, pos, SoundEvents.LEVER_CLICK, SoundCategory.BLOCKS, 0.3F, f);
+				world.playSound((Player)null, pos, SoundEvents.LEVER_CLICK, SoundCategory.BLOCKS, 0.3F, f);
 				// send message to clients
 				if (claim != null) {
 					sendToClient(world, new Coords(pos), claim.getBox().getMinCoords());

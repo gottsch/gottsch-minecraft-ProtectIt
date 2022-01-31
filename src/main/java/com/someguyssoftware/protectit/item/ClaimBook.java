@@ -35,9 +35,9 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.entity.player.ClientPlayer;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
@@ -100,7 +100,7 @@ public class ClaimBook extends ModItem {
 	/**
 	 * 
 	 */
-	public ActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
+	public ActionResult<ItemStack> use(World world, Player player, Hand hand) {
 
 		ItemStack itemStack = player.getItemInHand(hand);
 		if ( world.isClientSide()) {

@@ -39,7 +39,7 @@ import net.minecraft.command.ISuggestionProvider;
 import net.minecraft.command.arguments.BlockPosArgument;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -205,9 +205,9 @@ public class UnprotectCommand {
 		Entity entity = entities.iterator().next();
 		ProtectIt.LOGGER.debug("entity -> {}", entity);
 
-		if (entity instanceof PlayerEntity) {
-			ProtectIt.LOGGER.debug("player entity -> {}", ((PlayerEntity)entity).getDisplayName());
-			PlayerEntity player = (PlayerEntity)entity;
+		if (entity instanceof Player) {
+			ProtectIt.LOGGER.debug("player entity -> {}", ((Player)entity).getDisplayName());
+			Player player = (Player)entity;
 			uuid = player.getStringUUID();				
 		}
 		ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);

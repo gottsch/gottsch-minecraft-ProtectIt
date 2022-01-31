@@ -21,7 +21,7 @@ package com.someguyssoftware.protectit.registry.bst;
 
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * 
@@ -41,14 +41,14 @@ public class IdentifierData {
 		this.name = name;
 	}
 
-	public void save(CompoundNBT nbt) {
+	public void save(CompoundTag nbt) {
 		nbt.putString("uuid", getUuid());
 		nbt.putString("name", (getName() == null) ? "" : getName());
 		ProtectIt.LOGGER.info("saved uuid -> {}", nbt.getString("uuid"));
 		ProtectIt.LOGGER.info("saved name -> {}", nbt.getString("name"));
 	}
 	
-	public IdentifierData load(CompoundNBT nbt) {
+	public IdentifierData load(CompoundTag nbt) {
 		if (nbt.contains("uuid")) {
 			ProtectIt.LOGGER.info("loading uuid -> {}", nbt.getString("uuid"));
 			setUuid(nbt.getString("uuid"));

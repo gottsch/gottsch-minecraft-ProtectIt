@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -57,10 +57,10 @@ public class RegistryLoadMessageHandlerOnServer {
 		}
 
 		// we know for sure that this handler is only used on the server side, so it is ok to assume
-		//  that the ctx handler is a serverhandler, and that ServerPlayerEntity exists
+		//  that the ctx handler is a serverhandler, and that ServerPlayer exists
 		// Packets received on the client side must be handled differently!  See MessageHandlerOnClient
 
-		final ServerPlayerEntity sendingPlayer = ctx.getSender();
+		final ServerPlayer sendingPlayer = ctx.getSender();
 		if (sendingPlayer == null) {
 			ProtectIt.LOGGER.warn("EntityPlayerMP was null when PoisonMistMessageToServer was received");
 		}
@@ -75,16 +75,16 @@ public class RegistryLoadMessageHandlerOnServer {
 	 * @param worldServer
 	 * @param message
 	 */
-	private static void processMessage(RegistryLoadMessageToServer message, ServerPlayerEntity sendingPlayer) {
+	private static void processMessage(RegistryLoadMessageToServer message, ServerPlayer sendingPlayer) {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			MinecraftServer minecraftServer = sendingPlayer.server;
-			ServerPlayerEntity player = minecraftServer.getPlayerList().getPlayer(UUID.fromString(message.getUuid()));
+			ServerPlayer player = minecraftServer.getPlayerList().getPlayer(UUID.fromString(message.getUuid()));
 			if (sendingPlayer != null) {
 				// send message to update client's registry with the loaded data
 //				TEMP
 //				RegistryLoadMessageToClient clientMessage = new RegistryLoadMessageToClient(RegistryMutatorMessageToClient.BLOCK_TYPE, ProtectionRegistries.block().list());
-//				ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity)player), clientMessage);
+//				ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer)player), clientMessage);
 			}
 		}
 		catch(Exception e) {

@@ -36,7 +36,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.Player;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -120,7 +120,7 @@ public class ClaimLectern extends LecternBlock {
 	}
 
 	@Override
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult rayTrace) {
+	public ActionResultType use(BlockState state, World world, BlockPos pos, Player player, Hand hand, BlockRayTraceResult rayTrace) {
 		ProtectIt.LOGGER.debug("using lectern block");
 		if (state.getValue(HAS_BOOK)) {
 			ProtectIt.LOGGER.debug("has  book");
@@ -154,7 +154,7 @@ public class ClaimLectern extends LecternBlock {
 	 * @param itemStack
 	 * @return
 	 */
-	public static boolean tryPlaceBook(World world, BlockPos pos, BlockState state, PlayerEntity player, ItemStack itemStack) {
+	public static boolean tryPlaceBook(World world, BlockPos pos, BlockState state, Player player, ItemStack itemStack) {
 		ProtectIt.LOGGER.debug("trying to place book.");
 		if (!state.getValue(HAS_BOOK)) {
 			ProtectIt.LOGGER.debug("doesn't have a book yet.");
@@ -206,7 +206,7 @@ public class ClaimLectern extends LecternBlock {
 			lecternTileEntity.setBook(itemStack.split(1));
 			// update the block state
 			resetBookState(world, pos, state, true);
-			world.playSound((PlayerEntity)null, pos, SoundEvents.BOOK_PUT, SoundCategory.BLOCKS, 1.0F, 1.0F);
+			world.playSound((Player)null, pos, SoundEvents.BOOK_PUT, SoundCategory.BLOCKS, 1.0F, 1.0F);
 		}
 		else {
 			ProtectIt.LOGGER.debug("not the right TE.");
@@ -233,7 +233,7 @@ public class ClaimLectern extends LecternBlock {
 		return !state.getValue(HAS_BOOK) ? null : super.getMenuProvider(state, world, pos);
 	}
 
-	private void openScreen(World world, BlockPos pos, PlayerEntity player) {
+	private void openScreen(World world, BlockPos pos, Player player) {
 		ProtectIt.LOGGER.debug("opening screen");
 		TileEntity tileentity = world.getBlockEntity(pos);
 		if (tileentity instanceof ClaimLecternTileEntity) {

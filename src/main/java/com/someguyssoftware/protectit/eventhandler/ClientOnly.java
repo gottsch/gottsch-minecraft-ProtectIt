@@ -21,8 +21,8 @@ package com.someguyssoftware.protectit.eventhandler;
 
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.client.renderer.texture.AtlasTexture;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -50,8 +50,8 @@ public class ClientOnly {
 
 		@SubscribeEvent
 		public static void onTextureStitchEvent(TextureStitchEvent.Pre event) {
-			AtlasTexture map = event.getMap();
-			if (!map.location().equals( AtlasTexture.LOCATION_BLOCKS)) return;
+			TextureAtlas atlas = event.getAtlas();
+			if (!atlas.location().equals(TextureAtlas.LOCATION_BLOCKS)) return;
 			event.addSprite(new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
 		}
 	}

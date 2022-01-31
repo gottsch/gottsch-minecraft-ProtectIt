@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * 
@@ -94,13 +94,13 @@ public interface IProtectionRegistry {
 	 * load from an NBT
 	 * @param nbt
 	 */
-	public void load(CompoundNBT nbt);	
+	public void load(CompoundTag nbt);	
 	
 	/**
 	 * save to a NBT
 	 * @param nbt
 	 * @return
 	 */
-	public CompoundNBT save(CompoundNBT nbt);
+	public CompoundTag save(CompoundTag nbt);
 
 }

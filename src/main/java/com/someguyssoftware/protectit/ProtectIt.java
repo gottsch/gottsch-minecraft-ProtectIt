@@ -35,17 +35,16 @@ import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.client.renderer.texture.AtlasTexture;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
@@ -67,7 +66,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * 
@@ -124,16 +123,16 @@ public class ProtectIt implements IMod {
 	 * @param world 
 	 * @param player
 	 */
-	private void sendProtectedMessage(IWorld world, PlayerEntity player) {
+	private void sendProtectedMessage(LevelAccessor world, Player player) {
 		if (!world.isClientSide()) {
-			player.sendMessage((new TranslationTextComponent("message.protectit.block_protected").withStyle(new TextFormatting[]{TextFormatting.GRAY, TextFormatting.ITALIC})), player.getUUID());
+			player.sendMessage((new TextComponent("message.protectit.block_protected").withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC})), player.getUUID());
 		}
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(WorldEvent.Load event) {
 		if (!event.getWorld().isClientSide()) {
-			World world = (World) event.getWorld();
+			Level world = (Level)event.getWorld();
 			ProtectIt.LOGGER.debug("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
 			if (WorldInfo.isSurfaceWorld(world)) {
 				LOGGER.debug("loading Protect It data...");
@@ -145,7 +144,7 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(PlayerLoggedInEvent event) {
-		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
+		ServerPlayer player = (ServerPlayer) event.getPlayer();
 		if(player.getServer().isDedicatedServer()) {
 			LOGGER.debug("player logged in -> {}, sending registry data...", player.getDisplayName().getString());
 			// TODO will need two different message types now - block & pvp
@@ -175,10 +174,10 @@ public class ProtectIt implements IMod {
 		}
 		
 		// prevent protected blocks from placing
-		if (event.getEntity() instanceof PlayerEntity) {
+		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
-				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+				sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 			}
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
@@ -193,10 +192,10 @@ public class ProtectIt implements IMod {
 		}
 		
 		// prevent protected blocks from breaking
-		if (event.getEntity() instanceof PlayerEntity) {
+		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
-				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+				sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 			}
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
@@ -221,12 +220,12 @@ public class ProtectIt implements IMod {
 		}
 		
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
-		if (event.getEntity() instanceof PlayerEntity) {
+		if (event.getEntity() instanceof Player) {
 			// get the item in the player's hand
-			if (event.getHand() == Hand.MAIN_HAND && event.getItemStack().getItem() instanceof BlockItem) {
+			if (event.getHand() == InteractionHand.MAIN_HAND && event.getItemStack().getItem() instanceof BlockItem) {
 				if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 					event.setCanceled(true);
-					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+					sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 				}
 				// TODO check if Claim Lectern and if one already exists in claim?
 			}
@@ -239,10 +238,10 @@ public class ProtectIt implements IMod {
 	@SubscribeEvent
 	public void onLivingDestroyBlock(final LivingDestroyBlockEvent event) {
 		// prevent protected blocks from breaking from mob action
-		//		if (event.getEntity() instanceof PlayerEntity) {
+		//		if (event.getEntity() instanceof Player) {
 		//			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 		//				event.setCanceled(true);
-		//				sendProtectedMessage((PlayerEntity) event.getEntity());
+		//				sendProtectedMessage((Player) event.getEntity());
 		//			}	
 		//		}
 		//		else

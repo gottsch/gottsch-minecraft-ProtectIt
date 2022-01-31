@@ -24,6 +24,7 @@ import com.someguyssoftware.protectit.block.ProtectItBlocks;
 
 import net.minecraft.tileentity.LecternTileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -35,10 +36,10 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
  *
  */
 public class ProtectItTileEntities {
-	public static TileEntityType<ClaimTileEntity> CLAIM_TILE_ENTITY_TYPE;
-	public static TileEntityType<RemoveClaimTileEntity> REMOVE_CLAIM_TILE_ENTITY_TYPE;
-	public static TileEntityType<ClaimLeverTileEntity> CLAIM_LEVER_TILE_ENTITY_TYPE;
-	public static TileEntityType<ClaimLecternTileEntity> CLAIM_LECTERN_TILE_ENTITY_TYPE;
+	public static BlockEntityType<ClaimBlockEntity> CLAIM_TILE_ENTITY_TYPE;
+	public static BlockEntityType<RemoveClaimTileEntity> REMOVE_CLAIM_TILE_ENTITY_TYPE;
+	public static BlockEntityType<ClaimLeverTileEntity> CLAIM_LEVER_TILE_ENTITY_TYPE;
+	public static BlockEntityType<ClaimLecternTileEntity> CLAIM_LECTERN_TILE_ENTITY_TYPE;
 
 	//	public static TileEntityType<TestTE> TEST_TYPE;
 
@@ -48,7 +49,7 @@ public class ProtectItTileEntities {
 		@SubscribeEvent
 		public static void onTileEntityTypeRegistration(final RegistryEvent.Register<TileEntityType<?>> event) {
 			CLAIM_TILE_ENTITY_TYPE = TileEntityType.Builder
-					.of(ClaimTileEntity::new, ProtectItBlocks.SMALL_CLAIM, ProtectItBlocks.MEDIUM_CLAIM, ProtectItBlocks.LARGE_CLAIM)
+					.of(ClaimBlockEntity::new, ProtectItBlocks.SMALL_CLAIM, ProtectItBlocks.MEDIUM_CLAIM, ProtectItBlocks.LARGE_CLAIM)
 					.build(null);
 			CLAIM_TILE_ENTITY_TYPE.setRegistryName("claim_te");
 			event.getRegistry().register(CLAIM_TILE_ENTITY_TYPE);

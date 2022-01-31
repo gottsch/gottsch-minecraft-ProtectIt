@@ -55,8 +55,8 @@ import net.minecraft.command.ISuggestionProvider;
 import net.minecraft.command.arguments.BlockPosArgument;
 import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.Player;
+import net.minecraft.entity.player.ServerPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Tuple;
@@ -311,7 +311,7 @@ public class ProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int add(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable Collection<ServerPlayerEntity> players) {
+	private static int add(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable Collection<ServerPlayer> players) {
 		ProtectIt.LOGGER.debug("Executing protect command...");
 		try {
 			// first, check that pos2 > pos1
@@ -332,7 +332,7 @@ public class ProtectCommand {
 			String uuid = "";
 			AtomicReference<String> name = new AtomicReference<>("");
 			if (players != null) {
-				ServerPlayerEntity player = players.iterator().next();
+				ServerPlayer player = players.iterator().next();
 				ProtectIt.LOGGER.debug("player entity -> {}", player.getDisplayName().getString());
 				uuid = player.getStringUUID();
 				name.set(player.getName().getString());
@@ -494,8 +494,8 @@ public class ProtectCommand {
 		String uuid = "";
 		Entity entity = entities.iterator().next();
 
-		if (entity instanceof PlayerEntity) {
-			PlayerEntity player = (PlayerEntity)entity;
+		if (entity instanceof Player) {
+			Player player = (Player)entity;
 			uuid = player.getStringUUID();				
 		}
 		ProtectionRegistries.block().removeProtection(uuid);
@@ -531,8 +531,8 @@ public class ProtectCommand {
 			String uuid = "";
 			Entity entity = entities.iterator().next();
 
-			if (entity instanceof PlayerEntity) {
-				PlayerEntity player = (PlayerEntity)entity;
+			if (entity instanceof Player) {
+				Player player = (Player)entity;
 				uuid = player.getStringUUID();				
 			}
 			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
@@ -697,7 +697,7 @@ public class ProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable ServerPlayerEntity player) {
+	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable ServerPlayer player) {
 		ProtectIt.LOGGER.debug("Executing protect command...");
 
 		try {
@@ -723,7 +723,7 @@ public class ProtectCommand {
 				uuid = player.getStringUUID();
 				name.set(player.getName().getString());
 			}
-			ServerPlayerEntity owner = source.getPlayerOrException();
+			ServerPlayer owner = source.getPlayerOrException();
 
 			// TODO update
 			// add protection on server

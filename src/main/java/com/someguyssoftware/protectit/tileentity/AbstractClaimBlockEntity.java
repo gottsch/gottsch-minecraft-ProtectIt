@@ -23,18 +23,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
+import com.someguyssoftware.gottschcore.tileentity.AbstractModBlockEntity;
 
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * 
  * @author Mark Gottschling on Oct 30, 2021
  *
  */
-public abstract class AbstractClaimTileEntity extends AbstractModTileEntity implements IClaimTileEntity {
+public abstract class AbstractClaimBlockEntity extends AbstractModBlockEntity implements IClaimTileEntity {
 	protected static final String OWNER_UUID = "owner_uuid";
 	protected static final String OVERLAPS = "overlaps";	
 	
@@ -45,17 +45,10 @@ public abstract class AbstractClaimTileEntity extends AbstractModTileEntity impl
 	 * 
 	 * @param type
 	 */
-	public AbstractClaimTileEntity(TileEntityType<?> type) {
-		super(type);
+	public AbstractClaimBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
 	}
 
-	/**
-	 * NOTE this method is wrong in GottschCore v.1.4.0.
-	 */
-	@Override
-	public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
-		handleUpdateTag(this.getLevel().getBlockState(pkt.getPos()), pkt.getTag());
-	}
 	
 	@Override
 	public String getOwnerUuid() {
