@@ -23,23 +23,26 @@ public class Config extends AbstractConfig {
 	protected static final ForgeConfigSpec.Builder CLIENT_BUILDER = new ForgeConfigSpec.Builder();
 	protected static final ForgeConfigSpec.Builder SERVER_BUILDER = new ForgeConfigSpec.Builder();
 	public static ForgeConfigSpec COMMON_CONFIG;
+	public static ForgeConfigSpec CLIENT_CONFIG;
 	public static ForgeConfigSpec SERVER_CONFIG;
 
 	private static IMod mod;
 
 	public static final Mod MOD;
 	public static final Logging LOGGING;
+	public static final Gui GUI;
 	public static final General GENERAL;
 	public static final Protection PROTECTION;
 	
 	static {
 		MOD = new Mod(COMMON_BUILDER);
 		LOGGING = new Logging(COMMON_BUILDER);
-				
+		GUI = new Gui(CLIENT_BUILDER);
 		GENERAL = new General(SERVER_BUILDER);
 		PROTECTION = new Protection(SERVER_BUILDER);
 		
 		COMMON_CONFIG = COMMON_BUILDER.build();
+		CLIENT_CONFIG = CLIENT_BUILDER.build();
 		SERVER_CONFIG = SERVER_BUILDER.build();
 		
 		Config.init();
@@ -57,6 +60,21 @@ public class Config extends AbstractConfig {
 		Config.GENERAL.init();
 	}
 
+	/*
+	 * 
+	 */
+	public static class Gui {
+		public BooleanValue enableProtectionMessage;
+		
+		public Gui(final ForgeConfigSpec.Builder builder) {
+			builder.comment(CATEGORY_DIV, " Client GUI properties for Protect It  mod.", CATEGORY_DIV).push("GUI");
+			enableProtectionMessage = builder
+					.comment(" Enables protection message in chat. If enabled, when protection is triggered, a message will display in the chat.")
+					.define("Protection messages in chat:", false);
+			builder.pop();
+		}		
+	}
+	
 	/**
 	 * 
 	 * @author Mark Gottschling on Nov 3, 2021
@@ -65,16 +83,22 @@ public class Config extends AbstractConfig {
 	public static class General {
 		public IntValue giveCommandLevel;
 		public IntValue claimsPerPlayer;
+		public IntValue opsPermissionLevel;
 		
 		General(final ForgeConfigSpec.Builder builder) {
 			builder.comment(CATEGORY_DIV, " General properties for Protect It  mod.", CATEGORY_DIV).push(GENERAL_CATEGORY);
 			
 			giveCommandLevel = builder
 					.comment("The access level required for the 'give' command.")
-					.defineInRange("'give' command level:", 0, 0, 4);
+					.defineInRange("'give' command level:", 2, 0, 4);
 			claimsPerPlayer = builder
 					.comment(" The number of claims each player can place per world.")
 					.defineInRange("Number of claims per player:", 5, 1, 100);
+			opsPermissionLevel = builder
+					.comment(" The permission level required to be Ops within Protect It.","This is not the op-permission-level that is set in the server.propeties.",
+							"This allows players who are not server-level ops, to have Protect It Ops permissions. ie protections don't protect against Ops.",
+							"Ex. server-level ops = 4, but Protect It ops = 3 - a player with permission 3 would be considered an Ops within Protect It.")
+					.defineInRange("Ops permission level:", 4, 0, 4);
 			
 			builder.pop();
 		}
