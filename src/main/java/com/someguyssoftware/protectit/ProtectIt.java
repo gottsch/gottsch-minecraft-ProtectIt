@@ -35,18 +35,14 @@ import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.BlockItem;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
-import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
@@ -66,7 +62,6 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.network.PacketDistributor;
 
 /**
@@ -80,7 +75,7 @@ import net.minecraftforge.fml.network.PacketDistributor;
 		name =  ProtectIt.NAME, 
 		version =  ProtectIt.VERSION, 
 		minecraftVersion = "1.16.5", 
-		forgeVersion = "36.2.0",
+		forgeVersion = "36.2.34",
 		updateJsonUrl = "")
 @Credits(values = { "ProtectIt was first developed by Mark Gottschling on Sep 15, 2021."})
 public class ProtectIt implements IMod {
@@ -90,7 +85,7 @@ public class ProtectIt implements IMod {
 	// constants
 	public static final String MODID = "protectit";
 	public static final String NAME = "Protect It";
-	protected static final String VERSION = "2.1.0";
+	protected static final String VERSION = "2.4.0";
 
 	public static ProtectIt instance;
 	private static Config config;
@@ -102,11 +97,9 @@ public class ProtectIt implements IMod {
 		ProtectIt.instance = this;
 		ProtectIt.config = new Config(this);
 
+		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_CONFIG);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
-
-		Config.loadConfig(Config.COMMON_CONFIG, FMLPaths.CONFIGDIR.get().resolve("protectit-common.toml"));
-		Config.loadConfig(Config.SERVER_CONFIG, FMLPaths.CONFIGDIR.get().resolve("protectit-server.toml"));
 
 		// Register ourselves for server and other game events we are interested in
 		MinecraftForge.EVENT_BUS.register(this);
@@ -125,7 +118,7 @@ public class ProtectIt implements IMod {
 	 * @param player
 	 */
 	private void sendProtectedMessage(IWorld world, PlayerEntity player) {
-		if (!world.isClientSide()) {
+		if (world.isClientSide() && Config.GUI.enableProtectionMessage.get()) {
 			player.sendMessage((new TranslationTextComponent("message.protectit.block_protected").withStyle(new TextFormatting[]{TextFormatting.GRAY, TextFormatting.ITALIC})), player.getUUID());
 		}
 	}
@@ -161,24 +154,30 @@ public class ProtectIt implements IMod {
 		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 		// prevent protected blocks from breaking
 		if (Config.PROTECTION.enableBlockBreakEvent.get()
+				&& !event.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())
 				&& ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
-			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			event.setCanceled(true);
+			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
 	}
 
 	@SubscribeEvent
 	public void onBlockPlace(final EntityPlaceEvent event) {
-		if (!Config.PROTECTION.enableEntityPlaceEvent.get()) {
+		if (!Config.PROTECTION.enableEntityPlaceEvent.get()
+				|| event.getEntity().hasPermissions(Config.GENERAL.opsPermissionLevel.get()) ) {
 			return;
 		}
-		
+
 		// prevent protected blocks from placing
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
-				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+				if (!event.getWorld().isClientSide()) {
+					// TODO remove
+					LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+				}
 			}
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
@@ -188,14 +187,16 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onMutliBlockPlace(final EntityMultiPlaceEvent event) {
-		if (!Config.PROTECTION.enableEntityMultiPlaceEvent.get()) {
+		if (!Config.PROTECTION.enableEntityMultiPlaceEvent.get()
+				|| event.getEntity().hasPermissions(Config.GENERAL.opsPermissionLevel.get()) ) {
 			return;
 		}
-		
+
 		// prevent protected blocks from breaking
 		if (event.getEntity() instanceof PlayerEntity) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
+				LOGGER.debug("denied multi-block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 			}
 		}
@@ -206,9 +207,12 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onToolInteract(final BlockToolInteractEvent event) {
-		// prevent protected blocks from breaking
-		if (Config.PROTECTION.enableBlockToolInteractEvent.get()
-				&& ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+		if (!Config.PROTECTION.enableBlockToolInteractEvent.get()
+				|| event.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
+			return;
+		}
+
+		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
 			sendProtectedMessage(event.getWorld(), event.getPlayer());
 		}
@@ -216,20 +220,23 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onPlayerInteract(final PlayerInteractEvent.RightClickBlock event) {
-		if (!Config.PROTECTION.enableRightClickBlockEvent.get()) {
+		if (!Config.PROTECTION.enableRightClickBlockEvent.get()
+				|| event.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
 			return;
 		}
-		
+
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
 		if (event.getEntity() instanceof PlayerEntity) {
+
 			// get the item in the player's hand
-			if (event.getHand() == Hand.MAIN_HAND && event.getItemStack().getItem() instanceof BlockItem) {
-				if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
-					event.setCanceled(true);
+			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
+				event.setCanceled(true);
+				LOGGER.debug("denied right click -> {} @ {} w/ hand -> {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
+				if (event.getHand() == Hand.MAIN_HAND) {
 					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
 				}
-				// TODO check if Claim Lectern and if one already exists in claim?
 			}
+			// TODO check if Claim Lectern and if one already exists in claim?
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
@@ -238,14 +245,7 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent
 	public void onLivingDestroyBlock(final LivingDestroyBlockEvent event) {
-		// prevent protected blocks from breaking from mob action
-		//		if (event.getEntity() instanceof PlayerEntity) {
-		//			if (ProtectionRegistries.getRegistry().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
-		//				event.setCanceled(true);
-		//				sendProtectedMessage((PlayerEntity) event.getEntity());
-		//			}	
-		//		}
-		//		else
+		// prevent protected blocks from breaking by mob action
 		if (Config.PROTECTION.enableLivingDestroyBlockEvent.get()
 				&& ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
@@ -257,7 +257,7 @@ public class ProtectIt implements IMod {
 		if (!Config.PROTECTION.enablePistionEvent.get()) {
 			return;
 		}
-		
+
 		if (event.getDirection() == Direction.UP || event.getDirection() == Direction.DOWN) {
 			return;
 		}
