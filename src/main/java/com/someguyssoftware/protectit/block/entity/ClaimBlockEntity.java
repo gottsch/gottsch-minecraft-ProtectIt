@@ -17,52 +17,40 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.tileentity;
+package com.someguyssoftware.protectit.block.entity;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimBlock;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.math.AxisAlignedBB;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 /**
  * 
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickableTileEntity {
+public class ClaimBlockEntity extends AbstractClaimBlockEntity {
 	private static final int TICKS_PER_SECOND = 20;
 	private static final int FIVE_SECONDS = 5 * TICKS_PER_SECOND;
 	
 	/**
 	 * 
 	 */
-	public ClaimTileEntity() {
-		this(ProtectItTileEntities.CLAIM_TILE_ENTITY_TYPE);
-	}
-	
-	/**
-	 * 
-	 * @param type
-	 */
-	public ClaimTileEntity(TileEntityType<?> type) {
-		super(type);
+	public ClaimBlockEntity(BlockPos pos, BlockState state) {
+		super(ProtectItBlockEntities.CLAIM_TYPE.get(), pos, state);
 		setOverlaps(new ArrayList<>());
 	}
+
 
 	@Override
 	public void tick() {
@@ -82,29 +70,28 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 	 * 
 	 */
 	@Override
-	public CompoundNBT save(CompoundNBT nbt) {
-		super.save(nbt);
+	public void saveAdditional(CompoundTag nbt) {
+		super.saveAdditional(nbt);
 		//		ProtectIt.LOGGER.debug("saving overlap box -> {}", this);
 
 		if (StringUtils.isNotBlank(getOwnerUuid())) {
 			nbt.putString(OWNER_UUID, getOwnerUuid());
 		}
 
-		ListNBT list = new ListNBT();
+		ListTag list = new ListTag();
 		getOverlaps().forEach(box -> {
-			CompoundNBT element = new CompoundNBT();
+			CompoundTag element = new CompoundTag();
 			box.save(element);
 			list.add(element);
 		});
 		nbt.put(OVERLAPS, list);
-		return nbt;
 	}
 
 	/**
 	 * 
 	 */
 	@Override
-	public void load(BlockState state, CompoundNBT nbt) {
+	public void load(BlockState state, CompoundTag nbt) {
 		super.load(state, nbt);
 
 		if (nbt.contains(OWNER_UUID)) {
@@ -113,9 +100,9 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 
 		getOverlaps().clear();
 		if (nbt.contains(OVERLAPS)) {
-			ListNBT list = nbt.getList(OVERLAPS, 10);
+			ListTag list = nbt.getList(OVERLAPS, 10);
 			list.forEach(element -> {
-				Box box = Box.load((CompoundNBT)element);
+				Box box = Box.load((CompoundTag)element);
 				if (box != null) {
 					getOverlaps().add(box);
 				}
@@ -127,7 +114,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 	 * Get the render bounding box. Typical block is 1x1x1.
 	 */
 	@Override
-	public AxisAlignedBB getRenderBoundingBox() {
+	public AABB getRenderBoundingBox() {
 		// always render regardless if TE is in FOV.
 		return INFINITE_EXTENT_AABB;
 	}
@@ -136,9 +123,9 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 	 * collect data to send to client
 	 */
 	@Override
-	public CompoundNBT getUpdateTag() {
-		CompoundNBT nbt = new CompoundNBT();
-		save(nbt);
+	public CompoundTag getUpdateTag() {
+		CompoundTag nbt = new CompoundTag();
+		saveAdditional(nbt);
 		return nbt;
 	}
 	
@@ -146,7 +133,7 @@ public class ClaimTileEntity extends AbstractClaimTileEntity implements ITickabl
 	 * handle on client
 	 */
 	@Override
-	public void handleUpdateTag(BlockState state, CompoundNBT tag) {
+	public void handleUpdateTag(BlockState state, CompoundTag tag) {
 		load(state, tag);
 	}
 }

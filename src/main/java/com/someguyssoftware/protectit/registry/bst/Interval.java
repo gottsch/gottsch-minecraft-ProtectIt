@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -19,13 +19,14 @@
  */
 package com.someguyssoftware.protectit.registry.bst;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
+
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.nbt.CompoundNBT;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.nbt.CompoundTag;
+
 
 /**
  * 
@@ -38,7 +39,6 @@ public class Interval implements Comparable<Interval> {
 	private static final String MIN_KEY = "min";
 	private static final String MAX_KEY = "max";
 	private static final String DATA_KEY = "data";
-	
 
 	public static final Interval EMPTY = new Interval(new Coords(0, -255, 0), new Coords(0, -255, 0));
 	
@@ -132,11 +132,11 @@ public class Interval implements Comparable<Interval> {
 	 * 
 	 * @param nbt
 	 */
-	public void save(CompoundNBT nbt) {
+	public void save(CompoundTag nbt) {
 		ProtectIt.LOGGER.debug("saving interval -> {}", this);
 
-		CompoundNBT coordsNbt1 = new CompoundNBT();
-		CompoundNBT coordsNbt2 = new CompoundNBT();
+		CompoundTag coordsNbt1 = new CompoundTag();
+		CompoundTag coordsNbt2 = new CompoundTag();
 
 //		coordsNbt1 = saveCoords(coords1);
 //		coordsNbt2 = saveCoords(coords2);
@@ -150,20 +150,20 @@ public class Interval implements Comparable<Interval> {
 		nbt.putInt(MIN_KEY, min);
 		nbt.putInt(MAX_KEY, max);
 		
-		CompoundNBT dataNbt = new CompoundNBT();
+		CompoundTag dataNbt = new CompoundTag();
 //		dataNbt.putString("uuid", getData().getOwner().getUuid());
 //		dataNbt.putString("playerName", (getData().getOwner().getName() == null) ? "" : getData().getOwner().getName());		
 		getData().save(dataNbt);
 		nbt.put(DATA_KEY, dataNbt);
 		
 		if (getLeft() != null) {
-			CompoundNBT left = new CompoundNBT();
+			CompoundTag left = new CompoundTag();
 			getLeft().save(left);
 			nbt.put(LEFT_KEY, left);
 		}
 
 		if (getRight() != null) {
-			CompoundNBT right = new CompoundNBT();
+			CompoundTag right = new CompoundTag();
 			getRight().save(right);
 			nbt.put(RIGHT_KEY, right);
 		}
@@ -174,13 +174,13 @@ public class Interval implements Comparable<Interval> {
 	 * @param nbt
 	 * @return
 	 */
-	public static Interval load(CompoundNBT nbt) {
+	public static Interval load(CompoundTag nbt) {
 		Interval interval;
 		ICoords c1;
 		ICoords c2;
 		if (nbt.contains("coords1")) {
 //			c1 = loadCoords(nbt, "coords1");
-			c1 = WorldInfo.EMPTY_COORDS.load(nbt.getCompound("coords1"));
+			c1 = Coords.EMPTY.load(nbt.getCompound("coords1"));
 		}
 		else {
 			return Interval.EMPTY;
@@ -188,7 +188,7 @@ public class Interval implements Comparable<Interval> {
 		
 		if (nbt.contains("coords2")) {
 //			c2 = loadCoords(nbt, "coords2");
-			c2 = WorldInfo.EMPTY_COORDS.load(nbt.getCompound("coords2"));
+			c2 = Coords.EMPTY.load(nbt.getCompound("coords2"));
 		}
 		else {
 			return Interval.EMPTY;
@@ -203,7 +203,7 @@ public class Interval implements Comparable<Interval> {
 		}
 		
 		if (nbt.contains(DATA_KEY)) {
-			CompoundNBT dataNbt = (CompoundNBT) nbt.get(DATA_KEY);
+			CompoundTag dataNbt = (CompoundTag) nbt.get(DATA_KEY);
 //			if (dataNbt.contains("uuid")) {
 //				interval.getData().getOwner().setUuid(dataNbt.getString("uuid"));
 //			}
@@ -214,14 +214,14 @@ public class Interval implements Comparable<Interval> {
 		}
 		
 		if (nbt.contains(LEFT_KEY)) {
-			Interval left = Interval.load((CompoundNBT) nbt.get(LEFT_KEY));
+			Interval left = Interval.load((CompoundTag) nbt.get(LEFT_KEY));
 			if (!left.equals(Interval.EMPTY)) {
 				interval.setLeft(left);
 			}
 		}
 		
 		if (nbt.contains(RIGHT_KEY)) {
-			Interval right = Interval.load((CompoundNBT) nbt.get(RIGHT_KEY));
+			Interval right = Interval.load((CompoundTag) nbt.get(RIGHT_KEY));
 			if (!right.equals(Interval.EMPTY)) {
 				interval.setRight(right);
 			}			

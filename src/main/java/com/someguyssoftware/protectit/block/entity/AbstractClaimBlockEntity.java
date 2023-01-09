@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,24 +17,28 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.tileentity;
+package com.someguyssoftware.protectit.block.entity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
+import javax.annotation.Nullable;
 
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.TileEntityType;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * 
  * @author Mark Gottschling on Oct 30, 2021
  *
  */
-public abstract class AbstractClaimTileEntity extends AbstractModTileEntity implements IClaimTileEntity {
+public abstract class AbstractClaimBlockEntity extends BlockEntity implements IClaimBlockEntity {
 	protected static final String OWNER_UUID = "owner_uuid";
 	protected static final String OVERLAPS = "overlaps";	
 	
@@ -45,16 +49,39 @@ public abstract class AbstractClaimTileEntity extends AbstractModTileEntity impl
 	 * 
 	 * @param type
 	 */
-	public AbstractClaimTileEntity(TileEntityType<?> type) {
-		super(type);
+	public AbstractClaimBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
 	}
 
+	abstract public void tick();
+	
 	/**
-	 * NOTE this method is wrong in GottschCore v.1.4.0.
+	 * Sync client and server states
 	 */
 	@Override
-	public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
-		handleUpdateTag(this.getLevel().getBlockState(pkt.getPos()), pkt.getTag());
+	public CompoundTag getUpdateTag() {
+		CompoundTag tag = super.getUpdateTag();
+		saveAdditional(tag);
+		return tag;
+	}
+
+	@Override
+	public void handleUpdateTag(CompoundTag tag) {
+		if (tag != null) {
+			load(tag);
+		}
+	}
+
+	@Nullable
+	@Override
+	public ClientboundBlockEntityDataPacket getUpdatePacket() {
+		return ClientboundBlockEntityDataPacket.create(this);
+	}
+
+	@Override
+	public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+		CompoundTag tag = pkt.getTag();
+		handleUpdateTag(tag);
 	}
 	
 	@Override

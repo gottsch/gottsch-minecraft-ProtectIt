@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -19,7 +19,7 @@
  */
 package com.someguyssoftware.protectit.registry;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * 
@@ -49,23 +49,23 @@ public class PlayerData {
 		setName(name);
 	}
 	
-	public CompoundNBT save() {
-		CompoundNBT nbt = new CompoundNBT();
+	public CompoundTag save() {
+		CompoundTag nbt = new CompoundTag();
 		save(nbt);
 		return nbt;
 	}
 	
-	public void save(CompoundNBT nbt) {
-		nbt.putString("uuid", getUuid());
-		nbt.putString("name", (getName() == null) ? "" : getName());
+	public void save(CompoundTag tag) {
+		tag.putString("uuid", getUuid());
+		tag.putString("name", (getName() == null) ? "" : getName());
 	}
 	
-	public PlayerData load(CompoundNBT nbt) {
-		if (nbt.contains("uuid")) {
-			setUuid(nbt.getString("uuid"));
+	public PlayerData load(CompoundTag tag) {
+		if (tag.contains("uuid")) {
+			setUuid(tag.getString("uuid"));
 		}
-		if (nbt.contains("name")) {
-			setName(nbt.getString("name"));
+		if (tag.contains("name")) {
+			setName(tag.getString("name"));
 		}
 		return this;
 	}

@@ -27,9 +27,6 @@ import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.electronwill.nightconfig.core.CommentedConfig.Entry;
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.bst.IdentifierData;
@@ -37,8 +34,10 @@ import com.someguyssoftware.protectit.registry.bst.Interval;
 import com.someguyssoftware.protectit.registry.bst.OwnershipData;
 import com.someguyssoftware.protectit.registry.bst.ProtectedIntervalTree;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 
 /**
  * 
@@ -408,13 +407,13 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * @param nbt
 	 * @return
 	 */
-	public synchronized CompoundNBT save(CompoundNBT nbt) {
+	public synchronized CompoundTag save(CompoundTag nbt) {
 		ProtectIt.LOGGER.info("saving registry...");
 
-		ListNBT list = new ListNBT();
+		ListTag list = new ListTag();
 		CLAIMS_BY_COORDS.forEach((coords, claim) -> {
 //			ProtectIt.LOGGER.info("registry saving claim -> {}", claim);
-			CompoundNBT claimNbt = new CompoundNBT();
+			CompoundTag claimNbt = new CompoundTag();
 			claim.save(claimNbt);
 			list.add(claimNbt);
 		});
@@ -426,17 +425,17 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	/**
 	 * 
 	 */
-	public synchronized void load(CompoundNBT nbt) {
+	public synchronized void load(CompoundTag nbt) {
 		ProtectIt.LOGGER.debug("loading registry...");
 		clear();
 
 		//tree.load(nbt);
 
 		if (nbt.contains(CLAIMS_KEY)) {
-			ListNBT list = nbt.getList(CLAIMS_KEY, 10);
+			ListTag list = nbt.getList(CLAIMS_KEY, 10);
 			list.forEach(element -> {
-//			for (CompoundNBT compound : list.listIterator().
-				Claim claim = new Claim().load((CompoundNBT)element);
+//			for (CompoundTag compound : list.listIterator().
+				Claim claim = new Claim().load((CompoundTag)element);
 //				ProtectIt.LOGGER.debug("loaded claim -> {}", claim);
 				CLAIMS_BY_COORDS.put(claim.getCoords(), claim);
 //				ProtectIt.LOGGER.debug("coords mapped claim -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));

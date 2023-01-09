@@ -26,11 +26,11 @@ import javax.annotation.Nullable;
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.entity.ClaimLecternBlockEntity;
+import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimLecternTileEntity;
-import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -80,10 +80,10 @@ public class ClaimLectern extends LecternBlock {
 	@Override
 	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
 		ProtectIt.LOGGER.info("creating new ClaimLecternTileEntity...");
-		ClaimLecternTileEntity tileEntity = null;
+		ClaimLecternBlockEntity tileEntity = null;
 		//		TestTE tileEntity = null;
 		try {
-			tileEntity = new ClaimLecternTileEntity();
+			tileEntity = new ClaimLecternBlockEntity();
 			//			tileEntity = new TestTE();
 		}
 		catch(Exception e) {
@@ -107,14 +107,14 @@ public class ClaimLectern extends LecternBlock {
 	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
 		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
-		if (tileEntity instanceof ClaimLecternTileEntity) {
+		if (tileEntity instanceof ClaimLecternBlockEntity) {
 			// get the claim for this position
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			ProtectIt.LOGGER.debug("found claim list -> {}", list);
 			if (!list.isEmpty()) {
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.debug("found claim -> {}", claim);
-				((ClaimLecternTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+				((ClaimLecternBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}
 		}
 	}
@@ -164,9 +164,9 @@ public class ClaimLectern extends LecternBlock {
 				// test if the player is the owner
 				TileEntity tileEntity = world.getBlockEntity(pos);
 				
-				if (tileEntity instanceof ClaimLecternTileEntity) {
+				if (tileEntity instanceof ClaimLecternBlockEntity) {
 					ProtectIt.LOGGER.debug("it is a claim lectern TE");
-					ClaimLecternTileEntity lecternTileEntity = (ClaimLecternTileEntity)tileEntity;
+					ClaimLecternBlockEntity lecternTileEntity = (ClaimLecternBlockEntity)tileEntity;
 					ProtectIt.LOGGER.debug("claim coords -> {}", lecternTileEntity.getClaimCoords());
 					Claim lecternClaim = ProtectionRegistries.block().getClaimByCoords(lecternTileEntity.getClaimCoords());
 					ProtectIt.LOGGER.debug("lectern claim -> {}", lecternClaim);
@@ -200,8 +200,8 @@ public class ClaimLectern extends LecternBlock {
 		ProtectIt.LOGGER.debug("placing book");
 		TileEntity tileEntity = world.getBlockEntity(pos);
 		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
-		if (tileEntity instanceof ClaimLecternTileEntity) {
-			ClaimLecternTileEntity lecternTileEntity = (ClaimLecternTileEntity)tileEntity;
+		if (tileEntity instanceof ClaimLecternBlockEntity) {
+			ClaimLecternBlockEntity lecternTileEntity = (ClaimLecternBlockEntity)tileEntity;
 			ProtectIt.LOGGER.debug("settings the book.");
 			lecternTileEntity.setBook(itemStack.split(1));
 			// update the block state
@@ -236,9 +236,9 @@ public class ClaimLectern extends LecternBlock {
 	private void openScreen(World world, BlockPos pos, PlayerEntity player) {
 		ProtectIt.LOGGER.debug("opening screen");
 		TileEntity tileentity = world.getBlockEntity(pos);
-		if (tileentity instanceof ClaimLecternTileEntity) {
+		if (tileentity instanceof ClaimLecternBlockEntity) {
 			ProtectIt.LOGGER.debug("it is a CLTE");
-			player.openMenu((ClaimLecternTileEntity)tileentity);
+			player.openMenu((ClaimLecternBlockEntity)tileentity);
 		}
 	}
 }

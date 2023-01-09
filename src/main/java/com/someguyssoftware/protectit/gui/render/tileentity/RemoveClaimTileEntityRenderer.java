@@ -24,9 +24,9 @@ import java.awt.Color;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -51,7 +51,7 @@ public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer 
 	}
 
 	@Override
-	public void render(ClaimLeverTileEntity tileEntity, float partialTicks, MatrixStack matrixStack,
+	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
 			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
 		BlockPos pos = tileEntity.getBlockPos();	

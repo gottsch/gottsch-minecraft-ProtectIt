@@ -25,7 +25,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.protectit.tileentity.AbstractClaimTileEntity;
+import com.someguyssoftware.protectit.block.entity.AbstractClaimBlockEntity;
 
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
@@ -151,7 +151,7 @@ public interface IClaimRenderer {
 	 * @param blue
 	 * @param alpha
 	 */
-	default public void renderOverlap(AbstractClaimTileEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
+	default public void renderOverlap(AbstractClaimBlockEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
 			Box overlapBox, float red, float green, float blue, float alpha) {
 		// calculate render pos -> delta of b & pos
 		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());

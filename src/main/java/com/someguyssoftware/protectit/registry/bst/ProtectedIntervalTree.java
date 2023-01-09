@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 // NOTE this is currently not a balanced Binary Search Tree
 public class ProtectedIntervalTree {
@@ -402,24 +402,24 @@ public class ProtectedIntervalTree {
 
 	/**
 	 * 
-	 * @param nbt
+	 * @param tag
 	 * @param interval
 	 * @return
 	 */
-	public synchronized CompoundNBT save(CompoundNBT nbt) {
+	public synchronized CompoundTag save(CompoundTag tag) {
 		if (getRoot() == null) {
-			return nbt;
+			return tag;
 		}
-		getRoot().save(nbt);	        	        
-		return nbt;
+		getRoot().save(tag);	        	        
+		return tag;
 	}
 
 	/**
 	 * 
-	 * @param nbt
+	 * @param tag
 	 */
-	public synchronized void load(CompoundNBT nbt) {
-		Interval root = Interval.load(nbt);
+	public synchronized void load(CompoundTag tag) {
+		Interval root = Interval.load(tag);
 		if (!root.equals(Interval.EMPTY)) {
 			setRoot(root);
 		}

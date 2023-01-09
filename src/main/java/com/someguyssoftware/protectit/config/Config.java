@@ -1,22 +1,39 @@
+/*
+ * This file is part of  Protect It.
+ * Copyright (c) 2022 Mark Gottschling (gottsch)
+ *
+ * Protect It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Protect It is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
 package com.someguyssoftware.protectit.config;
 
-import com.someguyssoftware.gottschcore.config.AbstractConfig;
-import com.someguyssoftware.gottschcore.mod.IMod;
 import com.someguyssoftware.protectit.ProtectIt;
 
+import mod.gottsch.forge.gottschcore.config.AbstractConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.config.ModConfig.Reloading;
-import net.minecraftforge.fml.loading.FMLPaths;
 
+/**
+ * 
+ * @author Mark Gottschling on Nov 28, 2022
+ *
+ */
 @EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class Config extends AbstractConfig {
-	public static final String GENERAL_CATEGORY = "03-general";
-	public static final String PROTECTION_CATEGORY = "04-protection";
+	public static final String GENERAL_CATEGORY = "general";
+	public static final String PROTECTION_CATEGORY = "protection";
 	public static final String UNDERLINE_DIV = "------------------------------";
 
 	protected static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
@@ -26,16 +43,12 @@ public class Config extends AbstractConfig {
 	public static ForgeConfigSpec CLIENT_CONFIG;
 	public static ForgeConfigSpec SERVER_CONFIG;
 
-	private static IMod mod;
-
-	public static final Mod MOD;
 	public static final Logging LOGGING;
 	public static final Gui GUI;
 	public static final General GENERAL;
 	public static final Protection PROTECTION;
 	
 	static {
-		MOD = new Mod(COMMON_BUILDER);
 		LOGGING = new Logging(COMMON_BUILDER);
 		GUI = new Gui(CLIENT_BUILDER);
 		GENERAL = new General(SERVER_BUILDER);
@@ -47,15 +60,7 @@ public class Config extends AbstractConfig {
 		
 		Config.init();
 	}
-	
-	/**
-	 * 
-	 * @param mod
-	 */
-	public Config(IMod mod) {
-		Config.mod = mod;
-	}
-	
+		
 	public static void init() {
 		Config.GENERAL.init();
 	}
@@ -160,69 +165,7 @@ public class Config extends AbstractConfig {
 			builder.pop();
 		}
 	}
-	
-	@SubscribeEvent
-	public static void onLoad(final ModConfig.Loading configEvent) {
-		Config.loadConfig(Config.COMMON_CONFIG,
-				FMLPaths.CONFIGDIR.get().resolve(mod.getId() + "-common.toml"));
-		Config.loadConfig(Config.SERVER_CONFIG,
-				FMLPaths.CONFIGDIR.get().resolve(mod.getId() + "-server.toml"));
-	}
 
-	@SubscribeEvent
-	public static void onReload(final Reloading configEvent) {
-	}
-
-	@Override
-	public boolean isEnableVersionChecker() {
-		return Config.MOD.enableVersionChecker.get();
-	}
-
-	@Override
-	public void setEnableVersionChecker(boolean enableVersionChecker) {
-		Config.MOD.enableVersionChecker.set(enableVersionChecker);
-	}
-
-	@Override
-	public boolean isLatestVersionReminder() {
-		return Config.MOD.latestVersionReminder.get();
-	}
-
-	@Override
-	public void setLatestVersionReminder(boolean latestVersionReminder) {
-		Config.MOD.latestVersionReminder.set(latestVersionReminder);
-	}
-
-	@Override
-	public boolean isModEnabled() {
-		return Config.MOD.enabled.get();
-	}
-
-	@Override
-	public void setModEnabled(boolean modEnabled) {
-		Config.MOD.enabled.set(modEnabled);
-	}
-
-	@Override
-	public String getModsFolder() {
-		return Config.MOD.folder.get();
-	}
-
-	@Override
-	public void setModsFolder(String modsFolder) {
-		Config.MOD.folder.set(modsFolder);
-	}
-
-	@Override
-	public String getConfigFolder() {
-		return Config.MOD.configFolder.get();
-	}
-
-	@Override
-	public void setConfigFolder(String configFolder) {
-		Config.MOD.configFolder.set(configFolder);
-	}
-	
 	@Override
 	public String getLogsFolder() {
 		return Config.LOGGING.folder.get();

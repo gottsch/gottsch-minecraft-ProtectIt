@@ -26,11 +26,11 @@ import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.network.ClaimLeverMessageToClient;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
@@ -98,9 +98,9 @@ public class ClaimLever extends LeverBlock {
 
 	@Override
 	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-		ClaimLeverTileEntity tileEntity = null;
+		ClaimLeverBlockEntity tileEntity = null;
 		try {
-			tileEntity = new ClaimLeverTileEntity();
+			tileEntity = new ClaimLeverBlockEntity();
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
@@ -166,8 +166,8 @@ public class ClaimLever extends LeverBlock {
 	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult hit) {
 		TileEntity tileEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
-		if (tileEntity instanceof ClaimLeverTileEntity) {
-			Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverTileEntity)tileEntity).getClaimCoords());
+		if (tileEntity instanceof ClaimLeverBlockEntity) {
+			Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
 			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
 					claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return ActionResultType.FAIL;
@@ -176,9 +176,9 @@ public class ClaimLever extends LeverBlock {
 			if (world.isClientSide) {
 				BlockState blockstate1 = state.cycle(POWERED);
 				if (blockstate1.getValue(POWERED)) {
-					if (((ClaimLeverTileEntity)tileEntity).getClaimCoords() == null) {
+					if (((ClaimLeverBlockEntity)tileEntity).getClaimCoords() == null) {
 						if (claim != null) {
-							((ClaimLeverTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+							((ClaimLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 						}
 					}
 					makeParticle(blockstate1, world, pos, 1.0F);
@@ -205,7 +205,7 @@ public class ClaimLever extends LeverBlock {
 	@Override
 	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
-		if (tileEntity instanceof ClaimLeverTileEntity) {
+		if (tileEntity instanceof ClaimLeverBlockEntity) {
 			// get the claim for this position
 //			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 //			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
@@ -214,7 +214,7 @@ public class ClaimLever extends LeverBlock {
 			if (!list.isEmpty()) {				
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 //				ProtectIt.LOGGER.debug("found claim -> {}", claim);
-				((ClaimLeverTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}
 		}
 		worldIn.markAndNotifyBlock(pos, null, state, state, 0, 0);

@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -22,10 +22,10 @@ package com.someguyssoftware.protectit.registry;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.nbt.CompoundTag;
 
-import net.minecraft.nbt.CompoundNBT;
 
 /**
  * 
@@ -94,13 +94,13 @@ public interface IProtectionRegistry {
 	 * load from an NBT
 	 * @param nbt
 	 */
-	public void load(CompoundNBT nbt);	
+	public void load(CompoundTag nbt);	
 	
 	/**
 	 * save to a NBT
 	 * @param nbt
 	 * @return
 	 */
-	public CompoundNBT save(CompoundNBT nbt);
+	public CompoundTag save(CompoundTag nbt);
 
 }

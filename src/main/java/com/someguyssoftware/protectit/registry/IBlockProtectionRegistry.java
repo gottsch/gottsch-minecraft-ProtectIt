@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -22,8 +22,9 @@ package com.someguyssoftware.protectit.registry;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.claim.Claim;
+
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
 
 /**
  * Protection Registry more specific to land claim ownership / block protections ie can't alter blocks in area unless you are the owner.

@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,22 +21,21 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
-import com.someguyssoftware.gottschcore.world.WorldInfo;
-import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
+import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * 
@@ -58,13 +57,13 @@ public class ClaimBlockItem extends BlockItem {
 	 * 
 	 */
 	@Override
-	protected boolean placeBlock(BlockItemUseContext context, BlockState state) {
+	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// gather the number of claims the player has
 		List<Claim> claims = ProtectionRegistries.block().getProtections(context.getPlayer().getStringUUID());
 		
 		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
 			if (WorldInfo.isServerSide(context.getLevel())) {
-				context.getPlayer().sendMessage(new TranslationTextComponent("message.protectit.max_claims_met"), context.getPlayer().getUUID());
+				context.getPlayer().sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), context.getPlayer().getUUID());
 			}
 			return false;
 		}
@@ -73,8 +72,8 @@ public class ClaimBlockItem extends BlockItem {
 	
 	@SuppressWarnings("deprecation")
 	@Override
-	public void appendHoverText(ItemStack stack, World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
-		tooltip.add(new TranslationTextComponent("tooltip.protectit.claim.howto").withStyle(TextFormatting.GREEN));		
+		tooltip.add(new TranslatableComponent("tooltip.protectit.claim.howto").withStyle(ChatFormatting.GREEN));		
 	}
 }

@@ -26,6 +26,9 @@ import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
+import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
+import com.someguyssoftware.protectit.block.entity.RemoveClaimBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
@@ -33,9 +36,6 @@ import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
-import com.someguyssoftware.protectit.tileentity.ClaimTileEntity;
-import com.someguyssoftware.protectit.tileentity.RemoveClaimTileEntity;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -70,9 +70,9 @@ public class RemoveClaimBlock extends ClaimBlock {
 
 	@Override
 	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-		RemoveClaimTileEntity tileEntity = null;
+		RemoveClaimBlockEntity tileEntity = null;
 		try {
-			tileEntity = new RemoveClaimTileEntity();
+			tileEntity = new RemoveClaimBlockEntity();
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
@@ -87,7 +87,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 	@Override
 	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		TileEntity tileEntity = worldIn.getBlockEntity(pos);
-		if (tileEntity instanceof RemoveClaimTileEntity) {
+		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get the claim for this position
 			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
@@ -97,7 +97,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 				ProtectIt.LOGGER.debug("found protection -> {}", claim);
 				if (claim != null) {
 					ProtectIt.LOGGER.debug("found claim -> {}", claim);
-					((RemoveClaimTileEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+					((RemoveClaimBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 				}
 			}
 		}
@@ -118,10 +118,10 @@ public class RemoveClaimBlock extends ClaimBlock {
 
 		// get the tile entity
 		TileEntity tileEntity = world.getBlockEntity(pos);
-		if (tileEntity instanceof RemoveClaimTileEntity) {
+		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
-			Claim claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimTileEntity)tileEntity).getClaimCoords());
+			Claim claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
 				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_not_protected_or_owner"), player.getUUID());
 				return ActionResultType.SUCCESS;

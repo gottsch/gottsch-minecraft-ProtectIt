@@ -22,65 +22,53 @@ package com.someguyssoftware.protectit.persistence;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.storage.DimensionSavedDataManager;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
 
 /**
  * 
  * @author Mark Gottschling on Sep 15, 2021
  *
  */
-public class ProtectItSavedData extends WorldSavedData {
+public class ProtectItSavedData extends SavedData {
 
-	public static final String GEN_DATA_KEY = ProtectIt.MODID + ":generationData";
 	private static final String PROTECT_IT = ProtectIt.MODID;
 	private static final String PROTECTION_REGISTRY = "protectionRegistry";
 	
-	public ProtectItSavedData() {
-		super(GEN_DATA_KEY);
-	}
-	
-	public ProtectItSavedData(String key) {
-		super(key);
+	/**
+	 * 
+	 * @return
+	 */
+	public static ProtectItSavedData create() {
+		return new ProtectItSavedData();
 	}
 
-	@Override
-	public void load(CompoundNBT nbt) {
+	public static ProtectItSavedData load(CompoundTag tag) {
 		ProtectIt.LOGGER.info("world data loading...");
-		CompoundNBT protectIt = nbt.getCompound(PROTECT_IT);
-		if (protectIt.contains(PROTECTION_REGISTRY)) {
-//			ProtectionRegistry.load(protectIt.getCompound(PROTECTION_REGISTRY));
-			ProtectionRegistries.block().load(protectIt.getCompound(PROTECTION_REGISTRY));
+		if (tag.contains(PROTECTION_REGISTRY)) {
+			ProtectionRegistries.block().load(tag.getCompound(PROTECTION_REGISTRY));
 		}
+		return create();
 	}
 
 	@Override
-	public CompoundNBT save(CompoundNBT nbt) {
+	public CompoundTag save(CompoundTag tag) {
 		ProtectIt.LOGGER.info("world data saving...");
-		// create a treasure compound			
-		CompoundNBT protectIt = new CompoundNBT();
-		nbt.put(PROTECT_IT, protectIt);
-//		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistry.save(new CompoundNBT()));
-		protectIt.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundNBT()));
-		// TODO save pvp registry
-		return nbt;
+		tag.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundTag()));
+		return tag;
 	}
 	
 	/**
 	 * @param world
 	 * @return
 	 */
-	public static ProtectItSavedData get(IWorld world) {
-		DimensionSavedDataManager storage = ((ServerWorld)world).getDataStorage();
-		ProtectItSavedData data = (ProtectItSavedData) storage.computeIfAbsent(ProtectItSavedData::new, GEN_DATA_KEY);
-		
-		if (data == null) {
-			data = new ProtectItSavedData();
-			storage.set(data);
-		}
+	public static ProtectItSavedData get(Level world) {
+		DimensionDataStorage storage = ((ServerLevel)world).getDataStorage();
+		ProtectItSavedData data = (ProtectItSavedData) storage.computeIfAbsent(
+				ProtectItSavedData::load, ProtectItSavedData::create, PROTECT_IT);
 		return data;
 	}
 }

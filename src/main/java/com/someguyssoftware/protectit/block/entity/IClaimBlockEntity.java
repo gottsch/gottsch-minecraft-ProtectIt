@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,18 +17,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.tileentity;
+package com.someguyssoftware.protectit.block.entity;
 
 import java.util.List;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Box;
 
 /**
  * 
  * @author Mark Gottschling on Oct 30, 2021
  *
  */
-public interface IClaimTileEntity {
+public interface IClaimBlockEntity {
 
 	String getOwnerUuid();
 

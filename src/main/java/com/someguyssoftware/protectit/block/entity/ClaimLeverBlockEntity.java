@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.tileentity;
+package com.someguyssoftware.protectit.block.entity;
 
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
@@ -34,16 +34,16 @@ import net.minecraft.util.math.AxisAlignedBB;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverTileEntity extends AbstractModTileEntity {
+public class ClaimLeverBlockEntity extends AbstractModTileEntity {
 	private static final String CLAIM_COORDS_TAG = "claimCoords";
 
 	private ICoords claimCoords;
 	
-	public ClaimLeverTileEntity() {
-		this(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE);
+	public ClaimLeverBlockEntity() {
+		this(ProtectItBlockEntities.CLAIM_LEVER_TYPE);
 	}
 
-	public ClaimLeverTileEntity(TileEntityType<?> type) {
+	public ClaimLeverBlockEntity(TileEntityType<?> type) {
 		super(type);
 	}
 	

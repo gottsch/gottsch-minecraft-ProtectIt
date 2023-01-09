@@ -21,13 +21,13 @@ package com.someguyssoftware.protectit.gui;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
 import com.someguyssoftware.protectit.gui.render.tileentity.ClaimLecternTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.render.tileentity.ClaimLeverTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.render.tileentity.ClaimTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.render.tileentity.RemoveClaimTileEntityRenderer;
 import com.someguyssoftware.protectit.gui.screen.ClaimLecternScreen;
 import com.someguyssoftware.protectit.inventory.ProtectItContainers;
-import com.someguyssoftware.protectit.tileentity.ProtectItTileEntities;
 
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.client.renderer.RenderType;
@@ -62,10 +62,10 @@ public class ProtectItGuis {
 			ScreenManager.register(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE, ClaimLecternScreen::new);
 			
 			// register the custom renderer for our tile entity
-			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_TILE_ENTITY_TYPE, ClaimTileEntityRenderer::new);
-			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.REMOVE_CLAIM_TILE_ENTITY_TYPE, RemoveClaimTileEntityRenderer::new);
-			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_LEVER_TILE_ENTITY_TYPE, ClaimLeverTileEntityRenderer::new);
-			ClientRegistry.bindTileEntityRenderer(ProtectItTileEntities.CLAIM_LECTERN_TILE_ENTITY_TYPE, ClaimLecternTileEntityRenderer::new);
+			ClientRegistry.bindTileEntityRenderer(ProtectItBlockEntities.CLAIM_TYPE, ClaimTileEntityRenderer::new);
+			ClientRegistry.bindTileEntityRenderer(ProtectItBlockEntities.REMOVE_CLAIM_TYPE, RemoveClaimTileEntityRenderer::new);
+			ClientRegistry.bindTileEntityRenderer(ProtectItBlockEntities.CLAIM_LEVER_TYPE, ClaimLeverTileEntityRenderer::new);
+			ClientRegistry.bindTileEntityRenderer(ProtectItBlockEntities.CLAIM_LECTERN_TYPE, ClaimLecternTileEntityRenderer::new);
 
 		}
 		

@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -22,12 +22,6 @@ package com.someguyssoftware.protectit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.someguyssoftware.gottschcore.annotation.Credits;
-import com.someguyssoftware.gottschcore.annotation.ModInfo;
-import com.someguyssoftware.gottschcore.config.IConfig;
-import com.someguyssoftware.gottschcore.mod.IMod;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.init.ProtectItSetup;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
@@ -35,14 +29,16 @@ import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.World;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
@@ -62,7 +58,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * 
@@ -70,15 +66,8 @@ import net.minecraftforge.fml.network.PacketDistributor;
  *
  */
 @Mod(value = ProtectIt.MODID)
-@ModInfo(
-		modid =  ProtectIt.MODID, 
-		name =  ProtectIt.NAME, 
-		version =  ProtectIt.VERSION, 
-		minecraftVersion = "1.16.5", 
-		forgeVersion = "36.2.34",
-		updateJsonUrl = "")
-@Credits(values = { "ProtectIt was first developed by Mark Gottschling on Sep 15, 2021."})
-public class ProtectIt implements IMod {
+
+public class ProtectIt {
 	// logger
 	public static Logger LOGGER = LogManager.getLogger(ProtectIt.NAME);
 
@@ -95,7 +84,7 @@ public class ProtectIt implements IMod {
 	 */
 	public ProtectIt() {
 		ProtectIt.instance = this;
-		ProtectIt.config = new Config(this);
+		ProtectIt.config = new Config();
 
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_CONFIG);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
@@ -117,16 +106,16 @@ public class ProtectIt implements IMod {
 	 * @param world 
 	 * @param player
 	 */
-	private void sendProtectedMessage(IWorld world, PlayerEntity player) {
+	private void sendProtectedMessage(LevelAccessor world, Player player) {
 		if (world.isClientSide() && Config.GUI.enableProtectionMessage.get()) {
-			player.sendMessage((new TranslationTextComponent("message.protectit.block_protected").withStyle(new TextFormatting[]{TextFormatting.GRAY, TextFormatting.ITALIC})), player.getUUID());
+			player.sendMessage((new TranslatableComponent("message.protectit.block_protected").withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC})), player.getUUID());
 		}
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(WorldEvent.Load event) {
 		if (!event.getWorld().isClientSide()) {
-			World world = (World) event.getWorld();
+			Level world = (Level) event.getWorld();
 			ProtectIt.LOGGER.debug("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
 			if (WorldInfo.isSurfaceWorld(world)) {
 				LOGGER.debug("loading Protect It data...");
@@ -138,7 +127,7 @@ public class ProtectIt implements IMod {
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public void onWorldLoad(PlayerLoggedInEvent event) {
-		ServerPlayerEntity player = (ServerPlayerEntity) event.getPlayer();
+		ServerPlayer player = (ServerPlayer) event.getPlayer();
 		if(player.getServer().isDedicatedServer()) {
 			LOGGER.debug("player logged in -> {}, sending registry data...", player.getDisplayName().getString());
 			// TODO will need two different message types now - block & pvp
@@ -170,13 +159,13 @@ public class ProtectIt implements IMod {
 		}
 
 		// prevent protected blocks from placing
-		if (event.getEntity() instanceof PlayerEntity) {
+		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
 				if (!event.getWorld().isClientSide()) {
 					// TODO remove
 					LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
-					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+					sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 				}
 			}
 		}
@@ -193,11 +182,11 @@ public class ProtectIt implements IMod {
 		}
 
 		// prevent protected blocks from breaking
-		if (event.getEntity() instanceof PlayerEntity) {
+		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
 				LOGGER.debug("denied multi-block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
-				sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+				sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 			}
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
@@ -226,14 +215,14 @@ public class ProtectIt implements IMod {
 		}
 
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
-		if (event.getEntity() instanceof PlayerEntity) {
+		if (event.getEntity() instanceof Player) {
 
 			// get the item in the player's hand
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 				event.setCanceled(true);
 				LOGGER.debug("denied right click -> {} @ {} w/ hand -> {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
-				if (event.getHand() == Hand.MAIN_HAND) {
-					sendProtectedMessage(event.getWorld(), (PlayerEntity) event.getEntity());
+				if (event.getHand() == InteractionHand.MAIN_HAND) {
+					sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 				}
 			}
 			// TODO check if Claim Lectern and if one already exists in claim?
@@ -318,20 +307,4 @@ public class ProtectIt implements IMod {
 					&& ProtectionRegistries.block().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
 		});
 	}
-
-	@Override
-	public IMod getInstance() {
-		return ProtectIt.instance;
-	}
-
-	@Override
-	public String getId() {
-		return ProtectIt.MODID;
-	}
-
-	@Override
-	public IConfig getConfig() {
-		return ProtectIt.config;
-	}
-
 }

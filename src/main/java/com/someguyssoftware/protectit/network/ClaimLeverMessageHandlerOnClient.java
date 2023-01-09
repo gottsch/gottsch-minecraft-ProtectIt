@@ -24,11 +24,11 @@ import java.util.function.Supplier;
 
 import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tileentity.TileEntity;
@@ -92,8 +92,8 @@ public class ClaimLeverMessageHandlerOnClient {
 			}
 			TileEntity tileEntity = worldClient.getBlockEntity(message.getCoords().toPos());
 			ProtectIt.LOGGER.debug("tileEntity -> {}", tileEntity.getClass().getSimpleName());
-			if (tileEntity instanceof ClaimLeverTileEntity) {
-				((ClaimLeverTileEntity)tileEntity).setClaimCoords(message.getClaimCoords());
+			if (tileEntity instanceof ClaimLeverBlockEntity) {
+				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(message.getClaimCoords());
 				ProtectIt.LOGGER.debug("set the TE claim coords -> {}", message.getClaimCoords());
 			}
 		}			

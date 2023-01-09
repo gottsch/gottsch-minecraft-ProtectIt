@@ -17,19 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.tileentity;
+package com.someguyssoftware.protectit.block.entity;
 
 /**
  * 
  * @author Mark Gottschling on Dec 2, 2021
  *
  */
-public class RemoveClaimTileEntity extends ClaimLeverTileEntity {
+public class RemoveClaimBlockEntity extends ClaimLeverBlockEntity {
 	
 	/**
 	 * 
 	 */
-	public RemoveClaimTileEntity() {
-		super(ProtectItTileEntities.REMOVE_CLAIM_TILE_ENTITY_TYPE);
+	public RemoveClaimBlockEntity() {
+		super(ProtectItBlockEntities.REMOVE_CLAIM_TYPE);
 	}
 }

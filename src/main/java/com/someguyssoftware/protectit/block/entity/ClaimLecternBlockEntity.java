@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.tileentity;
+package com.someguyssoftware.protectit.block.entity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +64,7 @@ import net.minecraftforge.fml.network.PacketDistributor;
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
-public class ClaimLecternTileEntity extends AbstractModTileEntity implements IClearable, INamedContainerProvider {
+public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IClearable, INamedContainerProvider {
 	private static final String BOOK_TAG = "book";
 	private static final String PAGE_TAG = "page";
 	private static final String CLAIM_COORDS_TAG = "claimCoords";
@@ -76,12 +76,12 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 
 	private final IIntArray dataAccess = new IIntArray() {
 		public int get(int index) {
-			return index == 0 ? ClaimLecternTileEntity.this.page : 0;
+			return index == 0 ? ClaimLecternBlockEntity.this.page : 0;
 		}
 
 		public void set(int index, int value) {
 			if (index == 0) {
-				ClaimLecternTileEntity.this.setPage(value);
+				ClaimLecternBlockEntity.this.setPage(value);
 			}
 		}
 
@@ -93,8 +93,8 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 	/**
 	 * 
 	 */
-	public ClaimLecternTileEntity() {
-		super(ProtectItTileEntities.CLAIM_LECTERN_TILE_ENTITY_TYPE);
+	public ClaimLecternBlockEntity() {
+		super(ProtectItBlockEntities.CLAIM_LECTERN_TYPE);
 	}
 
 	@Override
@@ -263,19 +263,19 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 		}
 
 		public boolean isEmpty() {
-			return ClaimLecternTileEntity.this.book.isEmpty();
+			return ClaimLecternBlockEntity.this.book.isEmpty();
 		}
 
 		public ItemStack getItem(int p_70301_1_) {
-			return p_70301_1_ == 0 ? ClaimLecternTileEntity.this.book : ItemStack.EMPTY;
+			return p_70301_1_ == 0 ? ClaimLecternBlockEntity.this.book : ItemStack.EMPTY;
 		}
 
 		@Override
 		public ItemStack removeItem(int slot, int size) {
 			if (slot == 0) {
-				ItemStack itemstack = ClaimLecternTileEntity.this.book.split(size);
-				if (ClaimLecternTileEntity.this.book.isEmpty()) {
-					ClaimLecternTileEntity.this.onBookItemRemove();
+				ItemStack itemstack = ClaimLecternBlockEntity.this.book.split(size);
+				if (ClaimLecternBlockEntity.this.book.isEmpty()) {
+					ClaimLecternBlockEntity.this.onBookItemRemove();
 				}
 				return itemstack;
 			} else {
@@ -286,9 +286,9 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 		@Override
 		public ItemStack removeItemNoUpdate(int slot) {
 			if (slot == 0) {
-				ItemStack itemstack = ClaimLecternTileEntity.this.book;
-				ClaimLecternTileEntity.this.book = ItemStack.EMPTY;
-				ClaimLecternTileEntity.this.onBookItemRemove();
+				ItemStack itemstack = ClaimLecternBlockEntity.this.book;
+				ClaimLecternBlockEntity.this.book = ItemStack.EMPTY;
+				ClaimLecternBlockEntity.this.onBookItemRemove();
 				return itemstack;
 			} else {
 				return ItemStack.EMPTY;
@@ -303,18 +303,18 @@ public class ClaimLecternTileEntity extends AbstractModTileEntity implements ICl
 		}
 
 		public void setChanged() {
-			ClaimLecternTileEntity.this.setChanged();
+			ClaimLecternBlockEntity.this.setChanged();
 		}
 
 		public boolean stillValid(PlayerEntity player) {
-			if (ClaimLecternTileEntity.this.level
-					.getBlockEntity(ClaimLecternTileEntity.this.worldPosition) != ClaimLecternTileEntity.this) {
+			if (ClaimLecternBlockEntity.this.level
+					.getBlockEntity(ClaimLecternBlockEntity.this.worldPosition) != ClaimLecternBlockEntity.this) {
 				return false;
 			} else {
-				return player.distanceToSqr((double) ClaimLecternTileEntity.this.worldPosition.getX() + 0.5D,
-						(double) ClaimLecternTileEntity.this.worldPosition.getY() + 0.5D,
-						(double) ClaimLecternTileEntity.this.worldPosition.getZ() + 0.5D) > 64.0D ? false
-								: ClaimLecternTileEntity.this.hasBook();
+				return player.distanceToSqr((double) ClaimLecternBlockEntity.this.worldPosition.getX() + 0.5D,
+						(double) ClaimLecternBlockEntity.this.worldPosition.getY() + 0.5D,
+						(double) ClaimLecternBlockEntity.this.worldPosition.getZ() + 0.5D) > 64.0D ? false
+								: ClaimLecternBlockEntity.this.hasBook();
 			}
 		}
 

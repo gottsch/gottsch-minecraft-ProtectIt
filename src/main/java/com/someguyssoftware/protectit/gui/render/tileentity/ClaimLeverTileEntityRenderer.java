@@ -29,10 +29,10 @@ import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.BlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimLeverTileEntity;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeverBlock;
@@ -49,14 +49,14 @@ import net.minecraft.util.math.BlockPos;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverTileEntity> implements IClaimRenderer {
+public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverBlockEntity> implements IClaimRenderer {
 
 	public ClaimLeverTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
 		super(dispatcher);
 	}
 
 	@Override
-	public void render(ClaimLeverTileEntity tileEntity, float partialTicks, MatrixStack matrixStack,
+	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
 			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		
 		if (tileEntity == null) {
@@ -102,13 +102,13 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 
 	@Override
 	public void updateClaimTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
-		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaimCoords()).negate();
+		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverBlockEntity)tileEntity).getClaimCoords()).negate();
 		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
 	}
 	
 	@Override
 	public void updateHighlightTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
-		Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverTileEntity)tileEntity).getClaimCoords());
+		Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
 
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);
@@ -121,7 +121,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverT
 		highlightFloor = leverCoords.delta(highlightFloor).negate();
 		
 		ICoords delta = 
-				new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverTileEntity)tileEntity).getClaimCoords())
+				new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverBlockEntity)tileEntity).getClaimCoords())
 				.negate()
 				.withY(highlightFloor.getY());
 

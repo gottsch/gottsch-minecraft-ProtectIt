@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,12 +21,8 @@ package com.someguyssoftware.protectit.block;
 
 import java.util.List;
 
-import com.someguyssoftware.gottschcore.block.ModBlock;
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.item.ProtectItItems;
@@ -35,41 +31,32 @@ import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.tileentity.ClaimTileEntity;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.state.EnumProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.shapes.ISelectionContext;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.network.PacketDistributor;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * 
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ClaimBlock extends ModBlock {
+public class ClaimBlock extends Block implements EntityBlock {
 	public static final EnumProperty<Direction> FACING = EnumProperty.create("facing", Direction.class);
 	public static final ICoords EMPTY = new Coords(0, -255, 0);
+	
 	/*
 	 * An array of VoxelShape shapes for the bounding box
 	 */
@@ -80,8 +67,8 @@ public class ClaimBlock extends ModBlock {
 	 */
 	private ICoords claimSize = EMPTY;
 
-	public ClaimBlock(String modID, String name, Block.Properties properties) {
-		super(modID, name, properties);
+	public ClaimBlock(Block.Properties properties) {
+		super(properties);
 
 		// set the default shapes/shape
 		VoxelShape shape = Block.box(1, 0, 1, 15, 14, 15);
@@ -101,34 +88,23 @@ public class ClaimBlock extends ModBlock {
 	 * @param claimSize
 	 * @param properties
 	 */
-	public ClaimBlock(String modID, String name, ICoords claimSize, Block.Properties properties) {
-		this(modID, name, properties);
+	public ClaimBlock(ICoords claimSize, Block.Properties properties) {
+		this(properties);
 		setClaimSize(claimSize);
 	}
 
 	@Override
-	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-		ClaimTileEntity tileEntity = null;
+	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+		ClaimBlockEntity blockEntity = null;
 		try {
-			tileEntity = new ClaimTileEntity();
+			blockEntity = new ClaimBlockEntity();
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
 		}
-		ProtectIt.LOGGER.info("createNewTileEntity | tileEntity -> {}}", tileEntity);
-		return tileEntity;
+		ProtectIt.LOGGER.info("createNewTileEntity | blockEntity -> {}}", blockEntity);
+		return blockEntity;
 	}
-
-	/**
-	 * 
-	 * @param state
-	 * @return
-	 */
-	@Override
-	public boolean hasTileEntity(BlockState state) {
-		return true;
-	}
-
 
 	@Override
 	protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
@@ -141,25 +117,25 @@ public class ClaimBlock extends ModBlock {
 	}
 
 	@Override
-	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		TileEntity tileEntity = worldIn.getBlockEntity(pos);
+	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
 //		ProtectIt.LOGGER.info("setPlacedBy claimBlock TE -> {}", tileEntity.getClass().getSimpleName());
 		// gather the number of claims the player has
 		List<Claim> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
 		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
-			placer.sendMessage(new TranslationTextComponent("message.protectit.max_claims_met"), placer.getUUID());
+			placer.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), placer.getUUID());
 			return;
 		}
 		
-		if (tileEntity instanceof ClaimTileEntity) {
-			((ClaimTileEntity) tileEntity).setOwnerUuid(placer.getStringUUID());
+		if (tileEntity instanceof ClaimBlockEntity) {
+			((ClaimBlockEntity) tileEntity).setOwnerUuid(placer.getStringUUID());
 //			ProtectIt.LOGGER.info("setting ower to -> {}",( (ClaimTileEntity) tileEntity).getOwnerUuid());
 			// save any overlaps to the TileEntity
 			Box box = getBox(tileEntity.getBlockPos());
 			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			ProtectIt.LOGGER.info("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
-				((ClaimTileEntity)tileEntity).getOverlaps().addAll(overlaps);
+				((ClaimBlockEntity)tileEntity).getOverlaps().addAll(overlaps);
 			}
 		}
 	}
@@ -189,7 +165,7 @@ public class ClaimBlock extends ModBlock {
 		
 		// get the tile entity
 		TileEntity tileEntity = world.getBlockEntity(pos);
-		if (tileEntity instanceof ClaimTileEntity) {
+		if (tileEntity instanceof ClaimBlockEntity) {
 			final Box box = getBox(pos);
 
 			// add area to protections registry if this is a dedicated server

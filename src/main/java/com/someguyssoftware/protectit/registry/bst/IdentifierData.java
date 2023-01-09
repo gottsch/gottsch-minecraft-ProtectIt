@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,7 +21,8 @@ package com.someguyssoftware.protectit.registry.bst;
 
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
+
 
 /**
  * 
@@ -41,21 +42,21 @@ public class IdentifierData {
 		this.name = name;
 	}
 
-	public void save(CompoundNBT nbt) {
-		nbt.putString("uuid", getUuid());
-		nbt.putString("name", (getName() == null) ? "" : getName());
-		ProtectIt.LOGGER.info("saved uuid -> {}", nbt.getString("uuid"));
-		ProtectIt.LOGGER.info("saved name -> {}", nbt.getString("name"));
+	public void save(CompoundTag tag) {
+		tag.putString("uuid", getUuid());
+		tag.putString("name", (getName() == null) ? "" : getName());
+		ProtectIt.LOGGER.info("saved uuid -> {}", tag.getString("uuid"));
+		ProtectIt.LOGGER.info("saved name -> {}", tag.getString("name"));
 	}
 	
-	public IdentifierData load(CompoundNBT nbt) {
-		if (nbt.contains("uuid")) {
-			ProtectIt.LOGGER.info("loading uuid -> {}", nbt.getString("uuid"));
-			setUuid(nbt.getString("uuid"));
+	public IdentifierData load(CompoundTag tag) {
+		if (tag.contains("uuid")) {
+			ProtectIt.LOGGER.info("loading uuid -> {}", tag.getString("uuid"));
+			setUuid(tag.getString("uuid"));
 		}
-		if (nbt.contains("name")) {
-			ProtectIt.LOGGER.info("loading name -> {}", nbt.getString("name"));
-			setName(nbt.getString("name"));
+		if (tag.contains("name")) {
+			ProtectIt.LOGGER.info("loading name -> {}", tag.getString("name"));
+			setName(tag.getString("name"));
 		}
 		return this;
 	}

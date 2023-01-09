@@ -22,8 +22,8 @@ package com.someguyssoftware.protectit.gui.render.tileentity;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.block.entity.ClaimLecternBlockEntity;
 import com.someguyssoftware.protectit.item.ProtectItItems;
-import com.someguyssoftware.protectit.tileentity.ClaimLecternTileEntity;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;
@@ -43,7 +43,7 @@ import net.minecraft.util.math.vector.Vector3f;
  * @author Mark Gottschling on Nov 18, 2021
  *
  */
-public class ClaimLecternTileEntityRenderer extends TileEntityRenderer<ClaimLecternTileEntity> {
+public class ClaimLecternTileEntityRenderer extends TileEntityRenderer<ClaimLecternBlockEntity> {
 	private final BookModel bookModel = new BookModel();
 	public static final RenderMaterial BOOK_LOCATION = new RenderMaterial(AtlasTexture.LOCATION_BLOCKS, new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
 
@@ -52,7 +52,7 @@ public class ClaimLecternTileEntityRenderer extends TileEntityRenderer<ClaimLect
 	}
 
 	@Override
-	public void render(ClaimLecternTileEntity tileEntity, float partialTicks, MatrixStack matrixStack,
+	public void render(ClaimLecternBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
 			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		BlockState blockstate = tileEntity.getBlockState();
 		if (blockstate.getValue(LecternBlock.HAS_BOOK)) {

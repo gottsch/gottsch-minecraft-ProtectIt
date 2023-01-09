@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -24,8 +24,9 @@ import java.util.List;
 
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+
 
 /**
  * 
@@ -45,32 +46,32 @@ public class OwnershipData {
 		setOwner(new IdentifierData(uuid, name));
 	}
 	
-	public void save(CompoundNBT nbt) {
-		CompoundNBT ownerNbt = new CompoundNBT();
+	public void save(CompoundTag nbt) {
+		CompoundTag ownerNbt = new CompoundTag();
 		ProtectIt.LOGGER.info("saving owner -> {}, {}", getOwner().getName(), getOwner().getUuid());
 		getOwner().save(ownerNbt);
 		nbt.put("owner", ownerNbt);
 		
-		ListNBT list = new ListNBT();
+		ListTag list = new ListTag();
 		getWhitelist().forEach(data -> {
-			CompoundNBT player = new CompoundNBT();
+			CompoundTag player = new CompoundTag();
 			data.save(player);
 			list.add(player);
 		});
 		nbt.put("whitelist", list);
 	}
 	
-	public OwnershipData load(CompoundNBT nbt) {		
+	public OwnershipData load(CompoundTag nbt) {		
 		if (nbt.contains("owner")) {
 			ProtectIt.LOGGER.info("loading owner");
 			getOwner().load(nbt.getCompound("owner"));
 			ProtectIt.LOGGER.info("loaded owner -> {}, {}", getOwner().getName(), getOwner().getUuid());
 		}
 		if (nbt.contains("whitelist")) {
-			ListNBT list = nbt.getList("whitelist", 10);
+			ListTag list = nbt.getList("whitelist", 10);
 			list.forEach(compound -> {
 				IdentifierData player = new IdentifierData("");
-				player.load((CompoundNBT)compound);
+				player.load((CompoundTag)compound);
 				getWhitelist().add(player);
 			});
 		}
