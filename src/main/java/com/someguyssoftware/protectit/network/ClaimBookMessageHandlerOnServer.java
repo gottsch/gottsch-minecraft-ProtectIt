@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -27,13 +27,13 @@ import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent;
 
 /**
  * 
@@ -63,7 +63,7 @@ public class ClaimBookMessageHandlerOnServer {
 		// ok to assume that the ctx handler is a serverhandler, and that ServerPlayerEntity exists.
 		// Packets received on the client side must be handled differently! See MessageHandlerOnClient
 
-		final ServerPlayerEntity sendingPlayer = ctx.getSender();
+		final ServerPlayer sendingPlayer = ctx.getSender();
 		if (sendingPlayer == null) {
 			ProtectIt.LOGGER.warn("EntityPlayerMP was null when ClaimBookMessageToServer was received");
 		}
@@ -78,19 +78,19 @@ public class ClaimBookMessageHandlerOnServer {
 	 * @param worldServer
 	 * @param message
 	 */
-	private static void processMessage(ClaimBookMessageToServer message, ServerPlayerEntity sendingPlayer) {
+	private static void processMessage(ClaimBookMessageToServer message, ServerPlayer sendingPlayer) {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			if (sendingPlayer != null) {
-				if (message.getBook().getItem() == ProtectItItems.CLAIM_BOOK) {
-					CompoundNBT nbt = message.getBook().getTag();
+				if (message.getBook().getItem() == ProtectItItems.CLAIM_BOOK.get()) {
+					CompoundTag nbt = message.getBook().getTag();
 
 					List<PlayerData> playerDataList = Lists.newArrayList();
-					ListNBT sourceListNbt = nbt.getList(PLAYER_DATA_TAG, 10);
+					ListTag sourceListNbt = nbt.getList(PLAYER_DATA_TAG, 10);
 					ProtectIt.LOGGER.debug("sourceListNbt.size -> {}", sourceListNbt.size());
-					List<ServerPlayerEntity> players = sendingPlayer.getLevel().players();
+					List<ServerPlayer> players = sendingPlayer.getLevel().players();
 					sourceListNbt.forEach(element -> {
-						PlayerData data = new PlayerData().load((CompoundNBT) element);
+						PlayerData data = new PlayerData().load((CompoundTag) element);
 						ProtectIt.LOGGER.debug("loaded data -> {}", data);
 						// check for player on server if missing uuid and add it
 						if (data.getUuid().isEmpty()) {
@@ -106,12 +106,12 @@ public class ClaimBookMessageHandlerOnServer {
 					});
 
 					int slot = message.getSlot();
-					if (PlayerInventory.isHotbarSlot(slot) || slot == 40) {
-						ItemStack itemStack = sendingPlayer.inventory.getItem(slot);
-						if (itemStack.getItem() == ProtectItItems.CLAIM_BOOK) {
-							ListNBT destListNbt = new ListNBT();
+					if (Inventory.isHotbarSlot(slot) || slot == 40) {
+						ItemStack itemStack = sendingPlayer.getInventory().getItem(slot);
+						if (itemStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
+							ListTag destListNbt = new ListTag();
 							playerDataList.forEach(data -> {
-								CompoundNBT dataNbt = data.save();
+								CompoundTag dataNbt = data.save();
 								destListNbt.add(dataNbt);
 							});
 							itemStack.addTagElement("playerData", destListNbt);

@@ -22,7 +22,6 @@ import com.someguyssoftware.protectit.ProtectIt;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -41,11 +40,20 @@ public class Registration {
 
 	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITIES, ProtectIt.MODID);
     public static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, ProtectIt.MODID);
-	
-    // item properties convenience property
-	public static final Item.Properties ITEM_PROPERTIES = new Item.Properties().tab(CreativeModeTab.TAB_MISC);
 
+	public static void registerBlocks() {
+		BLOCKS.register(FMLJavaModLoadingContext.get().getModEventBus());
+	}
+	
+	public static void registerItems() {
+		ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
+	}
+	
 	public static void registerBlockEntities() {
 		BLOCK_ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
+	}
+	
+	public static void registerContainers() {
+		CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
 	}
 }

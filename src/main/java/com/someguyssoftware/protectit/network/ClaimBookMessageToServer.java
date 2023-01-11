@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,8 +21,9 @@ package com.someguyssoftware.protectit.network;
 
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.item.ItemStack;
+
 
 /**
  * 
@@ -51,7 +52,7 @@ public class ClaimBookMessageToServer {
 	 * 
 	 * @param buf
 	 */
-	public void encode(PacketBuffer buf) {
+	public void encode(FriendlyByteBuf buf) {
 		if (!isValid()) {
 			return;
 		}
@@ -64,7 +65,7 @@ public class ClaimBookMessageToServer {
 	 * @param buf
 	 * @return
 	 */
-	public static ClaimBookMessageToServer decode(PacketBuffer buf) {
+	public static ClaimBookMessageToServer decode(FriendlyByteBuf buf) {
 		ClaimBookMessageToServer message = new ClaimBookMessageToServer();
 
 		try {

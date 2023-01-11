@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -22,18 +22,15 @@ package com.someguyssoftware.protectit.network;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
-import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.LogicalSidedProvider;
-import net.minecraftforge.fml.network.NetworkEvent;
-
+import net.minecraftforge.network.NetworkEvent;
 
 /**
  * 
@@ -43,7 +40,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 public class RegistryWhitelistMutatorMessageHandlerOnClient {
 	
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return ProtectItNetworking.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
 	public static void onMessageReceived(final RegistryWhitelistMutatorMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -64,7 +61,7 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 		//  that the ctx handler is a client, and that Minecraft exists.
 		// Packets received on the server side must be handled differently!  See MessageHandlerOnServer
 
-		Optional<ClientWorld> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
 		if (!clientWorld.isPresent()) {
 			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
 			return;
@@ -80,7 +77,7 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(ClientWorld worldClient, RegistryWhitelistMutatorMessageToClient message) {
+	private static void processMessage(Level worldClient, RegistryWhitelistMutatorMessageToClient message) {
 		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
@@ -93,32 +90,7 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 				// TODO
 				break;
 			}
-			
-//			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
-//				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
-//				Claim claim = new Claim(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
-//				registry.addProtection(claim);
-//			}
-//			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
-//				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
-//					ProtectIt.LOGGER.info("has coords");
-//					// use methods that take coords
-//					if (message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
-//						ProtectIt.LOGGER.info("doesn't have uuid");
-//						registry.removeProtection(message.getCoords1(), message.getCoords2());
-//					}
-//					else {
-//						ProtectIt.LOGGER.info("has uuid");
-//						registry.removeProtection(message.getCoords1(), message.getCoords2(), message.getUuid());
-//					}
-//				}
-//				else {
-//					if (!message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
-//						ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
-//						registry.removeProtection(message.getUuid());
-//					}
-//				}
-//			}
+
 			if (message.getAction().equals(RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION)) {
 				if (!message.getClaims().isEmpty()) {
 					message.getClaims().forEach(c -> {

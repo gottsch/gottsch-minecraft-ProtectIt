@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -19,10 +19,9 @@
  */
 package com.someguyssoftware.protectit.network;
 
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-
-import net.minecraft.network.PacketBuffer;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * 
@@ -31,7 +30,7 @@ import net.minecraft.network.PacketBuffer;
  */
 public interface ICoordsHandler {
 
-	default public void writeCoords(ICoords coords, PacketBuffer buf) {
+	default public void writeCoords(ICoords coords, FriendlyByteBuf buf) {
 		if (coords != null) {
 			buf.writeInt(coords.getX());
 			buf.writeInt(coords.getY());
@@ -39,7 +38,7 @@ public interface ICoordsHandler {
 		}
 	}
 
-	public static ICoords readCoords(PacketBuffer buf) {
+	public static ICoords readCoords(FriendlyByteBuf buf) {
 		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
 		return coords;
 	}

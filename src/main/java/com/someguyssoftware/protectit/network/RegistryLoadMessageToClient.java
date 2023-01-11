@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -24,14 +24,14 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.network.PacketBuffer;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  *
@@ -46,20 +46,11 @@ public class RegistryLoadMessageToClient {
 	private boolean valid;
 	private String type;
 	private int size;
-//	@Deprecated
-//	private List<Interval> intervals;
 	private List<Claim> claims;
 	
 	public RegistryLoadMessageToClient() {
 		valid = false;
 	}
-	
-//	public RegistryLoadMessageToClient(String type, List<Interval> intervals) {
-//		this.valid = true;
-//		this.type = type;
-//		this.size = intervals.size();
-//		this.intervals = intervals;
-//	}
 
 	public RegistryLoadMessageToClient(String type, List<Claim> claims) {
 		this.valid = true;
@@ -72,37 +63,19 @@ public class RegistryLoadMessageToClient {
 	 * 
 	 * @param buf
 	 */
-	public void encode(PacketBuffer buf) {
+	public void encode(FriendlyByteBuf buf) {
 		if (!isValid()) {
 			return;
 		}
 		 buf.writeUtf(StringUtils.defaultString(type, ""));
 		 buf.writeInt(claims.size());
-		
-		// intervals.forEach(interval -> {
-		// 	if (interval.getCoords1() == null) {
-		// 		writeCoords(EMPTY_COORDS, buf);
-		// 	}
-		// 	else {
-		// 		writeCoords(interval.getCoords1(), buf);
-		// 	}
-		// 	if (interval.getCoords2() == null) {
-		// 		writeCoords(EMPTY_COORDS, buf);
-		// 	}
-		// 	else {
-		// 		writeCoords(interval.getCoords2(), buf);
-		// 	}
-		// 	buf.writeUtf(StringUtils.defaultString(interval.getData().getOwner().getUuid(), NULL_UUID));
-		// 	buf.writeUtf(StringUtils.defaultString(interval.getData().getOwner().getName(), ""));
-
-		// });
 
 		claims.forEach(claim -> {
 			writeClaim(buf, claim);
 		});
 	}
 
-	private void writeClaim(PacketBuffer buf, Claim claim) {
+	private void writeClaim(FriendlyByteBuf buf, Claim claim) {
 		buf.writeUtf(StringUtils.defaultString(claim.getOwner().getUuid(), NULL_UUID));
 		buf.writeUtf(StringUtils.defaultString(claim.getOwner().getName(), ""));
 
@@ -145,7 +118,7 @@ public class RegistryLoadMessageToClient {
 	 * @param buf
 	 * @return
 	 */
-	public static RegistryLoadMessageToClient decode(PacketBuffer buf) {
+	public static RegistryLoadMessageToClient decode(FriendlyByteBuf buf) {
 		RegistryLoadMessageToClient message;
 		
 		// List<Interval> intervals = new ArrayList<>();
@@ -180,7 +153,7 @@ public class RegistryLoadMessageToClient {
 	/**
 	 *
 	 */
-	public static Claim readClaim(PacketBuffer buf) {
+	public static Claim readClaim(FriendlyByteBuf buf) {
 		List<PlayerData> whitelist = new ArrayList<>();
 
 		String ownerUuid = buf.readUtf();
@@ -202,7 +175,7 @@ public class RegistryLoadMessageToClient {
 	}
 	
 	// shared with RegistryMutatorMessageToClient
-	private void writeCoords(ICoords coords, PacketBuffer buf) {
+	private void writeCoords(ICoords coords, FriendlyByteBuf buf) {
 		if (coords != null) {
 			buf.writeInt(coords.getX());
 			buf.writeInt(coords.getY());
@@ -210,7 +183,7 @@ public class RegistryLoadMessageToClient {
 		}
 	}
 	
-	private static ICoords readCoords(PacketBuffer buf) {
+	private static ICoords readCoords(FriendlyByteBuf buf) {
 		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
 		return coords;
 	}

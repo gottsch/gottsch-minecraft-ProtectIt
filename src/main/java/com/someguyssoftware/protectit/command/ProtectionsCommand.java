@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -25,10 +25,11 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.level.ServerLevel;
+
 
 /**
  * TODO need to make UUID in list highlightable or clickable???
@@ -42,7 +43,7 @@ public class ProtectionsCommand {
 	 * 
 	 * @param dispatcher
 	 */
-	public static void register(CommandDispatcher<CommandSource> dispatcher) {
+	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher
 		.register(Commands.literal("protections")
 				.requires(source -> {
@@ -71,17 +72,17 @@ public class ProtectionsCommand {
 	 * @param pos
 	 * @return
 	 */
-	private static int list(CommandSource source) {
+	private static int list(CommandSourceStack source) {
 		List<String> list = ProtectionRegistries.block().toStringList();
 		list.forEach(element -> {
-			source.sendSuccess(new StringTextComponent(element), true);
+			source.sendSuccess(new TextComponent(element), true);
 		});
 		return 1;
 	}
 
-	private static int clear(CommandSource source) {
+	private static int clear(CommandSourceStack source) {
 		ProtectionRegistries.block().clear();
-		ServerWorld world = source.getLevel();
+		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();

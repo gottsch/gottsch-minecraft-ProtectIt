@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,28 +17,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.render.tileentity;
+package com.someguyssoftware.protectit.client.render.tileentity;
 
 import java.awt.Color;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Matrix3f;
+import com.mojang.math.Matrix4f;
+import com.mojang.math.Vector3f;
 import com.someguyssoftware.protectit.block.entity.AbstractClaimBlockEntity;
 
-import net.minecraft.client.renderer.IRenderTypeBuffer;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.Matrix3f;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector2f;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
+
 
 /**
  * 
@@ -53,7 +54,7 @@ public interface IClaimRenderer {
 	 * @param matrixStack
 	 * @param offset
 	 */
-	default public void updateTranslation(MatrixStack matrixStack, ICoords offset) {
+	default public void updateTranslation(PoseStack matrixStack, ICoords offset) {
 		matrixStack.translate(offset.getX(), offset.getY(), offset.getZ());
 	}
 
@@ -68,7 +69,7 @@ public interface IClaimRenderer {
 	 * @param blue
 	 * @param alpha
 	 */
-	default public void renderClaim(TileEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
+	default public void renderClaim(BlockEntity tileEntity, PoseStack matrixStack, VertexConsumer builder,
 			ICoords claimSize, float red, float green, float blue, float alpha) {
 
 		// push the current transformation matrix + normals matrix
@@ -76,7 +77,7 @@ public interface IClaimRenderer {
 
 		updateClaimTranslation(tileEntity, matrixStack);
 		// render
-		WorldRenderer.renderLineBox(matrixStack, builder, 
+		LevelRenderer.renderLineBox(matrixStack, builder, 
 				0, 0, 0,
 				claimSize.getX(), claimSize.getY(), claimSize.getZ(),
 				red, green,blue, 1.0f, red, green, blue);
@@ -89,7 +90,7 @@ public interface IClaimRenderer {
 	 * @param tileEntity
 	 * @param matrixStack
 	 */
-	default public void updateClaimTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+	default public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		// do nothing
 	}
 	
@@ -104,7 +105,7 @@ public interface IClaimRenderer {
 	 * @param combinedLight
 	 * @param combinedOverlay
 	 */
-	default public void renderHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, ICoords size,
+	default public void renderHighlight(BlockEntity tileEntity, float partialTicks, PoseStack matrixStack, MultiBufferSource renderBuffers, ICoords size,
 			Color color, int combinedLight, int combinedOverlay) {
 
 		// push the current transformation matrix + normals matrix
@@ -117,7 +118,7 @@ public interface IClaimRenderer {
 		matrixStack.popPose();
 	}
 
-	default public void renderHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, ICoords size,
+	default public void renderHighlight(BlockEntity tileEntity, float partialTicks, PoseStack matrixStack, MultiBufferSource renderBuffers, ICoords size,
 			int combinedLight, int combinedOverlay) {
 		renderHighlight(tileEntity, partialTicks, matrixStack, renderBuffers, size, getHighlightColor(tileEntity), combinedLight, combinedOverlay);
 	}
@@ -127,7 +128,7 @@ public interface IClaimRenderer {
 	 * @param tileEntity
 	 * @return
 	 */
-	default public Color getHighlightColor(TileEntity tileEntity) {
+	default public Color getHighlightColor(BlockEntity tileEntity) {
 		return new Color(0, 255, 0, 100);
 	}
 	
@@ -136,7 +137,7 @@ public interface IClaimRenderer {
 	 * @param tileEntity
 	 * @param matrixStack
 	 */
-	default public void updateHighlightTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+	default public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		// do nothing
 	}
 
@@ -151,7 +152,7 @@ public interface IClaimRenderer {
 	 * @param blue
 	 * @param alpha
 	 */
-	default public void renderOverlap(AbstractClaimBlockEntity tileEntity, MatrixStack matrixStack, IVertexBuilder builder,
+	default public void renderOverlap(AbstractClaimBlockEntity tileEntity, PoseStack matrixStack, VertexConsumer builder,
 			Box overlapBox, float red, float green, float blue, float alpha) {
 		// calculate render pos -> delta of b & pos
 		ICoords offsetCoords = overlapBox.getMinCoords().delta(tileEntity.getBlockPos());
@@ -160,7 +161,7 @@ public interface IClaimRenderer {
 
 		matrixStack.pushPose(); 
 		updateTranslation(matrixStack, offsetCoords);
-		WorldRenderer.renderLineBox(matrixStack, builder, 0, 0, 0,
+		LevelRenderer.renderLineBox(matrixStack, builder, 0, 0, 0,
 				size.getX(),
 				size.getY(),
 				size.getZ(),
@@ -179,7 +180,7 @@ public interface IClaimRenderer {
 	 * @param combinedLight
 	 * @param combinedOverlay
 	 */
-	default public void renderOverlapHighlight(TileEntity tileEntity, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer renderBuffers, 
+	default public void renderOverlapHighlight(BlockEntity tileEntity, float partialTicks, PoseStack matrixStack, MultiBufferSource renderBuffers, 
 			Box overlapBox, Color color, int combinedLight, int combinedOverlay) {
 
 		// calculate render pos -> delta of b & pos
@@ -200,12 +201,12 @@ public interface IClaimRenderer {
 	/**
 	 * Draw a cube from [0,0,0] to [x, y, z], same texture on all sides, using a supplied texture
 	 */
-	default public void drawQuads(MatrixStack matrixStack, IRenderTypeBuffer renderBuffer,
+	default public void drawQuads(PoseStack matrixStack, MultiBufferSource renderBuffer,
 			ICoords size, Color color, int combinedLight) {
 
 		// other typical RenderTypes used by TER are:
 		// getEntityCutout, getBeaconBeam (which has translucency),
-		IVertexBuilder vertexBuilderBlockQuads = renderBuffer.getBuffer(RenderType.beaconBeam(TEXTURE, true));
+		VertexConsumer vertexBuilderBlockQuads = renderBuffer.getBuffer(RenderType.beaconBeam(TEXTURE, true));
 
 		// retrieves the current transformation matrix
 		Matrix4f matrixPos = matrixStack.last().pose();
@@ -213,7 +214,7 @@ public interface IClaimRenderer {
 		Matrix3f matrixNormal = matrixStack.last().normal();
 
 		// we use the whole texture
-		Vector2f bottomLeftUV = new Vector2f(0.0F, 1.0F);
+		Vec2 bottomLeftUV = new Vec2(0.0F, 1.0F);
 		float uvWidth = 1.0F;
 		float uvHeight = 1.0F;
 
@@ -221,8 +222,8 @@ public interface IClaimRenderer {
 		final float WIDTH = size.getX();
 		final float HEIGHT = size.getZ();
 
-		final Vector3d UP_FACE_ORIGIN = new Vector3d(0, 0.005, 0);
-		final Vector3d DOWN_FACE_ORIGIN = new Vector3d(0, -0.005, 0);
+		final Vec3 UP_FACE_ORIGIN = new Vec3(0, 0.005, 0);
+		final Vec3 DOWN_FACE_ORIGIN = new Vec3(0, -0.005, 0);
 
 		addFace(Direction.UP, matrixPos, matrixNormal, vertexBuilderBlockQuads,
 				color, UP_FACE_ORIGIN, WIDTH, HEIGHT, bottomLeftUV, uvWidth, uvHeight, combinedLight);
@@ -250,8 +251,8 @@ public interface IClaimRenderer {
 	 * @param texVheight
 	 * @param lightmapValue
 	 */
-	default public void addFace(Direction whichFace, Matrix4f matrixPos, Matrix3f matrixNormal, IVertexBuilder renderBuffer,
-			Color color, Vector3d originPos, float width, float height, Vector2f bottomLeftUV, float texUwidth, float texVheight, int lightmapValue) {
+	default public void addFace(Direction whichFace, Matrix4f matrixPos, Matrix3f matrixNormal, VertexConsumer renderBuffer,
+			Color color, Vec3 originPos, float width, float height, Vec2 bottomLeftUV, float texUwidth, float texVheight, int lightmapValue) {
 
 		Vector3f xOffset, zOffset;
 		xOffset = new Vector3f(1, 0, 0);
@@ -285,10 +286,10 @@ public interface IClaimRenderer {
 
 		// texture coordinates are "upside down" relative to the face
 		// eg bottom left = [U min, V max]
-		Vector2f bottomLeftUVpos = new Vector2f(bottomLeftUV.x, bottomLeftUV.y);
-		Vector2f bottomRightUVpos = new Vector2f(bottomLeftUV.x + texUwidth, bottomLeftUV.y);
-		Vector2f topLeftUVpos = new Vector2f(bottomLeftUV.x + texUwidth, bottomLeftUV.y + texVheight);
-		Vector2f topRightUVpos = new Vector2f(bottomLeftUV.x, bottomLeftUV.y + texVheight);
+		Vec2 bottomLeftUVpos = new Vec2(bottomLeftUV.x, bottomLeftUV.y);
+		Vec2 bottomRightUVpos = new Vec2(bottomLeftUV.x + texUwidth, bottomLeftUV.y);
+		Vec2 topLeftUVpos = new Vec2(bottomLeftUV.x + texUwidth, bottomLeftUV.y + texVheight);
+		Vec2 topRightUVpos = new Vec2(bottomLeftUV.x, bottomLeftUV.y + texVheight);
 
 		Vector3f normalVector = whichFace.step();  // gives us the normal to the face
 
@@ -308,9 +309,9 @@ public interface IClaimRenderer {
 	 * http://greyminecraftcoder.blogspot.com/2014/12/the-tessellator-and-worldrenderer-18.html
 	 * http://greyminecraftcoder.blogspot.com/2014/12/block-models-texturing-quads-faces.html
 	 */
-	default public void addQuad(Matrix4f matrixPos, Matrix3f matrixNormal, IVertexBuilder renderBuffer,
+	default public void addQuad(Matrix4f matrixPos, Matrix3f matrixNormal, VertexConsumer renderBuffer,
 			Vector3f blpos, Vector3f brpos, Vector3f trpos, Vector3f tlpos,
-			Vector2f blUVpos, Vector2f brUVpos, Vector2f trUVpos, Vector2f tlUVpos,
+			Vec2 blUVpos, Vec2 brUVpos, Vec2 trUVpos, Vec2 tlUVpos,
 			Vector3f normalVector, Color color, int lightmapValue) {
 		addQuadVertex(matrixPos, matrixNormal, renderBuffer, blpos, blUVpos, normalVector, color, lightmapValue);
 		addQuadVertex(matrixPos, matrixNormal, renderBuffer, brpos, brUVpos, normalVector, color, lightmapValue);
@@ -319,8 +320,8 @@ public interface IClaimRenderer {
 	}
 
 	// suitable for vertexbuilders using the DefaultVertexFormats.ENTITY format
-	static void addQuadVertex(Matrix4f matrixPos, Matrix3f matrixNormal, IVertexBuilder renderBuffer,
-			Vector3f pos, Vector2f texUV,
+	static void addQuadVertex(Matrix4f matrixPos, Matrix3f matrixNormal, VertexConsumer renderBuffer,
+			Vector3f pos, Vec2 texUV,
 			Vector3f normalVector, Color color, int lightmapValue) {
 		renderBuffer.vertex(matrixPos, pos.x(), pos.y(), pos.z()) // position coordinate
 		.color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha())        // color

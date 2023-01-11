@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -24,33 +24,29 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
-import com.someguyssoftware.gottschcore.item.ModItem;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Claim;
-import com.someguyssoftware.protectit.gui.screen.EditClaimBookScreen;
-import com.someguyssoftware.protectit.gui.screen.OpenScreenUtil;
+import com.someguyssoftware.protectit.client.screen.OpenScreenUtil;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
@@ -59,49 +55,47 @@ import net.minecraftforge.fml.DistExecutor;
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
-public class ClaimBook extends ModItem {
+public class ClaimBook extends Item {
 	public static final String PAGES_TAG = "pages";
 	public static final String PLAYER_DATA_TAG = "playerData";
 	
 	/**
 	 * 
 	 */
-	public ClaimBook(String modID, String name, Item.Properties properties) {
-		super(modID, name, properties);
+	public ClaimBook(Item.Properties properties) {
+		super(properties);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
-	public void appendHoverText(ItemStack stack, World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
-		tooltip.add(new TranslationTextComponent("tooltip.protectit.claim_book.howto").withStyle(TextFormatting.GREEN));		
+		tooltip.add(new TranslatableComponent("tooltip.protectit.claim_book.howto").withStyle(ChatFormatting.GREEN));		
 	}
 	
 	/**
 	 * 
 	 */
-	public ActionResultType useOn(ItemUseContext context) {
+	public InteractionResult useOn(UseOnContext context) {
 		ProtectIt.LOGGER.debug("using ClaimBook...");
-		World world = context.getLevel();
+		Level world = context.getLevel();
 		BlockPos pos = context.getClickedPos();
 		BlockState state = world.getBlockState(pos);
 		// TODO maybe have to change to instanceof interface in future
-		if (state.is(ProtectItBlocks.CLAIM_LECTERN)) {
+		if (state.is(ProtectItBlocks.CLAIM_LECTERN.get())) {
 			ProtectIt.LOGGER.debug("lectern is a ClaimLectern");
-			return ClaimLectern.tryPlaceBook(world, pos, state, context.getPlayer(), context.getItemInHand())
-					? ActionResultType.sidedSuccess(world.isClientSide)
-					: ActionResultType.PASS;
+			return ClaimLectern.tryPlaceBook(context.getPlayer(), world, pos, state, context.getItemInHand())
+					? InteractionResult.sidedSuccess(world.isClientSide)
+					: InteractionResult.PASS;
 		} else {
 			ProtectIt.LOGGER.debug("what is it then? -> {}", state.getBlock().getRegistryName().toString());
-			return ActionResultType.PASS;
+			return InteractionResult.PASS;
 		}
 	}
 
 	/**
 	 * 
 	 */
-	public ActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
-
+	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
 		ItemStack itemStack = player.getItemInHand(hand);
 		if ( world.isClientSide()) {
 			/*
@@ -111,7 +105,7 @@ public class ClaimBook extends ModItem {
 			 */
 			DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> OpenScreenUtil.openEditClaimBookScreen(player, itemStack, hand));
 		}
-		return ActionResult.sidedSuccess(itemStack, world.isClientSide());
+		return InteractionResultHolder.sidedSuccess(itemStack, world.isClientSide());
 	}
 
 	/**
@@ -119,13 +113,13 @@ public class ClaimBook extends ModItem {
 	 * @param nbt
 	 * @return
 	 */
-	public static boolean makeSureTagIsValid(@Nullable CompoundNBT nbt) {
+	public static boolean makeSureTagIsValid(@Nullable CompoundTag nbt) {
 		if (nbt == null) {
 			return false;
 		} else if (!nbt.contains(PAGES_TAG, 9)) {
 			return false;
 		} else {
-			ListNBT list = nbt.getList(PAGES_TAG, 8);
+			ListTag list = nbt.getList(PAGES_TAG, 8);
 
 			for (int i = 0; i < list.size(); ++i) {
 				String s = list.getString(i);
@@ -144,18 +138,18 @@ public class ClaimBook extends ModItem {
 	 */
 	public static List<PlayerData> loadPlayerData(ItemStack itemStack) {
 		List<PlayerData> result = Lists.newArrayList();
-		if (itemStack.getItem() != ProtectItItems.CLAIM_BOOK) {
+		if (itemStack.getItem() != ProtectItItems.CLAIM_BOOK.get()) {
 			return result;
 		}
 		
 		// get white list from book stack
-		CompoundNBT nbt = itemStack.getTag();
+		CompoundTag nbt = itemStack.getTag();
 		if (nbt != null) {
 			// load the PlayerData			
-			ListNBT playerDataListNbt = nbt.getList(ClaimBook.PLAYER_DATA_TAG, 10);
-			playerDataListNbt.forEach(element -> {
+			ListTag playerDataListTag = nbt.getList(ClaimBook.PLAYER_DATA_TAG, 10);
+			playerDataListTag.forEach(element -> {
 				PlayerData playerData = new PlayerData();
-				playerData.load((CompoundNBT)element);
+				playerData.load((CompoundTag)element);
 				result.add(playerData);
 			});
 		}
@@ -169,9 +163,9 @@ public class ClaimBook extends ModItem {
 	 */
 	public static Claim loadClaim(ItemStack itemStack) {
 		Claim claim = null;
-		CompoundNBT nbt = itemStack.getTag();
+		CompoundTag nbt = itemStack.getTag();
 		if (nbt != null) {
-			CompoundNBT claimNbt = nbt.getCompound("claim");
+			CompoundTag claimNbt = nbt.getCompound("claim");
 			claim = new Claim();
 			claim.load(claimNbt);
 		}
@@ -184,10 +178,10 @@ public class ClaimBook extends ModItem {
 	 * @param data
 	 * @return
 	 */
-	public static ListNBT savePlayerData(ItemStack itemStack, List<PlayerData> data) {
-		ListNBT playerDataList = new ListNBT();
+	public static ListTag savePlayerData(ItemStack itemStack, List<PlayerData> data) {
+		ListTag playerDataList = new ListTag();
 		data.forEach(playerData -> {
-			CompoundNBT nbt = new CompoundNBT();
+			CompoundTag nbt = new CompoundTag();
 			playerData.save(nbt);
 			playerDataList.add(nbt);
 		});
@@ -202,8 +196,8 @@ public class ClaimBook extends ModItem {
 	 * @param registryClaim
 	 * @return
 	 */
-	public static CompoundNBT saveClaim(ItemStack itemStack, Claim registryClaim) {
-		CompoundNBT claimNbt = new CompoundNBT();
+	public static CompoundTag saveClaim(ItemStack itemStack, Claim registryClaim) {
+		CompoundTag claimNbt = new CompoundTag();
 		registryClaim.save(claimNbt);
 		itemStack.removeTagKey("claim");
 		itemStack.addTagElement("claim", claimNbt);

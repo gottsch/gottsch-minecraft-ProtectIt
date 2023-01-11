@@ -19,56 +19,55 @@
  */
 package com.someguyssoftware.protectit.block.entity;
 
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
-import com.someguyssoftware.protectit.claim.Claim;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.math.AxisAlignedBB;
 
 /**
  * 
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverBlockEntity extends AbstractModTileEntity {
+public class ClaimLeverBlockEntity extends BlockEntity {
 	private static final String CLAIM_COORDS_TAG = "claimCoords";
 
 	private ICoords claimCoords;
 	
-	public ClaimLeverBlockEntity() {
-		this(ProtectItBlockEntities.CLAIM_LEVER_TYPE);
+	public ClaimLeverBlockEntity(BlockPos pos, BlockState state) {
+		this(ProtectItBlockEntities.CLAIM_LEVER_TYPE.get(), pos, state);
 	}
 
-	public ClaimLeverBlockEntity(TileEntityType<?> type) {
-		super(type);
+	public ClaimLeverBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
 	}
-	
+
 	/**
 	 * 
 	 */
 	@Override
-	public CompoundNBT save(CompoundNBT nbt) {
-		super.save(nbt);
+	public void saveAdditional(CompoundTag nbt) {
+		super.saveAdditional(nbt);
 		if (getClaimCoords() != null) {
-			CompoundNBT coordsNbt = new CompoundNBT();
+			CompoundTag coordsNbt = new CompoundTag();
 			getClaimCoords().save(coordsNbt);
 			nbt.put(CLAIM_COORDS_TAG, coordsNbt);
 		}
-		return nbt;
 	}
 	
 	/**
 	 * 
 	 */
 	@Override
-	public void load(BlockState state, CompoundNBT nbt) {
-		super.load(state, nbt);
+	public void load(CompoundTag nbt) {
+		super.load(nbt);
 		if (nbt.contains(CLAIM_COORDS_TAG)) {
-			setClaimCoords(WorldInfo.EMPTY_COORDS.load(nbt.getCompound(CLAIM_COORDS_TAG)));
+			setClaimCoords(Coords.EMPTY.load(nbt.getCompound(CLAIM_COORDS_TAG)));
 		}
 	}
 	
@@ -76,7 +75,7 @@ public class ClaimLeverBlockEntity extends AbstractModTileEntity {
 	 * Get the render bounding box. Typical block is 1x1x1.
 	 */
 	@Override
-	public AxisAlignedBB getRenderBoundingBox() {
+	public AABB getRenderBoundingBox() {
 		// always render regardless if TE is in FOV.
 		return INFINITE_EXTENT_AABB;
 	}
@@ -86,9 +85,9 @@ public class ClaimLeverBlockEntity extends AbstractModTileEntity {
 	 * collect data to send to client
 	 */
 	@Override
-	public CompoundNBT getUpdateTag() {
-		CompoundNBT nbt = new CompoundNBT(); //super.getUpdateTag();
-		nbt = save(nbt);
+	public CompoundTag getUpdateTag() {
+		CompoundTag nbt = new CompoundTag(); //super.getUpdateTag();
+		saveAdditional(nbt);
 		return nbt;
 	}
 	
@@ -96,9 +95,9 @@ public class ClaimLeverBlockEntity extends AbstractModTileEntity {
 	 * handle on client
 	 */
 	@Override
-	public void handleUpdateTag(BlockState state, CompoundNBT tag) {
+	public void handleUpdateTag(CompoundTag tag) {
 		//super.handleUpdateTag(state, tag);
-		load(state, tag);
+		load(tag);
 	}
 
 	public ICoords getClaimCoords() {

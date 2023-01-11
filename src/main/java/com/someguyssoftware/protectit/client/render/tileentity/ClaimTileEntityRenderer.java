@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,48 +17,50 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.render.tileentity;
+package com.someguyssoftware.protectit.client.render.tileentity;
 
 import java.awt.Color;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimBlock;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 
-import net.minecraft.block.Block;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.model.BookModel;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * 
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimBlockEntity> implements IClaimRenderer {
-
+public class ClaimTileEntityRenderer implements BlockEntityRenderer<ClaimBlockEntity>, IClaimRenderer {
+	private final BookModel bookModel;
 	/**
 	 * 
 	 * @param dispatcher
 	 */
-	public ClaimTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
-		super(dispatcher);
+	public ClaimTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+	      this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
 	}
 
 	@Override
-	public void render(ClaimBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
-			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
+	public void render(ClaimBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
 		BlockPos pos = tileEntity.getBlockPos();
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
@@ -81,7 +83,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimBlockEntity
 		float green = c.getGreen() / 255.0f;
 		float blue = c.getBlue() / 255.0f;
 
-		IVertexBuilder builder = renderTypeBuffer.getBuffer(RenderType.lines());
+		VertexConsumer builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
 		// render the claim
 		boolean hasOverlaps = false;
@@ -114,7 +116,7 @@ public class ClaimTileEntityRenderer extends TileEntityRenderer<ClaimBlockEntity
 	}
 
 	@Override
-	public void updateClaimTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+	public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		BlockPos pos = tileEntity.getBlockPos();
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
 		final Box box = ((ClaimBlock)block).getBox(pos	);

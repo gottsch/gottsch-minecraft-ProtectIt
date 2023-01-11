@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.screen;
+package com.someguyssoftware.protectit.client.screen;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,9 +31,13 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.item.ClaimBook;
@@ -43,33 +47,31 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.ChatFormatting;
+import net.minecraft.SharedConstants;
+import net.minecraft.Util;
+import net.minecraft.client.StringSplitter;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.chat.NarratorChatListener;
-import net.minecraft.client.gui.fonts.TextInputUtil;
-import net.minecraft.client.gui.screen.ReadBookScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Rectangle2d;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.util.Hand;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.CharacterManager;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.font.TextFieldHelper;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.BookViewScreen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+
 
 /**
  * @author Mark Gottschling on Nov 16, 2021
@@ -79,9 +81,9 @@ public class EditClaimBookScreen extends Screen {
 	private static final String PLAYER_DATA_TAG = "playerData";
 
 	// context properties
-	private final PlayerEntity owner;
+	private final Player owner;
 	private final ItemStack book;
-	private final Hand hand;
+	private final InteractionHand hand;
 
 	// buttons
 	private Button doneButton;
@@ -98,7 +100,7 @@ public class EditClaimBookScreen extends Screen {
 	private final List<PlayerData> playerDataCache = Lists.newArrayList();
 	private Claim claim;
 
-	private final TextInputUtil pageEdit = new TextInputUtil(this::getCurrentPageText, this::setCurrentPageText, this::getClipboard, this::setClipboard, (p_238774_1_) -> {
+	private final TextFieldHelper pageEdit = new TextFieldHelper(this::getCurrentPageText, this::setCurrentPageText, this::getClipboard, this::setClipboard, (p_238774_1_) -> {
 		return p_238774_1_.length() < 1024 && this.font.wordWrapHeight(p_238774_1_, 114) <= 128;
 	});
 
@@ -111,7 +113,7 @@ public class EditClaimBookScreen extends Screen {
 	 * @param itemStack
 	 * @param hand
 	 */
-	public EditClaimBookScreen(PlayerEntity player, ItemStack itemStack, Hand hand) {
+	public EditClaimBookScreen(Player player, ItemStack itemStack, InteractionHand hand) {
 		super(NarratorChatListener.NO_TITLE);
 		this.owner = player;
 		this.book = itemStack;
@@ -136,7 +138,7 @@ public class EditClaimBookScreen extends Screen {
 		this.clearDisplayCache();
 		this.minecraft.keyboardHandler.setSendRepeatsToGui(true);
 
-		this.doneButton = this.addButton(new Button(this.width / 2 + 2, 196, 98, 20, DialogTexts.GUI_DONE, (p_214204_1_) -> {
+		this.doneButton = this.addRenderableWidget(new Button(this.width / 2 + 2, 196, 98, 20, CommonComponents.GUI_DONE, (p_214204_1_) -> {
 			ProtectIt.LOGGER.debug("clicked done.");
 			this.minecraft.setScreen((Screen)null);
 			this.saveChanges();
@@ -153,7 +155,7 @@ public class EditClaimBookScreen extends Screen {
 	 */
 	private void setClipboard(String text) {
 		if (this.minecraft != null) {
-			TextInputUtil.setClipboardContents(this.minecraft, text);
+			TextFieldHelper.setClipboardContents(this.minecraft, text);
 		}
 	}
 
@@ -162,7 +164,7 @@ public class EditClaimBookScreen extends Screen {
 	 * @return
 	 */
 	private String getClipboard() {
-		return this.minecraft != null ? TextInputUtil.getClipboardContents(this.minecraft) : "";
+		return this.minecraft != null ? TextFieldHelper.getClipboardContents(this.minecraft) : "";
 	}
 
 	private void eraseEmptyTrailingPages() {
@@ -209,9 +211,9 @@ public class EditClaimBookScreen extends Screen {
 		ProtectIt.LOGGER.debug("playerDataCache.size -> {}", getPlayerDataCache().size());
 
 		// save the data cache to the item
-		ListNBT playerDataList = new ListNBT();
+		ListTag playerDataList = new ListTag();
 		getPlayerDataCache().forEach(playerData -> {
-			CompoundNBT nbt = new CompoundNBT();
+			CompoundTag nbt = new CompoundTag();
 			ProtectIt.LOGGER.debug("saving/adding player data -> {}", playerData);
 			playerData.save(nbt);
 			ProtectIt.LOGGER.info("result nbt uuid -> {}", nbt.getString("uuid"));
@@ -221,9 +223,9 @@ public class EditClaimBookScreen extends Screen {
 		});
 		this.book.addTagElement(PLAYER_DATA_TAG, playerDataList);
 
-		int slot = this.hand == Hand.MAIN_HAND ? this.owner.inventory.selected : 40;
+		int slot = this.hand == InteractionHand.MAIN_HAND ? this.owner.getInventory().selected : 40;
 		ClaimBookMessageToServer messageToServer = new ClaimBookMessageToServer(this.book, slot);
-		ProtectItNetworking.simpleChannel.sendToServer(messageToServer);
+		ProtectItNetworking.channel.sendToServer(messageToServer);
 
 	}
 
@@ -360,15 +362,15 @@ public class EditClaimBookScreen extends Screen {
 	 */
 	@SuppressWarnings("deprecation")
 	@Override
-	public void render(MatrixStack matrixStack, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
+	public void render(PoseStack matrixStack, int p_230430_2_, int p_230430_3_, float p_230430_4_) {
 		this.renderBackground(matrixStack);
-		this.setFocused((IGuiEventListener)null);
-		RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-		this.minecraft.getTextureManager().bind(ReadBookScreen.BOOK_LOCATION);
-		int startX = (this.width - 192) / 2;
+		this.setFocused((GuiEventListener)null);
+		RenderSystem.setShader(GameRenderer::getPositionTexShader);
+		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.setShaderTexture(0, BookViewScreen.BOOK_LOCATION);		int startX = (this.width - 192) / 2;
 		this.blit(matrixStack, startX, 2, 0, 0, 192, 192);
 		// add title
-		IFormattableTextComponent title = new TranslationTextComponent("label.protectit.claim_book.title", TextFormatting.GOLD);
+		TranslatableComponent title = new TranslatableComponent("label.protectit.claim_book.title", ChatFormatting.GOLD);
 		int titleWidth = this.font.width(title);
 		this.font.draw(matrixStack, title, (float)((this.width/2) - (titleWidth/2)), 18.0F, 0);
 
@@ -394,36 +396,37 @@ public class EditClaimBookScreen extends Screen {
 	 * 
 	 * @param rectangle
 	 */
-	private void renderHighlight(Rectangle2d[] rectangle) {
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bufferbuilder = tessellator.getBuilder();
-		RenderSystem.color4f(0.0F, 0.0F, 255.0F, 255.0F);
-		RenderSystem.disableTexture();
-		RenderSystem.enableColorLogicOp();
-		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
-		bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
+	   private void renderHighlight(Rect2i[] p_98139_) {
+		      Tesselator tesselator = Tesselator.getInstance();
+		      BufferBuilder bufferbuilder = tesselator.getBuilder();
+		      RenderSystem.setShader(GameRenderer::getPositionShader);
+		      RenderSystem.setShaderColor(0.0F, 0.0F, 255.0F, 255.0F);
+		      RenderSystem.disableTexture();
+		      RenderSystem.enableColorLogicOp();
+		      RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		      bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
 
-		for(Rectangle2d rectangle2d : rectangle) {
-			int i = rectangle2d.getX();
-			int j = rectangle2d.getY();
-			int k = i + rectangle2d.getWidth();
-			int l = j + rectangle2d.getHeight();
-			bufferbuilder.vertex((double)i, (double)l, 0.0D).endVertex();
-			bufferbuilder.vertex((double)k, (double)l, 0.0D).endVertex();
-			bufferbuilder.vertex((double)k, (double)j, 0.0D).endVertex();
-			bufferbuilder.vertex((double)i, (double)j, 0.0D).endVertex();
-		}
+		      for(Rect2i rect2i : p_98139_) {
+		         int i = rect2i.getX();
+		         int j = rect2i.getY();
+		         int k = i + rect2i.getWidth();
+		         int l = j + rect2i.getHeight();
+		         bufferbuilder.vertex((double)i, (double)l, 0.0D).endVertex();
+		         bufferbuilder.vertex((double)k, (double)l, 0.0D).endVertex();
+		         bufferbuilder.vertex((double)k, (double)j, 0.0D).endVertex();
+		         bufferbuilder.vertex((double)i, (double)j, 0.0D).endVertex();
+		      }
 
-		tessellator.end();
-		RenderSystem.disableColorLogicOp();
-		RenderSystem.enableTexture();
-	}
+		      tesselator.end();
+		      RenderSystem.disableColorLogicOp();
+		      RenderSystem.enableTexture();
+		   }
 
-	private void renderCursor(MatrixStack matrixStack, EditClaimBookScreen.Point p_238756_2_, boolean p_238756_3_) {
+	private void renderCursor(PoseStack matrixStack, EditClaimBookScreen.Point p_238756_2_, boolean p_238756_3_) {
 		if (this.frameTick / 6 % 2 == 0) {
 			p_238756_2_ = this.convertLocalToScreen(p_238756_2_);
 			if (!p_238756_3_) {
-				AbstractGui.fill(matrixStack, p_238756_2_.x, p_238756_2_.y - 1, p_238756_2_.x + 1, p_238756_2_.y + 9, -16777216);
+				GuiComponent.fill(matrixStack, p_238756_2_.x, p_238756_2_.y - 1, p_238756_2_.x + 1, p_238756_2_.y + 9, -16777216);
 			} else {
 				this.font.draw(matrixStack, "_", (float)p_238756_2_.x, (float)p_238756_2_.y, 0);
 			}
@@ -448,8 +451,8 @@ public class EditClaimBookScreen extends Screen {
 			List<EditClaimBookScreen.BookLine> list = Lists.newArrayList();
 			MutableInt mutableint = new MutableInt();
 			MutableBoolean mutableboolean = new MutableBoolean();
-			CharacterManager charactermanager = this.font.getSplitter();
-			charactermanager.splitLines(s, 114, Style.EMPTY, true, (defaultStyle, p_238762_7_, p_238762_8_) -> {
+			StringSplitter stringSplitter = this.font.getSplitter();
+			stringSplitter.splitLines(s, 114, Style.EMPTY, true, (defaultStyle, p_238762_7_, p_238762_8_) -> {
 				int k3 = mutableint.getAndIncrement();
 				String s2 = s.substring(p_238762_7_, p_238762_8_);
 				mutableboolean.setValue(s2.endsWith("\n"));
@@ -470,7 +473,7 @@ public class EditClaimBookScreen extends Screen {
 				EditClaimBookScreen$point = new EditClaimBookScreen.Point(l, k * 9);
 			}
 
-			List<Rectangle2d> list1 = Lists.newArrayList();
+			List<Rect2i> list1 = Lists.newArrayList();
 			if (i != j) {
 				int l2 = Math.min(i, j);
 				int i1 = Math.max(i, j);
@@ -479,22 +482,22 @@ public class EditClaimBookScreen extends Screen {
 				if (j1 == k1) {
 					int l1 = j1 * 9;
 					int i2 = aint[j1];
-					list1.add(this.createPartialLineSelection(s, charactermanager, l2, i1, l1, i2));
+					list1.add(this.createPartialLineSelection(s, stringSplitter, l2, i1, l1, i2));
 				} else {
 					int i3 = j1 + 1 > aint.length ? s.length() : aint[j1 + 1];
-					list1.add(this.createPartialLineSelection(s, charactermanager, l2, i3, j1 * 9, aint[j1]));
+					list1.add(this.createPartialLineSelection(s, stringSplitter, l2, i3, j1 * 9, aint[j1]));
 
 					for(int j3 = j1 + 1; j3 < k1; ++j3) {
 						int j2 = j3 * 9;
 						String s1 = s.substring(aint[j3], aint[j3 + 1]);
-						int k2 = (int)charactermanager.stringWidth(s1);
+						int k2 = (int)stringSplitter.stringWidth(s1);
 						list1.add(this.createSelection(new EditClaimBookScreen.Point(0, j2), new EditClaimBookScreen.Point(k2, j2 + 9)));
 					}
 
-					list1.add(this.createPartialLineSelection(s, charactermanager, aint[k1], i1, k1 * 9, aint[k1]));
+					list1.add(this.createPartialLineSelection(s, stringSplitter, aint[k1], i1, k1 * 9, aint[k1]));
 				}
 			}
-			return new EditClaimBookScreen.BookPage(s, EditClaimBookScreen$point, flag, aint, list.toArray(new EditClaimBookScreen.BookLine[0]), list1.toArray(new Rectangle2d[0]));
+			return new EditClaimBookScreen.BookPage(s, EditClaimBookScreen$point, flag, aint, list.toArray(new EditClaimBookScreen.BookLine[0]), list1.toArray(new Rect2i[0]));
 		}
 	}
 
@@ -538,7 +541,7 @@ public class EditClaimBookScreen extends Screen {
 
 	private void selectWord(int position) {
 		String s = this.getCurrentPageText();
-		this.pageEdit.setSelectionRange(CharacterManager.getWordPosition(s, -1, position, false), CharacterManager.getWordPosition(s, 1, position, false));
+		this.pageEdit.setSelectionRange(StringSplitter.getWordPosition(s, -1, position, false), StringSplitter.getWordPosition(s, 1, position, false));
 	}
 
 	public boolean mouseDragged(double p_231045_1_, double p_231045_3_, int p_231045_5_, double p_231045_6_, double p_231045_8_) {
@@ -556,7 +559,7 @@ public class EditClaimBookScreen extends Screen {
 		}
 	}
 
-	private Rectangle2d createPartialLineSelection(String p_238761_1_, CharacterManager p_238761_2_, int p_238761_3_, int p_238761_4_, int p_238761_5_, int p_238761_6_) {
+	private Rect2i createPartialLineSelection(String p_238761_1_, StringSplitter p_238761_2_, int p_238761_3_, int p_238761_4_, int p_238761_5_, int p_238761_6_) {
 		String s = p_238761_1_.substring(p_238761_6_, p_238761_3_);
 		String s1 = p_238761_1_.substring(p_238761_6_, p_238761_4_);
 		Point editbookscreen$point = new Point((int)p_238761_2_.stringWidth(s), p_238761_5_);
@@ -564,14 +567,14 @@ public class EditClaimBookScreen extends Screen {
 		return this.createSelection(editbookscreen$point, editbookscreen$point1);
 	}
 
-	private Rectangle2d createSelection(Point point1, Point point2) {
+	private Rect2i createSelection(Point point1, Point point2) {
 		Point screenPoint1 = this.convertLocalToScreen(point1);
 		Point screenPoint2 = this.convertLocalToScreen(point2);
 		int i = Math.min(screenPoint1.x, screenPoint2.x);
 		int j = Math.max(screenPoint1.x, screenPoint2.x);
 		int k = Math.min(screenPoint1.y, screenPoint2.y);
 		int l = Math.max(screenPoint1.y, screenPoint2.y);
-		return new Rectangle2d(i, k, j - i, l - k);
+		return new Rect2i(i, k, j - i, l - k);
 	}
 
 	public void tick() {
@@ -583,7 +586,7 @@ public class EditClaimBookScreen extends Screen {
 		return book;
 	}
 
-	protected Hand getHand() {
+	protected InteractionHand getHand() {
 		return hand;
 	}
 
@@ -600,7 +603,7 @@ public class EditClaimBookScreen extends Screen {
 	static class BookLine {
 		private final Style style;
 		private final String contents;
-		private final ITextComponent asComponent;
+		private final Component asComponent;
 		private final int x;
 		private final int y;
 
@@ -609,7 +612,7 @@ public class EditClaimBookScreen extends Screen {
 			this.contents = p_i232289_2_;
 			this.x = p_i232289_3_;
 			this.y = p_i232289_4_;
-			this.asComponent = (new StringTextComponent(p_i232289_2_)).setStyle(p_i232289_1_);
+			this.asComponent = (new TextComponent(p_i232289_2_)).setStyle(p_i232289_1_);
 		}
 	}
 
@@ -617,16 +620,16 @@ public class EditClaimBookScreen extends Screen {
 	 *
 	 */
 	static class BookPage {
-		private static final EditClaimBookScreen.BookPage EMPTY = new EditClaimBookScreen.BookPage("", new EditClaimBookScreen.Point(0, 0), true, new int[]{0}, new EditClaimBookScreen.BookLine[]{new EditClaimBookScreen.BookLine(Style.EMPTY, "", 0, 0)}, new Rectangle2d[0]);
+		private static final EditClaimBookScreen.BookPage EMPTY = new EditClaimBookScreen.BookPage("", new EditClaimBookScreen.Point(0, 0), true, new int[]{0}, new EditClaimBookScreen.BookLine[]{new EditClaimBookScreen.BookLine(Style.EMPTY, "", 0, 0)}, new Rect2i[0]);
 		private final String fullText;
 		private final EditClaimBookScreen.Point cursor;
 		private final boolean cursorAtEnd;
 		private final int[] lineStarts;
 		private final EditClaimBookScreen.BookLine[] lines;
-		private final Rectangle2d[] selection;
+		private final Rect2i[] selection;
 
 		public BookPage(String text, EditClaimBookScreen.Point point, boolean cursorAtEnd, int[] lineStarts, 
-				EditClaimBookScreen.BookLine[] lines, Rectangle2d[] selection) {
+				EditClaimBookScreen.BookLine[] lines, Rect2i[] selection) {
 			this.fullText = text;
 			this.cursor = point;
 			this.cursorAtEnd = cursorAtEnd;
@@ -635,7 +638,7 @@ public class EditClaimBookScreen extends Screen {
 			this.selection = selection;
 		}
 
-		public int getIndexAtPosition(FontRenderer p_238789_1_, EditClaimBookScreen.Point p_238789_2_) {
+		public int getIndexAtPosition(Font p_238789_1_, EditClaimBookScreen.Point p_238789_2_) {
 			int i = p_238789_2_.y / 9;
 			if (i < 0) {
 				return 0;

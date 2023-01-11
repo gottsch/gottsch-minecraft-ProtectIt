@@ -25,7 +25,6 @@ import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.config.Config;
-import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -35,18 +34,32 @@ import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * 
@@ -65,7 +78,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 	/*
 	 * size of the claim
 	 */
-	private ICoords claimSize = EMPTY;
+	private ICoords claimSize = new Coords(Coords.EMPTY);
 
 	public ClaimBlock(Block.Properties properties) {
 		super(properties);
@@ -97,7 +110,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
 		ClaimBlockEntity blockEntity = null;
 		try {
-			blockEntity = new ClaimBlockEntity();
+			blockEntity = new ClaimBlockEntity(pos, state);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
@@ -107,13 +120,13 @@ public class ClaimBlock extends Block implements EntityBlock {
 	}
 
 	@Override
-	protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		builder.add(FACING);
 	}
 
 	@Override
-	public BlockRenderType getRenderShape(BlockState state) {
-		return BlockRenderType.MODEL;
+	public RenderShape getRenderShape(BlockState state) {
+		return RenderShape.MODEL;
 	}
 
 	@Override
@@ -144,12 +157,12 @@ public class ClaimBlock extends Block implements EntityBlock {
 	 * 
 	 */
 	@Override
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player,
-			Hand handIn, BlockRayTraceResult hit) {
+	public  InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+			InteractionHand handIn, BlockHitResult hit) {
 
 		// exit if on the client
-		if (WorldInfo.isClientSide(world)) {
-			return ActionResultType.SUCCESS;
+		if (WorldInfo.isClientSide(level)) {
+			return InteractionResult.SUCCESS;
 		}
 		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
@@ -159,12 +172,12 @@ public class ClaimBlock extends Block implements EntityBlock {
 		
 		// prevent the use of claim if max claims is met
 		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
-			player.sendMessage(new TranslationTextComponent("message.protectit.max_claims_met"), player.getUUID());
-			return ActionResultType.SUCCESS;
+			player.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), player.getUUID());
+			return InteractionResult.SUCCESS;
 		}
 		
 		// get the tile entity
-		TileEntity tileEntity = world.getBlockEntity(pos);
+		BlockEntity tileEntity = level.getBlockEntity(pos);
 		if (tileEntity instanceof ClaimBlockEntity) {
 			final Box box = getBox(pos);
 
@@ -183,13 +196,13 @@ public class ClaimBlock extends Block implements EntityBlock {
 //				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
 				
 				ProtectIt.LOGGER.info("should've added -> {} {}", box, player.getStringUUID());
-				ProtectItSavedData savedData = ProtectItSavedData.get(world);
+				ProtectItSavedData savedData = ProtectItSavedData.get(level);
 				// mark data as dirty
 				if (savedData != null) {
 					savedData.setDirty();
 				}
 
-				if(((ServerWorld)world).getServer().isDedicatedServer()) {
+				if(((ServerLevel)level).getServer().isDedicatedServer()) {
 					// send message to add protection on all clients
 					RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 							RegistryMutatorMessageToClient.BLOCK_TYPE, 
@@ -200,30 +213,30 @@ public class ClaimBlock extends Block implements EntityBlock {
 								$.playerName = player.getName().getString();
 							}).build();
 					ProtectIt.LOGGER.info("sending message to sync client side ");
-					ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+					ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 				}
 				// remove claim block
-				world.removeBlock(pos, false);
+				level.removeBlock(pos, false);
 
 				// give player Claim Lectern and Lever
-				ItemStack lecternStack = new ItemStack(ProtectItBlocks.CLAIM_LECTERN);
-				if (!player.inventory.add(lecternStack)) {
+				ItemStack lecternStack = new ItemStack(ProtectItBlocks.CLAIM_LECTERN.get());
+				if (!player.getInventory().add(lecternStack)) {
 					player.drop(lecternStack, false);
 				}
-				ItemStack leverStack = new ItemStack(ProtectItBlocks.CLAIM_LEVER);
-				if (!player.inventory.add(leverStack)) {
+				ItemStack leverStack = new ItemStack(ProtectItBlocks.CLAIM_LEVER.get());
+				if (!player.getInventory().add(leverStack)) {
 					player.drop(leverStack, false);
 				}
 				
 				// send message to player
-				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
+				player.sendMessage(new TranslatableComponent("message.protectit.block_region_successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
 			}
 			else {
 				// message player that the area is already protected
-				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_protected"), player.getUUID());
+				player.sendMessage(new TranslatableComponent("message.protectit.block_region_protected"), player.getUUID());
 			}
 		}
-		return ActionResultType.SUCCESS;
+		return InteractionResult.SUCCESS;
 	}
 
 	/**
@@ -234,9 +247,9 @@ public class ClaimBlock extends Block implements EntityBlock {
 	 * Implementing/overriding is fine.
 	 */
 	@Override
-	public boolean triggerEvent(BlockState state, World world, BlockPos pos, int id, int param) {
+	public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int id, int param) {
 		super.triggerEvent(state, world, pos, id, param);
-		TileEntity tileEntity = world.getBlockEntity(pos);
+		BlockEntity tileEntity = world.getBlockEntity(pos);
 		return tileEntity == null ? false : tileEntity.triggerEvent(id, param);
 	}
 
@@ -253,7 +266,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 	 * 
 	 */
 	@Override
-	public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+	public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
 		switch(state.getValue(FACING)) {
 		default:
 		case NORTH:
@@ -268,7 +281,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 	}
 
 	@Override
-	public BlockState getStateForPlacement(BlockItemUseContext context) {
+	public BlockState getStateForPlacement(BlockPlaceContext context) {
 		BlockState blockState = this.defaultBlockState().setValue(FACING,
 				context.getHorizontalDirection().getOpposite());
 		return blockState;

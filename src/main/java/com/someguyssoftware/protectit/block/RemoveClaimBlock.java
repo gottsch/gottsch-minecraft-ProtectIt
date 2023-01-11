@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,37 +21,33 @@ package com.someguyssoftware.protectit.block;
 
 import java.util.List;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
-import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.block.entity.RemoveClaimBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
-import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
-import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.network.PacketDistributor;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.PacketDistributor;
+
 
 /**
  * 
@@ -60,33 +56,33 @@ import net.minecraftforge.fml.network.PacketDistributor;
  */
 public class RemoveClaimBlock extends ClaimBlock {
 
-	public RemoveClaimBlock(String modID, String name, Block.Properties properties) {
-		super(modID, name, properties);
+	public RemoveClaimBlock(Block.Properties properties) {
+		super(properties);
 	}
 
-	public RemoveClaimBlock(String modID, String name, ICoords claimSize, Block.Properties properties) {
-		super(modID, name, claimSize, properties);
+	public RemoveClaimBlock(ICoords claimSize, Block.Properties properties) {
+		super(claimSize, properties);
 	}
 
 	@Override
-	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-		RemoveClaimBlockEntity tileEntity = null;
+	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+		RemoveClaimBlockEntity blockEntity = null;
 		try {
-			tileEntity = new RemoveClaimBlockEntity();
+			blockEntity = new RemoveClaimBlockEntity(pos, state);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
 		}
-		ProtectIt.LOGGER.info("create tileEntity -> {}}", tileEntity);
-		return tileEntity;
+		ProtectIt.LOGGER.info("createNewTileEntity | blockEntity -> {}}", blockEntity);
+		return blockEntity;
 	}
 
 	/**
 	 * 
 	 */
 	@Override
-	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		TileEntity tileEntity = worldIn.getBlockEntity(pos);
+	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
 		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get the claim for this position
 			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
@@ -106,25 +102,26 @@ public class RemoveClaimBlock extends ClaimBlock {
 	/**
 	 * 
 	 */
+	
 	@Override
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player,
-			Hand handIn, BlockRayTraceResult hit) {
+	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player,
+			InteractionHand handIn, BlockHitResult hit) {
 
 		// exit if on the client
 		if (WorldInfo.isClientSide(world)) {
-			return ActionResultType.SUCCESS;
+			return InteractionResult.SUCCESS;
 		}
 		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
 		// get the tile entity
-		TileEntity tileEntity = world.getBlockEntity(pos);
+		BlockEntity tileEntity = world.getBlockEntity(pos);
 		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
 			Claim claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				player.sendMessage(new TranslationTextComponent("message.protectit.block_region_not_protected_or_owner"), player.getUUID());
-				return ActionResultType.SUCCESS;
+				player.sendMessage(new TranslatableComponent("message.protectit.block_region_not_protected_or_owner"), player.getUUID());
+				return InteractionResult.SUCCESS;
 			}
 
 			// remove claim
@@ -138,7 +135,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 				savedData.setDirty();
 			}
 
-			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				// send message to remove protection on all clients
 				RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 						RegistryMutatorMessageToClient.BLOCK_TYPE, 
@@ -149,23 +146,23 @@ public class RemoveClaimBlock extends ClaimBlock {
 							$.playerName = player.getName().getString();
 						}).build();
 				ProtectIt.LOGGER.info("sending message to sync client side ");
-				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
 			// remove Remove Claim block
 			world.removeBlock(pos, false);
 
 			// TODO give player Claim Block - need the size?
-			ItemStack claimStack = new ItemStack(ProtectItBlocks.SMALL_CLAIM);
-			if (!player.inventory.add(claimStack)) {
+			ItemStack claimStack = new ItemStack(ProtectItBlocks.SMALL_CLAIM.get());
+			if (!player.getInventory().add(claimStack)) {
 				player.drop(claimStack, false);
 			}
 
 			// send message to player
-			player.sendMessage(new TranslationTextComponent("message.protectit.claim_successfully_removed"), player.getUUID());
+			player.sendMessage(new TranslatableComponent("message.protectit.claim_successfully_removed"), player.getUUID());
 
 		}
 
-		return ActionResultType.SUCCESS;
+		return InteractionResult.SUCCESS;
 	}
 }

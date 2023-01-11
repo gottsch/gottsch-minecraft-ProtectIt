@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -25,11 +25,10 @@ import java.util.function.Supplier;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraftforge.network.NetworkEvent;
 
 /**
  * 
@@ -39,7 +38,7 @@ import net.minecraftforge.fml.network.PacketDistributor;
 public class RegistryLoadMessageHandlerOnServer {
 	
 	public static boolean isThisProtocolAcceptedByServer(String protocolVersion) {
-		return ProtectItNetworking.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
 	public static void onMessageReceived(final RegistryLoadMessageToServer message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -60,7 +59,7 @@ public class RegistryLoadMessageHandlerOnServer {
 		//  that the ctx handler is a serverhandler, and that ServerPlayerEntity exists
 		// Packets received on the client side must be handled differently!  See MessageHandlerOnClient
 
-		final ServerPlayerEntity sendingPlayer = ctx.getSender();
+		final ServerPlayer sendingPlayer = ctx.getSender();
 		if (sendingPlayer == null) {
 			ProtectIt.LOGGER.warn("EntityPlayerMP was null when PoisonMistMessageToServer was received");
 		}
@@ -75,11 +74,11 @@ public class RegistryLoadMessageHandlerOnServer {
 	 * @param worldServer
 	 * @param message
 	 */
-	private static void processMessage(RegistryLoadMessageToServer message, ServerPlayerEntity sendingPlayer) {
+	private static void processMessage(RegistryLoadMessageToServer message, ServerPlayer sendingPlayer) {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			MinecraftServer minecraftServer = sendingPlayer.server;
-			ServerPlayerEntity player = minecraftServer.getPlayerList().getPlayer(UUID.fromString(message.getUuid()));
+			ServerPlayer player = minecraftServer.getPlayerList().getPlayer(UUID.fromString(message.getUuid()));
 			if (sendingPlayer != null) {
 				// send message to update client's registry with the loaded data
 //				TEMP

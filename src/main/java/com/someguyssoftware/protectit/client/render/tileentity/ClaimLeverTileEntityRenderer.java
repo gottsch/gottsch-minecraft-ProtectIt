@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,47 +17,46 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.render.tileentity;
+package com.someguyssoftware.protectit.client.render.tileentity;
 
 import java.awt.Color;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.protectit.ProtectIt;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
-import com.someguyssoftware.protectit.registry.BlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LeverBlock;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+
 
 /**
  * 
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverBlockEntity> implements IClaimRenderer {
+public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLeverBlockEntity>, IClaimRenderer {
 
-	public ClaimLeverTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
-		super(dispatcher);
+	public ClaimLeverTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+//		super(context);
 	}
 
 	@Override
-	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
-			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
+	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		
 		if (tileEntity == null) {
 			return;
@@ -67,7 +66,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverB
 		BlockState state =  tileEntity.getLevel().getBlockState(pos);
 		Claim claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 
-		if (!state.is(ProtectItBlocks.CLAIM_LEVER) || !state.getValue(LeverBlock.POWERED) || claim == null) {
+		if (!state.is(ProtectItBlocks.CLAIM_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || claim == null) {
 			return;
 		}
 		
@@ -89,7 +88,7 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverB
 		// split up in red, green and blue and transform it to 0.0 - 1.0
 		float green = c.getGreen() / 255.0f;
 
-		IVertexBuilder builder = renderTypeBuffer.getBuffer(RenderType.lines());
+		VertexConsumer builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
 		// TODO merge the Color strategies between the render methods
 		
@@ -101,13 +100,13 @@ public class ClaimLeverTileEntityRenderer extends TileEntityRenderer<ClaimLeverB
 
 
 	@Override
-	public void updateClaimTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+	public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverBlockEntity)tileEntity).getClaimCoords()).negate();
 		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
 	}
 	
 	@Override
-	public void updateHighlightTranslation(TileEntity tileEntity, MatrixStack matrixStack) {
+	public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
 
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());

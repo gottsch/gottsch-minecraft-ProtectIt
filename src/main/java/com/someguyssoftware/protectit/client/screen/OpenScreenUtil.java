@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.screen;
+package com.someguyssoftware.protectit.client.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.DistExecutor;
 
 /**
@@ -39,7 +39,7 @@ public class OpenScreenUtil {
 	 * @param hand
 	 * @return
 	 */
-    public static DistExecutor.SafeRunnable openEditClaimBookScreen(PlayerEntity player, ItemStack itemStack, Hand hand) {
+    public static DistExecutor.SafeRunnable openEditClaimBookScreen(Player player, ItemStack itemStack, InteractionHand hand) {
         Minecraft.getInstance().setScreen(new EditClaimBookScreen(player, itemStack, hand));
         return new DistExecutor.SafeRunnable() {
             @Override

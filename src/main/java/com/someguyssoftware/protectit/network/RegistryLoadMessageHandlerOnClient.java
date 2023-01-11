@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -29,10 +29,11 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.registry.bst.Interval;
 
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.LogicalSidedProvider;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent;
+
 
 /**
  * 
@@ -42,7 +43,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 public class RegistryLoadMessageHandlerOnClient {
 	
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return ProtectItNetworking.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
 	public static void onMessageReceived(final RegistryLoadMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -64,7 +65,7 @@ public class RegistryLoadMessageHandlerOnClient {
 		//  that the ctx handler is a client, and that Minecraft exists.
 		// Packets received on the server side must be handled differently!  See MessageHandlerOnServer
 
-		Optional<ClientWorld> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
 		if (!clientWorld.isPresent()) {
 			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
 			return;
@@ -80,7 +81,7 @@ public class RegistryLoadMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(ClientWorld worldClient, RegistryLoadMessageToClient message) {
+	private static void processMessage(Level worldClient, RegistryLoadMessageToClient message) {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
@@ -96,15 +97,8 @@ public class RegistryLoadMessageHandlerOnClient {
 			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
 			// load registry from interval list
-//			for(Interval interval : message.getIntervals()) {
-//				ProtectIt.LOGGER.debug("adding interval to registry -> {}", interval);
-//				registry.addProtection(interval.getCoords1(), interval.getCoords2(), 
-//						new PlayerData(interval.getData().getOwner().getUuid(), interval.getData().getOwner().getName()));
-//			}
 			for(Claim claim : message.getClaims()) {
 				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
-//				registry.addProtection(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), 
-//						new PlayerData(claim.getOwner().getUuid(), claim.getOwner().getName()));
 				registry.addProtection(claim);
 			}
 		}
@@ -112,6 +106,4 @@ public class RegistryLoadMessageHandlerOnClient {
 			ProtectIt.LOGGER.error("Unexpected error ->", e);
 		}
 	}
-	
-	
 }

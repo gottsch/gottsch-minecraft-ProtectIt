@@ -21,26 +21,26 @@ package com.someguyssoftware.protectit.inventory;
 
 import com.someguyssoftware.protectit.claim.Claim;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.IIntArray;
-import net.minecraft.util.IntArray;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * 
  * @author Mark Gottschling on Nov 18, 2021
  *
  */
-public class ClaimLecternContainer extends Container {
-	private final IInventory lectern;
-	private final IIntArray lecternData;
+public class ClaimLecternMenu extends AbstractContainerMenu {
+	private final Container lectern;
+	private final ContainerData lecternData;
 
 	private Claim claim;
 	
@@ -51,8 +51,8 @@ public class ClaimLecternContainer extends Container {
 	 * @param extraData
 	 * @return
 	 */
-	public static ClaimLecternContainer create(int windowID, PlayerInventory playerInventory, PacketBuffer extraData) {
-		return new ClaimLecternContainer(windowID);
+	public static ClaimLecternMenu create(int windowID, Inventory playerInventory, FriendlyByteBuf extraData) {
+		return new ClaimLecternMenu(windowID);
 	}
 
 	/**
@@ -63,8 +63,8 @@ public class ClaimLecternContainer extends Container {
 	 * @param playerInventory
 	 * @param slotCount
 	 */
-	private ClaimLecternContainer(int windowID) {
-		this(windowID, new Inventory(1), new IntArray(1));
+	public ClaimLecternMenu(int windowID) {
+		this(windowID, new SimpleContainer(1), new SimpleContainerData(1));
 	}
 
 	/**
@@ -73,8 +73,8 @@ public class ClaimLecternContainer extends Container {
 	 * @param inventory
 	 * @param data
 	 */
-	public ClaimLecternContainer(int windowID, IInventory inventory, IIntArray data) {
-		super(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE, windowID);
+	public ClaimLecternMenu(int windowID, Container inventory, ContainerData data) {
+		super(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE.get(), windowID);
 		checkContainerSize(inventory, 1);
 		checkContainerDataCount(data, 1);
 		this.lectern = inventory;
@@ -82,13 +82,13 @@ public class ClaimLecternContainer extends Container {
 		this.addSlot(new Slot(inventory, 0, 0, 0) {
 			public void setChanged() {
 				super.setChanged();
-				ClaimLecternContainer.this.slotsChanged(this.container);
+				ClaimLecternMenu.this.slotsChanged(this.container);
 			}
 		});
 		this.addDataSlots(data);
 	}
 
-	public boolean clickMenuButton(PlayerEntity player, int p_75140_2_) {
+	public boolean clickMenuButton(Player player, int p_75140_2_) {
 		if (p_75140_2_ >= 100) {
 			int k = p_75140_2_ - 100;
 			this.setData(0, k);
@@ -110,13 +110,13 @@ public class ClaimLecternContainer extends Container {
 
 				// take only if the owner of the claim
 				if (getClaim() != null && !player.getStringUUID().equalsIgnoreCase(getClaim().getOwner().getUuid())) {
-					player.sendMessage(new TranslationTextComponent("message.protectit.block_region_not_owner"), player.getUUID());
+					player.sendMessage(new TranslatableComponent("message.protectit.block_region_not_owner"), player.getUUID());
 					return false;
 				}
 				
 				ItemStack itemstack = this.lectern.removeItemNoUpdate(0);
 				this.lectern.setChanged();
-				if (!player.inventory.add(itemstack)) {
+				if (!player.getInventory().add(itemstack)) {
 					player.drop(itemstack, false);
 				}
 
@@ -133,7 +133,7 @@ public class ClaimLecternContainer extends Container {
 	}
 
 	@Override
-	public boolean stillValid(PlayerEntity player) {
+	public boolean stillValid(Player player) {
 		return this.lectern.stillValid(player);
 	}
 

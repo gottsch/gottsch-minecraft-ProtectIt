@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,8 +21,7 @@ package com.someguyssoftware.protectit.command;
 
 import java.util.Optional;
 
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.util.Tuple;
 
 /**

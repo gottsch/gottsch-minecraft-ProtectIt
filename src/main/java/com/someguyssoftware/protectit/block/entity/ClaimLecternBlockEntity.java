@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -26,13 +26,10 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
-import com.someguyssoftware.gottschcore.tileentity.AbstractModTileEntity;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
 import com.someguyssoftware.protectit.claim.Claim;
-import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
+import com.someguyssoftware.protectit.inventory.ClaimLecternMenu;
 import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
@@ -42,29 +39,33 @@ import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.IClearable;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.INamedContainerProvider;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.IIntArray;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.network.PacketDistributor;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Clearable;
+import net.minecraft.world.Container;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * 
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
-public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IClearable, INamedContainerProvider {
+public class ClaimLecternBlockEntity extends BlockEntity implements Clearable, MenuProvider {
 	private static final String BOOK_TAG = "book";
 	private static final String PAGE_TAG = "page";
 	private static final String CLAIM_COORDS_TAG = "claimCoords";
@@ -74,7 +75,7 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 	private int page;
 	private ICoords claimCoords;
 
-	private final IIntArray dataAccess = new IIntArray() {
+	private final ContainerData dataAccess = new ContainerData() {
 		public int get(int index) {
 			return index == 0 ? ClaimLecternBlockEntity.this.page : 0;
 		}
@@ -93,17 +94,17 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 	/**
 	 * 
 	 */
-	public ClaimLecternBlockEntity() {
-		super(ProtectItBlockEntities.CLAIM_LECTERN_TYPE);
+	public ClaimLecternBlockEntity(BlockPos pos, BlockState state) {
+		super(ProtectItBlockEntities.CLAIM_LECTERN_TYPE.get(), pos, state);
 	}
 
 	@Override
-	public ITextComponent getDisplayName() {
-		return new TranslationTextComponent("container.claim_lectern");
+	public Component getDisplayName() {
+		return new TranslatableComponent("container.claim_lectern");
 	}
 
-	public Container createMenu(int id, PlayerInventory playerInventory, PlayerEntity player) {
-		ClaimLecternContainer container = new ClaimLecternContainer(id, this.bookAccess, this.dataAccess);
+	public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
+		ClaimLecternMenu container = new ClaimLecternMenu(id, this.bookAccess, this.dataAccess);
 		Claim claim = ProtectionRegistries.block().getClaimByCoords(claimCoords);
 		container.setClaim(claim);
 		return container;
@@ -140,11 +141,11 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 	 * 
 	 */
 	@Override
-	public void load(BlockState state, CompoundNBT nbt) {
-		super.load(state, nbt);
+	public void load(CompoundTag nbt) {
+		super.load(nbt);
 
 		if (nbt.contains(CLAIM_COORDS_TAG)) {
-			setClaimCoords(WorldInfo.EMPTY_COORDS.load(nbt.getCompound(CLAIM_COORDS_TAG)));
+			setClaimCoords(Coords.EMPTY.load(nbt.getCompound(CLAIM_COORDS_TAG)));
 		}
 		if (nbt.contains(BOOK_TAG, 10)) {
 			this.book = ItemStack.of(nbt.getCompound(BOOK_TAG));
@@ -158,20 +159,19 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 	 * 
 	 */
 	@Override
-	public CompoundNBT save(CompoundNBT nbt) {
-		super.save(nbt);
+	public void saveAdditional(CompoundTag nbt) {
+		super.saveAdditional(nbt);
 
 		if (getClaimCoords() != null) {
-			CompoundNBT coordsNbt = new CompoundNBT();
+			CompoundTag coordsNbt = new CompoundTag();
 			getClaimCoords().save(coordsNbt);
 			nbt.put(CLAIM_COORDS_TAG, coordsNbt);
 		}
 
 		if (!this.getBook().isEmpty()) {
-			nbt.put(BOOK_TAG, this.getBook().save(new CompoundNBT()));
+			nbt.put(BOOK_TAG, this.getBook().save(new CompoundTag()));
 			nbt.putInt(PAGE_TAG, this.page);
 		}
-		return nbt;
 	}
 
 	public ItemStack getBook() {
@@ -187,7 +187,7 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 		Claim registryClaim = ProtectionRegistries.block().getClaimByCoords(getClaimCoords());
 
 		if (registryClaim !=null) {
-			if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
+			if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
 				List<PlayerData> bookPlayerDataList = ClaimBook.loadPlayerData(bookStack);
 				/*
 				 * compare white lists and update
@@ -211,14 +211,14 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 				// update registry on client side
 				List<Claim> claims = Lists.newArrayList();
 				claims.add(registryClaim);
-				if(((ServerWorld)this.level).getServer().isDedicatedServer()) {
+				if(((ServerLevel)this.level).getServer().isDedicatedServer()) {
 					// send message to add protection on all clients
 					RegistryWhitelistMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
 							RegistryMutatorMessageToClient.BLOCK_TYPE, 
 							RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION, 
 							claims).build();
 					ProtectIt.LOGGER.info("sending message to sync client side -> {}", message);
-					ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+					ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 				}
 				
 				// update this claim - mark as dirty
@@ -235,10 +235,10 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 				registryClaim.getWhitelist().clear();
 			}
 		}
-		this.setBook(bookStack, (PlayerEntity) null);
+		this.setBook(bookStack, (Player) null);
 	}
 
-	public void setBook(ItemStack itemStack, @Nullable PlayerEntity player) {
+	public void setBook(ItemStack itemStack, @Nullable Player player) {
 		this.book = itemStack;
 		this.page = 0;
 		// this.pageCount = WrittenBookItem.getPageCount(this.book);
@@ -257,7 +257,7 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 	/**
 	 * 
 	 */
-	private final IInventory bookAccess = new IInventory() {
+	private final Container bookAccess = new Container() {
 		public int getContainerSize() {
 			return 1;
 		}
@@ -306,7 +306,7 @@ public class ClaimLecternBlockEntity extends AbstractModTileEntity implements IC
 			ClaimLecternBlockEntity.this.setChanged();
 		}
 
-		public boolean stillValid(PlayerEntity player) {
+		public boolean stillValid(Player player) {
 			if (ClaimLecternBlockEntity.this.level
 					.getBlockEntity(ClaimLecternBlockEntity.this.worldPosition) != ClaimLecternBlockEntity.this) {
 				return false;

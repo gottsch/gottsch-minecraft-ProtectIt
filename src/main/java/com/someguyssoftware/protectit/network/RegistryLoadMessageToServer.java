@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  *
@@ -48,7 +48,7 @@ public class RegistryLoadMessageToServer {
 	 * 
 	 * @param buf
 	 */
-	public void encode(PacketBuffer buf) {
+	public void encode(FriendlyByteBuf buf) {
 		if (!isValid()) {
 			return;
 		}
@@ -60,7 +60,7 @@ public class RegistryLoadMessageToServer {
 	 * @param buf
 	 * @return
 	 */
-	public static RegistryLoadMessageToServer decode(PacketBuffer buf) {
+	public static RegistryLoadMessageToServer decode(FriendlyByteBuf buf) {
 		RegistryLoadMessageToServer message;
 
 		try {

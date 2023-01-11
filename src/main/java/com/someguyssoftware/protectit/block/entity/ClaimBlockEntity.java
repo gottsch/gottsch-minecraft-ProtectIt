@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -91,8 +91,8 @@ public class ClaimBlockEntity extends AbstractClaimBlockEntity {
 	 * 
 	 */
 	@Override
-	public void load(BlockState state, CompoundTag nbt) {
-		super.load(state, nbt);
+	public void load(CompoundTag nbt) {
+		super.load(nbt);
 
 		if (nbt.contains(OWNER_UUID)) {
 			setOwnerUuid(nbt.getString(OWNER_UUID));
@@ -133,7 +133,7 @@ public class ClaimBlockEntity extends AbstractClaimBlockEntity {
 	 * handle on client
 	 */
 	@Override
-	public void handleUpdateTag(BlockState state, CompoundTag tag) {
-		load(state, tag);
+	public void handleUpdateTag(CompoundTag tag) {
+		load(tag);
 	}
 }

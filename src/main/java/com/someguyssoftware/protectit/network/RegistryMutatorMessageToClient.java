@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -23,11 +23,12 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 
-import net.minecraft.network.PacketBuffer;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.network.FriendlyByteBuf;
+
 
 /**
  * 
@@ -108,7 +109,7 @@ public class RegistryMutatorMessageToClient {
 	 * 
 	 * @param buf
 	 */
-	public void encode(PacketBuffer buf) {
+	public void encode(FriendlyByteBuf buf) {
 		if (!isValid()) {
 			return;
 		}
@@ -145,7 +146,7 @@ public class RegistryMutatorMessageToClient {
 	 * @param buf
 	 * @return
 	 */
-	public static RegistryMutatorMessageToClient decode(PacketBuffer buf) {
+	public static RegistryMutatorMessageToClient decode(FriendlyByteBuf buf) {
 		RegistryMutatorMessageToClient message;
 		
 		try {
@@ -176,7 +177,7 @@ public class RegistryMutatorMessageToClient {
 		return message;
 	}
 		
-	protected void writeCoords(ICoords coords, PacketBuffer buf) {
+	protected void writeCoords(ICoords coords, FriendlyByteBuf buf) {
 		if (coords != null) {
 			buf.writeInt(coords.getX());
 			buf.writeInt(coords.getY());
@@ -184,7 +185,7 @@ public class RegistryMutatorMessageToClient {
 		}
 	}
 	
-	protected static ICoords readCoords(PacketBuffer buf) {
+	protected static ICoords readCoords(FriendlyByteBuf buf) {
 		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
 		return coords;
 	}

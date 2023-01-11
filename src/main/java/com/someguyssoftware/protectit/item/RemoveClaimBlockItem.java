@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -21,28 +21,22 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.world.WorldInfo;
-import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
-import com.someguyssoftware.protectit.block.entity.RemoveClaimBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
-import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+
 
 /**
  * 
@@ -64,14 +58,14 @@ public class RemoveClaimBlockItem extends BlockItem {
 	 * 
 	 */
 	@Override
-	protected boolean placeBlock(BlockItemUseContext context, BlockState state) {
+	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// prevent use if not the owner
 		Coords coords = new Coords(context.getClickedPos());
 		List<Box> list = ProtectionRegistries.block().getProtections(coords, coords.add(1, 1,1), false, false);
 		if (!list.isEmpty()) {				
 			Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 			if (claim != null && !context.getPlayer().getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				context.getPlayer().sendMessage(new TranslationTextComponent("message.protectit.block_region_not_owner"), context.getPlayer().getUUID());
+				context.getPlayer().sendMessage(new TranslatableComponent("message.protectit.block_region_not_owner"), context.getPlayer().getUUID());
 				return false;
 			}
 		}
@@ -80,10 +74,10 @@ public class RemoveClaimBlockItem extends BlockItem {
 
 	@SuppressWarnings("deprecation")
 	@Override
-	public void appendHoverText(ItemStack stack, World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
+	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
 
-		tooltip.add(new TranslationTextComponent("tooltip.protectit.remove_claim.howto").withStyle(TextFormatting.RED));
+		tooltip.add(new TranslatableComponent("tooltip.protectit.remove_claim.howto").withStyle(ChatFormatting.RED));
 
 	}
 }

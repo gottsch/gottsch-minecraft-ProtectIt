@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -22,19 +22,15 @@ package com.someguyssoftware.protectit.network;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
-import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
-import com.someguyssoftware.protectit.registry.PlayerData;
-import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.LogicalSidedProvider;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent;
+
 
 /**
  * 
@@ -44,7 +40,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 public class ClaimLeverMessageHandlerOnClient {
 
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return ProtectItNetworking.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
 	public static void onMessageReceived(final ClaimLeverMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -65,7 +61,7 @@ public class ClaimLeverMessageHandlerOnClient {
 		//  that the ctx handler is a client, and that Minecraft exists.
 		// Packets received on the server side must be handled differently!  See MessageHandlerOnServer
 
-		Optional<ClientWorld> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
 		if (!clientWorld.isPresent()) {
 			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
 			return;
@@ -81,7 +77,7 @@ public class ClaimLeverMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(ClientWorld worldClient, ClaimLeverMessageToClient message) {
+	private static void processMessage(Level worldClient, ClaimLeverMessageToClient message) {
 		ProtectIt.LOGGER.debug("received claim lever message -> {}", message);
 
 		try {			
@@ -90,7 +86,7 @@ public class ClaimLeverMessageHandlerOnClient {
 				ProtectIt.LOGGER.debug("coords/claimCoords are missing -> {}", message);
 				return;
 			}
-			TileEntity tileEntity = worldClient.getBlockEntity(message.getCoords().toPos());
+			BlockEntity tileEntity = worldClient.getBlockEntity(message.getCoords().toPos());
 			ProtectIt.LOGGER.debug("tileEntity -> {}", tileEntity.getClass().getSimpleName());
 			if (tileEntity instanceof ClaimLeverBlockEntity) {
 				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(message.getClaimCoords());

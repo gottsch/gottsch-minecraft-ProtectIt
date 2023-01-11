@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -19,14 +19,11 @@
  */
 package com.someguyssoftware.protectit.inventory;
 
-import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.setup.Registration;
 
-import net.minecraft.inventory.container.ContainerType;
-import net.minecraftforge.common.extensions.IForgeContainerType;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.registries.RegistryObject;
 
 /**
  * 
@@ -34,17 +31,27 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
  *
  */
 public class ProtectItContainers {
-	public static ContainerType<ClaimLecternContainer> CLAIM_LECTERN_CONTAINER_TYPE;
+	
+	public static final RegistryObject<MenuType<ClaimLecternMenu>> CLAIM_LECTERN_CONTAINER_TYPE;
 
-	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)	
-	public static class RegistrationHandler {		
-		
-		@SubscribeEvent
-		public static void registerContainers(final RegistryEvent.Register<ContainerType<?>> event) {
-			CLAIM_LECTERN_CONTAINER_TYPE = IForgeContainerType.create(ClaimLecternContainer::create);
-			CLAIM_LECTERN_CONTAINER_TYPE.setRegistryName("claim_lectern_container");
-			event.getRegistry().register(CLAIM_LECTERN_CONTAINER_TYPE);
-			
-		}
+	static {
+		CLAIM_LECTERN_CONTAINER_TYPE = Registration.CONTAINERS.register("standard_chest_container",
+	            () -> IForgeMenuType.create((windowId, inventory, data) ->  new ClaimLecternMenu(windowId)));			
 	}
+	
+	public static void register() {
+		Registration.registerContainers();
+	}
+	
+//	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)	
+//	public static class RegistrationHandler {		
+//		
+//		@SubscribeEvent
+//		public static void registerContainers(final RegistryEvent.Register<ContainerType<?>> event) {
+//			CLAIM_LECTERN_CONTAINER_TYPE = IForgeContainerType.create(ClaimLecternContainer::create);
+//			CLAIM_LECTERN_CONTAINER_TYPE.setRegistryName("claim_lectern_container");
+//			event.getRegistry().register(CLAIM_LECTERN_CONTAINER_TYPE);
+//			
+//		}
+//	}
 }

@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -22,17 +22,18 @@ package com.someguyssoftware.protectit.network;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.client.world.ClientWorld;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.LogicalSidedProvider;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent;
+
 
 
 /**
@@ -43,7 +44,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 public class RegistryMutatorMessageHandlerOnClient {
 	
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return ProtectItNetworking.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
 	public static void onMessageReceived(final RegistryMutatorMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -64,7 +65,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 		//  that the ctx handler is a client, and that Minecraft exists.
 		// Packets received on the server side must be handled differently!  See MessageHandlerOnServer
 
-		Optional<ClientWorld> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
 		if (!clientWorld.isPresent()) {
 			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
 			return;
@@ -80,7 +81,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(ClientWorld worldClient, RegistryMutatorMessageToClient message) {
+	private static void processMessage(Level worldClient, RegistryMutatorMessageToClient message) {
 		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;

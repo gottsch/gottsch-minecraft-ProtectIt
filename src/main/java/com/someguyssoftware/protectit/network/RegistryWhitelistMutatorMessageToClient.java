@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -25,14 +25,14 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.Lists;
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.network.PacketBuffer;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * 
@@ -95,7 +95,7 @@ public class RegistryWhitelistMutatorMessageToClient {
 	 * 
 	 * @param buf
 	 */
-	public void encode(PacketBuffer buf) {
+	public void encode(FriendlyByteBuf buf) {
 		if (!isValid()) {
 			return;
 		}
@@ -127,7 +127,7 @@ public class RegistryWhitelistMutatorMessageToClient {
 	 * @param buf
 	 * @return
 	 */
-	public static RegistryWhitelistMutatorMessageToClient decode(PacketBuffer buf) {
+	public static RegistryWhitelistMutatorMessageToClient decode(FriendlyByteBuf buf) {
 		RegistryWhitelistMutatorMessageToClient message;
 
 		List<Claim> claims = Lists.newArrayList();
@@ -162,7 +162,7 @@ public class RegistryWhitelistMutatorMessageToClient {
 		return message;
 	}
 
-	protected void writeCoords(ICoords coords, PacketBuffer buf) {
+	protected void writeCoords(ICoords coords, FriendlyByteBuf buf) {
 		if (coords != null) {
 			buf.writeInt(coords.getX());
 			buf.writeInt(coords.getY());
@@ -170,7 +170,7 @@ public class RegistryWhitelistMutatorMessageToClient {
 		}
 	}
 	
-	protected static ICoords readCoords(PacketBuffer buf) {
+	protected static ICoords readCoords(FriendlyByteBuf buf) {
 		ICoords coords = new Coords(buf.readInt(), buf.readInt(), buf.readInt());
 		return coords;
 	}

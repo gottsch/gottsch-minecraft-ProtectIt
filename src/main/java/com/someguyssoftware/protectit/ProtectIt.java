@@ -22,8 +22,12 @@ package com.someguyssoftware.protectit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.init.ProtectItSetup;
+import com.someguyssoftware.protectit.inventory.ProtectItContainers;
+import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -96,9 +100,14 @@ public class ProtectIt {
 		// Register the setup method for modloading
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+		// register the deferred registries
+		ProtectItBlocks.register();
+		ProtectItItems.register();
+		ProtectItBlockEntities.register();
+		ProtectItContainers.register();
+		
 		// regular register
 		eventBus.addListener(ProtectItSetup::common);
-		eventBus.addListener(ProtectItNetworking::common);
 	}
 
 	/**
@@ -134,7 +143,7 @@ public class ProtectIt {
 			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
 			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().getAll());
 			ProtectIt.LOGGER.debug("player logged in, sending all claim data -> {}", ProtectionRegistries.block().getAll());
-			ProtectItNetworking.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), message);
+			ProtectItNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
 

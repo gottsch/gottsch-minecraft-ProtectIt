@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -23,32 +23,31 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimLecternBlockEntity;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LecternBlock;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.container.INamedContainerProvider;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LecternBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+
 
 /**
  * 
@@ -63,49 +62,26 @@ public class ClaimLectern extends LecternBlock {
 	 * @param name
 	 * @param material
 	 */
-	public ClaimLectern(String modID, String name, Block.Properties properties) {
+	public ClaimLectern(Block.Properties properties) {
 		super(properties);
-		setBlockName(modID, name);
-	}
-
-	/**
-	 * 
-	 * @param modID
-	 * @param name
-	 */
-	public void setBlockName(String modID, String name) {
-		setRegistryName(modID, name);
 	}
 
 	@Override
-	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-		ProtectIt.LOGGER.info("creating new ClaimLecternTileEntity...");
-		ClaimLecternBlockEntity tileEntity = null;
-		//		TestTE tileEntity = null;
+	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+		ClaimLecternBlockEntity blockEntity = null;
 		try {
-			tileEntity = new ClaimLecternBlockEntity();
-			//			tileEntity = new TestTE();
+			blockEntity = new ClaimLecternBlockEntity(pos, state);
 		}
 		catch(Exception e) {
-			ProtectIt.LOGGER.error("An error occurred", e);
+			ProtectIt.LOGGER.error(e);
 		}
-		ProtectIt.LOGGER.info("createNewTileEntity | tileEntity -> {}}", tileEntity);
-		return tileEntity;
-	}
-
-	/**
-	 * 
-	 * @param state
-	 * @return
-	 */
-	@Override
-	public boolean hasTileEntity(BlockState state) {
-		return true;
+		ProtectIt.LOGGER.info("createNewTileEntity | blockEntity -> {}}", blockEntity);
+		return blockEntity;
 	}
 
 	@Override
-	public void setPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		TileEntity tileEntity = worldIn.getBlockEntity(pos);
+	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
 		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
 		if (tileEntity instanceof ClaimLecternBlockEntity) {
 			// get the claim for this position
@@ -120,7 +96,7 @@ public class ClaimLectern extends LecternBlock {
 	}
 
 	@Override
-	public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult rayTrace) {
+	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTrace) {
 		ProtectIt.LOGGER.debug("using lectern block");
 		if (state.getValue(HAS_BOOK)) {
 			ProtectIt.LOGGER.debug("has  book");
@@ -129,20 +105,20 @@ public class ClaimLectern extends LecternBlock {
 				this.openScreen(world, pos, player);
 			}
 
-			return ActionResultType.sidedSuccess(world.isClientSide);
+			return InteractionResult.sidedSuccess(world.isClientSide);
 		} else {
 			ProtectIt.LOGGER.debug("testing if book is in hand.");
 			ItemStack itemStack = player.getItemInHand(hand);
 			// if Book in hand, replace with claim book
 			if (!itemStack.isEmpty() && itemStack.getItem() == Items.BOOK) {
 				itemStack.shrink(1);
-				player.setItemInHand(hand, new ItemStack(ProtectItItems.CLAIM_BOOK));
+				player.setItemInHand(hand, new ItemStack(ProtectItItems.CLAIM_BOOK.get()));
 			}
-			else if (!itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK) {
-				return ActionResultType.CONSUME;
+			else if (!itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK.get()) {
+				return InteractionResult.CONSUME;
 			}
 //			return !itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK ? ActionResultType.CONSUME : ActionResultType.PASS;
-			return ActionResultType.PASS;
+			return InteractionResult.PASS;
 		}
 	}
 
@@ -154,7 +130,7 @@ public class ClaimLectern extends LecternBlock {
 	 * @param itemStack
 	 * @return
 	 */
-	public static boolean tryPlaceBook(World world, BlockPos pos, BlockState state, PlayerEntity player, ItemStack itemStack) {
+	public static boolean tryPlaceBook(Level world, BlockPos pos, BlockState state, Player player, ItemStack itemStack) {
 		ProtectIt.LOGGER.debug("trying to place book.");
 		if (!state.getValue(HAS_BOOK)) {
 			ProtectIt.LOGGER.debug("doesn't have a book yet.");
@@ -162,7 +138,7 @@ public class ClaimLectern extends LecternBlock {
 				ProtectIt.LOGGER.debug("on server side.");
 				
 				// test if the player is the owner
-				TileEntity tileEntity = world.getBlockEntity(pos);
+				BlockEntity tileEntity = world.getBlockEntity(pos);
 				
 				if (tileEntity instanceof ClaimLecternBlockEntity) {
 					ProtectIt.LOGGER.debug("it is a claim lectern TE");
@@ -196,9 +172,9 @@ public class ClaimLectern extends LecternBlock {
 	 * @param state
 	 * @param itemStack
 	 */
-	private static void placeBook(World world, BlockPos pos, BlockState state, ItemStack itemStack) {
+	private static void placeBook(Level world, BlockPos pos, BlockState state, ItemStack itemStack) {
 		ProtectIt.LOGGER.debug("placing book");
-		TileEntity tileEntity = world.getBlockEntity(pos);
+		BlockEntity tileEntity = world.getBlockEntity(pos);
 		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
 		if (tileEntity instanceof ClaimLecternBlockEntity) {
 			ClaimLecternBlockEntity lecternTileEntity = (ClaimLecternBlockEntity)tileEntity;
@@ -206,7 +182,7 @@ public class ClaimLectern extends LecternBlock {
 			lecternTileEntity.setBook(itemStack.split(1));
 			// update the block state
 			resetBookState(world, pos, state, true);
-			world.playSound((PlayerEntity)null, pos, SoundEvents.BOOK_PUT, SoundCategory.BLOCKS, 1.0F, 1.0F);
+			world.playSound((Player)null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
 		}
 		else {
 			ProtectIt.LOGGER.debug("not the right TE.");
@@ -220,25 +196,25 @@ public class ClaimLectern extends LecternBlock {
 	 * @param state
 	 * @param hasBook
 	 */
-	public static void resetBookState(World world, BlockPos pos, BlockState state, boolean hasBook) {
+	public static void resetBookState(Level world, BlockPos pos, BlockState state, boolean hasBook) {
 		world.setBlock(pos, state.setValue(HAS_BOOK, Boolean.valueOf(hasBook)), 3);
 	}
 
 	@Override
 	@Nullable
-	public INamedContainerProvider getMenuProvider(BlockState state, World world, BlockPos pos) {
+	public MenuProvider getMenuProvider(BlockState state, Level world, BlockPos pos) {
 		if (!state.getValue(HAS_BOOK)) {
 			ProtectIt.LOGGER.debug("doesn't have book");
 		}
 		return !state.getValue(HAS_BOOK) ? null : super.getMenuProvider(state, world, pos);
 	}
 
-	private void openScreen(World world, BlockPos pos, PlayerEntity player) {
+	private void openScreen(Level world, BlockPos pos, Player player) {
 		ProtectIt.LOGGER.debug("opening screen");
-		TileEntity tileentity = world.getBlockEntity(pos);
-		if (tileentity instanceof ClaimLecternBlockEntity) {
-			ProtectIt.LOGGER.debug("it is a CLTE");
-			player.openMenu((ClaimLecternBlockEntity)tileentity);
+		BlockEntity blockEntity = world.getBlockEntity(pos);
+		if (blockEntity instanceof ClaimLecternBlockEntity) {
+			ProtectIt.LOGGER.debug("it is a BE");
+			player.openMenu((ClaimLecternBlockEntity)blockEntity);
 		}
 	}
 }

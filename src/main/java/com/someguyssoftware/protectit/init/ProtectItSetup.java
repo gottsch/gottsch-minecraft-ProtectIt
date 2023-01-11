@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -19,9 +19,10 @@
  */
 package com.someguyssoftware.protectit.init;
 
-import com.someguyssoftware.gottschcore.config.IModSetup;
 import com.someguyssoftware.protectit.ProtectIt;
+import com.someguyssoftware.protectit.network.ProtectItNetworking;
 
+import mod.gottsch.forge.gottschcore.config.Config;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 /**
@@ -36,6 +37,8 @@ public class ProtectItSetup {
 	 */
 	public static void common(final FMLCommonSetupEvent event) {
 		// add mod specific logging
-		IModSetup.addRollingFileAppender(ProtectIt.instance);		
+		Config.instance.addRollingFileAppender(ProtectIt.MODID);
+		
+		ProtectItNetworking.register();
 	}
 }

@@ -17,23 +17,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.render.tileentity;
+package com.someguyssoftware.protectit.client.render.tileentity;
 
 import java.awt.Color;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Claim;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * 
@@ -46,13 +46,13 @@ public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer 
 	 * 
 	 * @param dispatcher
 	 */
-	public RemoveClaimTileEntityRenderer(TileEntityRendererDispatcher dispatcher) {
-		super(dispatcher);
+	public RemoveClaimTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+		super(context);
 	}
 
 	@Override
-	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, MatrixStack matrixStack,
-			IRenderTypeBuffer renderTypeBuffer, int combinedLight, int combinedOverlay) {
+	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
 		BlockPos pos = tileEntity.getBlockPos();	
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
@@ -63,7 +63,7 @@ public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer 
 			return;
 		}
 
-		IVertexBuilder builder = renderTypeBuffer.getBuffer(RenderType.lines());
+		VertexConsumer builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
 		// render the claim
 		ICoords size = claim.getBox().getMaxCoords().delta(claim.getBox().getMinCoords());
@@ -72,7 +72,7 @@ public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer 
 	}
 	
 	@Override
-	public Color getHighlightColor(TileEntity tileEntity) {
+	public Color getHighlightColor(BlockEntity tileEntity) {
 		return new Color(0, 0, 0, 100);
 	}
 }

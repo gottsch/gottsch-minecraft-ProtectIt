@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -27,23 +27,24 @@ import java.util.regex.Pattern;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
+
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
-import net.minecraft.command.ISuggestionProvider;
-import net.minecraft.command.arguments.BlockPosArgument;
-import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Tuple;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+
 
 /**
  * TODO need to add uuid in suggestions as opposed to Entity. so would need an additional literal argument (-entity | -uuid)
@@ -57,7 +58,7 @@ public class UnprotectCommand {
 	private static final String UUID = "uuid";
 	private static final String TARGETS = "targets";
 
-	private static final SuggestionProvider<CommandSource> SUGGEST_UUID = (source, builder) -> {
+	private static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
 		// get all uuids from registry
 //		return ISuggestionProvider.suggest(ProtectionRegistries.block().find(p -> !p.getData().getOwner().getUuid().isEmpty()).stream()
 //				.map(i -> String.format("%s[%s]", 
@@ -66,7 +67,7 @@ public class UnprotectCommand {
 		return null;
 	};
 
-	public static void register(CommandDispatcher<CommandSource> dispatcher) {
+	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher
 		.register(Commands.literal("unprotect")
 				.requires(source -> {
@@ -83,24 +84,24 @@ public class UnprotectCommand {
 				.then(Commands.literal("pos")
 						.then(Commands.argument(POS, BlockPosArgument.blockPos())
 								.executes(source -> {
-									return unprotect(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS));
+									return unprotect(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS));
 								})
 								.then(Commands.argument("pos2", BlockPosArgument.blockPos())
 										.executes(source -> {
-											return unprotect(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, "pos2"));
+											return unprotect(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, "pos2"));
 										})
 										.then(Commands.literal(UUID)
 												.then(Commands.argument(UUID, StringArgumentType.string())
 														.suggests(SUGGEST_UUID)
 														.executes(source -> {
-															return unprotect(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), StringArgumentType.getString(source, UUID));							
+															return unprotect(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2), StringArgumentType.getString(source, UUID));							
 														})
 														)
 												)
 										.then(Commands.literal("entity")
 												.then(Commands.argument(TARGETS, EntityArgument.entities())
 														.executes(source -> {
-															return unprotect(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), EntityArgument.getEntities(source, TARGETS));							
+															return unprotect(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2), EntityArgument.getEntities(source, TARGETS));							
 														})
 														)													
 												)
@@ -117,7 +118,7 @@ public class UnprotectCommand {
 	 * @param pos
 	 * @return
 	 */
-	private static int unprotect(CommandSource source, BlockPos pos) {
+	private static int unprotect(CommandSourceStack source, BlockPos pos) {
 		return unprotect(source, pos, pos);
 	}
 
@@ -128,17 +129,17 @@ public class UnprotectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int unprotect(CommandSource source, BlockPos pos, BlockPos pos2) {
+	private static int unprotect(CommandSourceStack source, BlockPos pos, BlockPos pos2) {
 		// first, check that pos2 > pos1
 		Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 		if (!validCoords.isPresent()) {
-			source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+			source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 			return 1;
 		}
 
 		ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB());
 		// save world data
-		ServerWorld world = source.getLevel();
+		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();
@@ -154,11 +155,11 @@ public class UnprotectCommand {
 	 * @param uuid
 	 * @return
 	 */
-	private static int unprotect(CommandSource source, BlockPos pos, BlockPos pos2, String uuid) {
+	private static int unprotect(CommandSourceStack source, BlockPos pos, BlockPos pos2, String uuid) {
 		// first, check that pos2 > pos1
 		Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 		if (!validCoords.isPresent()) {
-			source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+			source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 			return 1;
 		}
 
@@ -180,7 +181,7 @@ public class UnprotectCommand {
 	 * @param uuid
 	 * @return
 	 */
-	private static int unprotect(CommandSource source, String uuid) {		
+	private static int unprotect(CommandSourceStack source, String uuid) {		
 		ProtectionRegistries.block().removeProtection(uuid);
 		return 1;
 	}
@@ -192,12 +193,12 @@ public class UnprotectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int unprotect(CommandSource source, BlockPos pos, BlockPos pos2, Collection<? extends Entity> entities) {
+	private static int unprotect(CommandSourceStack source, BlockPos pos, BlockPos pos2, Collection<? extends Entity> entities) {
 
 		// first, check that pos2 > pos1
 		Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 		if (!validCoords.isPresent()) {
-			source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+			source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 			return 1;
 		}
 
@@ -205,9 +206,9 @@ public class UnprotectCommand {
 		Entity entity = entities.iterator().next();
 		ProtectIt.LOGGER.debug("entity -> {}", entity);
 
-		if (entity instanceof PlayerEntity) {
-			ProtectIt.LOGGER.debug("player entity -> {}", ((PlayerEntity)entity).getDisplayName());
-			PlayerEntity player = (PlayerEntity)entity;
+		if (entity instanceof Player) {
+			ProtectIt.LOGGER.debug("player entity -> {}", ((Player)entity).getDisplayName());
+			Player player = (Player)entity;
 			uuid = player.getStringUUID();				
 		}
 		ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
@@ -215,7 +216,7 @@ public class UnprotectCommand {
 
 		//		ProtectionRegistries.getRegistry().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
 		// save world data
-		ServerWorld world = source.getLevel();
+		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();

@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -17,55 +17,51 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.gui.screen;
+package com.someguyssoftware.protectit.client.screen;
 
 import java.util.List;
 
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.inventory.ClaimLecternContainer;
+import com.someguyssoftware.protectit.inventory.ClaimLecternMenu;
 import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.DialogTexts;
-import net.minecraft.client.gui.IHasContainer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.IContainerListener;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerListener;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * 
  * @author Mark Gottschling on Nov 19, 2021
  *
  */
-public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasContainer<ClaimLecternContainer> {
+public class ClaimLecternScreen extends ReadClaimBookScreen implements MenuAccess<ClaimLecternMenu> {
 
-	private final IContainerListener listener = new IContainerListener() {
-		public void refreshContainer(Container container, NonNullList<ItemStack> itemStack) {
+	private final ContainerListener listener = new ContainerListener() {
+		public void slotChanged(AbstractContainerMenu container, int slot, ItemStack itemStack) {
 			ClaimLecternScreen.this.bookChanged();
 		}
 
-		public void slotChanged(Container container, int slot, ItemStack itemStack) {
-			ClaimLecternScreen.this.bookChanged();
-		}
-
-		public void setContainerData(Container container, int p_71112_2_, int p_71112_3_) {
+		public void dataChanged(AbstractContainerMenu container, int p_71112_2_, int p_71112_3_) {
+	         if (p_71112_2_ == 0) {
+	        	 ClaimLecternScreen.this.bookChanged();
+	         }
 		}
 	};
 
-	private final ClaimLecternContainer menu;
-	private final PlayerEntity player;
+	private final ClaimLecternMenu menu;
+	private final Player player;
 
 	/**
 	 * 
@@ -73,11 +69,11 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 	 * @param playerInventory
 	 * @param text
 	 */
-	public ClaimLecternScreen(ClaimLecternContainer container, PlayerInventory playerInventory, ITextComponent text) {
+	public ClaimLecternScreen(ClaimLecternMenu container, Inventory playerInventory, Component text) {
 		this.menu = container;
 		this.player = playerInventory.player;
 	}
-
+	   
 	@Override
 	protected void init() {
 		super.init();
@@ -87,11 +83,11 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 	@Override
 	protected void createMenuControls() {
 		if (this.minecraft.player.mayBuild()) {
-			this.addButton(new Button(this.width / 2 - 100, 196, 98, 20, DialogTexts.GUI_DONE, (p_214181_1_) -> {
-				this.minecraft.setScreen((Screen) null);
+			this.addRenderableWidget(new Button(this.width / 2 - 100, 196, 98, 20, CommonComponents.GUI_DONE, (p_214181_1_) -> {
+				this.onClose();
 			}));
-			this.addButton(new Button(this.width / 2 + 2, 196, 98, 20,
-					new TranslationTextComponent("lectern.take_book"), (p_214178_1_) -> {
+			this.addRenderableWidget(new Button(this.width / 2 + 2, 196, 98, 20,
+					new TranslatableComponent("lectern.take_book"), (p_214178_1_) -> {
 						this.sendButtonClick(3);
 					}));
 
@@ -105,7 +101,7 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 	}
 
 	@Override
-	public ClaimLecternContainer getMenu() {
+	public ClaimLecternMenu getMenu() {
 		return this.menu;
 	}
 
@@ -134,13 +130,13 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements IHasConta
 		ItemStack bookStack = this.menu.getBook();
 		ProtectIt.LOGGER.debug("book item? -> {}", bookStack);
 		try {
-			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK) {
+			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
 				// TODO replace with ClaimBook.loadPlayerData()
-				CompoundNBT bookNbt = bookStack.getTag();
-				ListNBT list = bookNbt.getList("playerData", 10).copy();
+				CompoundTag bookNbt = bookStack.getTag();
+				ListTag list = bookNbt.getList("playerData", 10).copy();
 				List<PlayerData> playerDataList = Lists.newArrayList();
 				list.forEach(element -> {
-					PlayerData playerData = new PlayerData().load((CompoundNBT) element);
+					PlayerData playerData = new PlayerData().load((CompoundTag) element);
 					ProtectIt.LOGGER.debug("updating player names with name -> {}", playerData.getName());
 					playerDataList.add(playerData);
 				});

@@ -1,6 +1,6 @@
 /*
  * This file is part of  Treasure2.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -32,9 +32,6 @@ import javax.annotation.Nullable;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import com.someguyssoftware.gottschcore.spatial.Box;
-import com.someguyssoftware.gottschcore.spatial.Coords;
-import com.someguyssoftware.gottschcore.spatial.ICoords;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Claim;
@@ -42,29 +39,31 @@ import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
-import com.someguyssoftware.protectit.network.RegistryWhitelistMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.registry.BlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.registry.BlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.bst.Interval;
 
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
-import net.minecraft.command.ISuggestionProvider;
-import net.minecraft.command.arguments.BlockPosArgument;
-import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * 
@@ -83,33 +82,33 @@ public class ProtectCommand {
 	private static final String GIVE_ITEM = "giveItem";
 
 	///// SUGGESTIONS /////
-	private static final SuggestionProvider<CommandSource> SUGGEST_UUID = (source, builder) -> {
+	private static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
 		// get all uuids from registry
 		//		return ISuggestionProvider.suggest(ProtectionRegistries.block().find(p -> !p.getData().getOwner().getUuid().isEmpty()).stream()
 		//				.map(i -> String.format("%s [%s]", 
 		//						(i.getData().getOwner().getName() == null) ? "" : i.getData().getOwner().getName(),
 		//								(i.getData().getOwner().getUuid() == null) ? "" : i.getData().getOwner().getUuid())), builder);
 
-		return ISuggestionProvider.suggest(ProtectionRegistries.block().findByClaim(p -> !p.getOwner().getUuid().isEmpty()).stream()
+		return SharedSuggestionProvider.suggest(ProtectionRegistries.block().findByClaim(p -> !p.getOwner().getUuid().isEmpty()).stream()
 				.map(i -> String.format("%s [%s]", 
 						(i.getOwner().getName() == null) ? "" : i.getOwner().getName(),
 								(i.getOwner().getUuid() == null) ? "" : i.getOwner().getUuid())), builder);
 	};
 	
-	private static final SuggestionProvider<CommandSource> GIVABLE_ITEMS = (source, builder) -> {
+	private static final SuggestionProvider<CommandSourceStack> GIVABLE_ITEMS = (source, builder) -> {
 		List<String> items = Arrays.asList(
 //				ProtectItBlocks.CLAIM_LECTERN.getRegistryName().toString(),
 //				ProtectItBlocks.CLAIM_LEVER.getRegistryName().toString(),
 //				ProtectItItems.CLAIM_BOOK.getRegistryName().toString()
 				"Claim Access Lectern", "Claim Vizualizer Lever", "Claim Access Manifest", "Remove Claim Stake"
 				);
-		return ISuggestionProvider.suggest(items, builder);
+		return SharedSuggestionProvider.suggest(items, builder);
 	};
 
 	/*
 	 * protect [block|pvp] [add|remove|list|whitelist*|unwhitelist*] [uuid|pos] [pos2] [uuid|entity]
 	 */
-	public static void register(CommandDispatcher<CommandSource> dispatcher) {
+	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher
 		.register(Commands.literal("protect")
 				.requires(source -> {
@@ -125,16 +124,16 @@ public class ProtectCommand {
 								})
 								.then(Commands.argument(POS, BlockPosArgument.blockPos())
 										.executes(source -> {
-											return add(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS));
+											return add(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS));
 										})
 										// TODO have just player instead of pos2
 										.then(Commands.argument(POS2, BlockPosArgument.blockPos())
 												.executes(source -> {
-													return add(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2));
+													return add(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2));
 												})
 												.then(Commands.argument(TARGETS, EntityArgument.players())
 														.executes(source -> {
-															return add(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), EntityArgument.getPlayers(source, TARGETS));							
+															return add(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2), EntityArgument.getPlayers(source, TARGETS));							
 														})
 														)
 												)
@@ -163,24 +162,24 @@ public class ProtectCommand {
 								.then(Commands.literal("pos")
 										.then(Commands.argument(POS, BlockPosArgument.blockPos())
 												.executes(source -> {
-													return remove(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS));
+													return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS));
 												})
 												.then(Commands.argument("pos2", BlockPosArgument.blockPos())
 														.executes(source -> {
-															return remove(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, "pos2"));
+															return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, "pos2"));
 														})
 														.then(Commands.literal(UUID)
 																.then(Commands.argument(UUID, StringArgumentType.greedyString())
 																		.suggests(SUGGEST_UUID)
 																		.executes(source -> {
-																			return remove(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), StringArgumentType.getString(source, UUID));							
+																			return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2), StringArgumentType.getString(source, UUID));							
 																		})
 																		)
 																)
 														.then(Commands.literal("entity")
 																.then(Commands.argument(TARGETS, EntityArgument.entities())
 																		.executes(source -> {
-																			return remove(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), EntityArgument.getEntities(source, TARGETS));							
+																			return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2), EntityArgument.getEntities(source, TARGETS));							
 																		})
 																		)													
 																)
@@ -227,15 +226,15 @@ public class ProtectCommand {
 								.then(Commands.literal("add")
 										.then(Commands.argument(POS, BlockPosArgument.blockPos())
 												.executes(source -> {
-													return addWhitelist(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS));
+													return addWhitelist(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS));
 												})
 												.then(Commands.argument(POS2, BlockPosArgument.blockPos())
 														.executes(source -> {
-															return addWhitelist(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2));
+															return addWhitelist(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2));
 														})
 														.then(Commands.argument(TARGET, EntityArgument.player())
 																.executes(source -> {
-																	return addWhitelist(source.getSource(), BlockPosArgument.getOrLoadBlockPos(source, POS), BlockPosArgument.getOrLoadBlockPos(source, POS2), EntityArgument.getPlayer(source, TARGET));							
+																	return addWhitelist(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, POS), BlockPosArgument.getLoadedBlockPos(source, POS2), EntityArgument.getPlayer(source, TARGET));							
 																})
 																)
 														)
@@ -286,8 +285,8 @@ public class ProtectCommand {
 	 * @param source
 	 * @return
 	 */
-	private static int unavailable(CommandSource source) {
-		source.sendSuccess(new TranslationTextComponent("message.protectit.option_unavailable"), true);
+	private static int unavailable(CommandSourceStack source) {
+		source.sendSuccess(new TranslatableComponent("message.protectit.option_unavailable"), true);
 		return 1;
 	}
 
@@ -297,11 +296,11 @@ public class ProtectCommand {
 	 * @param pos
 	 * @return
 	 */
-	private static int add(CommandSource source, BlockPos pos) {
+	private static int add(CommandSourceStack source, BlockPos pos) {
 		return add(source, pos, pos, null);
 	}
 
-	private static int add(CommandSource source, BlockPos pos, BlockPos pos2) {
+	private static int add(CommandSourceStack source, BlockPos pos, BlockPos pos2) {
 		return add(source, pos, pos2, null);
 	}
 	/**
@@ -311,20 +310,20 @@ public class ProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int add(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable Collection<ServerPlayerEntity> players) {
+	private static int add(CommandSourceStack source, BlockPos pos, BlockPos pos2, @Nullable Collection<ServerPlayer> players) {
 		ProtectIt.LOGGER.debug("Executing protect command...");
 		try {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 				return 1;
 			}
 
 			// second, check if any block in the area is already protected.
 			if (ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
 				// send message
-				source.sendSuccess(new TranslationTextComponent("message.protectit.block_region_protected"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.block_region_protected"), true);
 				return 1;
 			}
 
@@ -332,7 +331,7 @@ public class ProtectCommand {
 			String uuid = "";
 			AtomicReference<String> name = new AtomicReference<>("");
 			if (players != null) {
-				ServerPlayerEntity player = players.iterator().next();
+				ServerPlayer player = players.iterator().next();
 				ProtectIt.LOGGER.debug("player entity -> {}", player.getDisplayName().getString());
 				uuid = player.getStringUUID();
 				name.set(player.getName().getString());
@@ -355,14 +354,14 @@ public class ProtectCommand {
 			ProtectionRegistries.block().addProtection(claim);
 
 			// save world data
-			ServerWorld world = source.getLevel();
+			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
 
 			// send message to add protection on all clients
-			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 						RegistryMutatorMessageToClient.BLOCK_TYPE, 
 						RegistryMutatorMessageToClient.ADD_ACTION, 
@@ -371,7 +370,7 @@ public class ProtectCommand {
 							$.coords2 = validCoords.get().getB();
 							$.playerName = name.get();
 						}).build();
-				ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		}
 		catch(Exception e) {
@@ -386,7 +385,7 @@ public class ProtectCommand {
 	 * @param pos
 	 * @return
 	 */
-	private static int remove(CommandSource source, BlockPos pos) {
+	private static int remove(CommandSourceStack source, BlockPos pos) {
 		return remove(source, pos, pos);
 	}
 
@@ -397,22 +396,22 @@ public class ProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int remove(CommandSource source, BlockPos pos, BlockPos pos2) {
+	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2) {
 		// first, check that pos2 > pos1
 		Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 		if (!validCoords.isPresent()) {
-			source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+			source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 			return 1;
 		}
 
 		ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB());
 		// save world data
-		ServerWorld world = source.getLevel();
+		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();
 		}
-		if(((ServerWorld)world).getServer().isDedicatedServer()) {
+		if(((ServerLevel)world).getServer().isDedicatedServer()) {
 			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
 					validCoords.get().getA(), 
 					validCoords.get().getB(), 
@@ -429,12 +428,12 @@ public class ProtectCommand {
 	 * @param uuid
 	 * @return
 	 */
-	private static int remove(CommandSource source, BlockPos pos, BlockPos pos2, String uuid) {
+	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, String uuid) {
 		try {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 				return 1;
 			}
 
@@ -442,12 +441,12 @@ public class ProtectCommand {
 
 			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
 			// save world data
-			ServerWorld world = source.getLevel();
+			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, validCoords.get().getA(), validCoords.get().getB(), uuid);
 			}
 		}
@@ -463,18 +462,18 @@ public class ProtectCommand {
 	 * @param uuid
 	 * @return
 	 */
-	private static int remove(CommandSource source, String uuid) {
+	private static int remove(CommandSourceStack source, String uuid) {
 		try {
 			// parse out the uuid
 			uuid = parseNameUuid(uuid);
 			ProtectionRegistries.block().removeProtection(uuid);
 			// save world data
-			ServerWorld world = source.getLevel();
+			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
 			}
 		}
@@ -490,22 +489,22 @@ public class ProtectCommand {
 	 * @param entities
 	 * @return
 	 */
-	private static int remove(CommandSource source, Collection<? extends Entity> entities) {
+	private static int remove(CommandSourceStack source, Collection<? extends Entity> entities) {
 		String uuid = "";
 		Entity entity = entities.iterator().next();
 
-		if (entity instanceof PlayerEntity) {
-			PlayerEntity player = (PlayerEntity)entity;
+		if (entity instanceof Player) {
+			Player player = (Player)entity;
 			uuid = player.getStringUUID();				
 		}
 		ProtectionRegistries.block().removeProtection(uuid);
 		// save world data
-		ServerWorld world = source.getLevel();
+		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();
 		}
-		if(((ServerWorld)world).getServer().isDedicatedServer()) {
+		if(((ServerLevel)world).getServer().isDedicatedServer()) {
 			sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, null, null, uuid);
 		}
 
@@ -519,31 +518,31 @@ public class ProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int remove(CommandSource source, BlockPos pos, BlockPos pos2, Collection<? extends Entity> entities) {
+	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, Collection<? extends Entity> entities) {
 		try {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 				return 1;
 			}
 
 			String uuid = "";
 			Entity entity = entities.iterator().next();
 
-			if (entity instanceof PlayerEntity) {
-				PlayerEntity player = (PlayerEntity)entity;
+			if (entity instanceof Player) {
+				Player player = (Player)entity;
 				uuid = player.getStringUUID();				
 			}
 			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
 
 			// save world data
-			ServerWorld world = source.getLevel();
+			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
-			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
 						validCoords.get().getA(), 
 						validCoords.get().getB(), 
@@ -596,7 +595,7 @@ public class ProtectCommand {
 					$.coords2 = coords2;
 					$.playerName = "";
 				}).build();
-		ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+		ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 	}
 
 	/**
@@ -604,13 +603,13 @@ public class ProtectCommand {
 	 * @param source
 	 * @return
 	 */
-	private static int list(CommandSource source) {
+	private static int list(CommandSourceStack source) {
 		List<String> list = ProtectionRegistries.block().toStringList();
 		list.forEach(element -> {
-			source.sendSuccess(new StringTextComponent(element), true);
+			source.sendSuccess(new TextComponent(element), true);
 		});
 		if (list.isEmpty()) {
-			source.sendSuccess(new TranslationTextComponent("message.protectit.empty_list"), true);
+			source.sendSuccess(new TranslatableComponent("message.protectit.empty_list"), true);
 		}
 		return 1;
 	}
@@ -620,22 +619,22 @@ public class ProtectCommand {
 	 * @param source
 	 * @return
 	 */
-	private static int clear(CommandSource source) {
+	private static int clear(CommandSourceStack source) {
 		ProtectionRegistries.block().clear();
 
-		ServerWorld world = source.getLevel();
+		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
 		if (savedData != null) {
 			savedData.setDirty();
 		}
 
-		if(((ServerWorld)world).getServer().isDedicatedServer()) {
+		if(((ServerLevel)world).getServer().isDedicatedServer()) {
 			// send message to add protection on all clients
 			RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 					RegistryMutatorMessageToClient.BLOCK_TYPE, 
 					RegistryMutatorMessageToClient.CLEAR_ACTION, 
 					RegistryMutatorMessageToClient.NULL_UUID).build();
-			ProtectItNetworking.simpleChannel.send(PacketDistributor.ALL.noArg(), message);
+			ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 		}
 		return 1;
 	}
@@ -647,28 +646,28 @@ public class ProtectCommand {
 	 * @return
 	 */
 	// TODO update to take in a Player param
-	private static int give(CommandSource source, String name) {
+	private static int give(CommandSourceStack source, String name) {
 		try {
 			Item givableItem = null;
 			switch (name.toLowerCase()) {
 			case "claim access lectern":
-				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LECTERN);
+				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LECTERN.get());
 				break;
 			case "claim vizualizer lever":
-				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LEVER);
+				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LEVER.get());
 				break;
 			case "claim access manifest":
-				givableItem = ProtectItItems.CLAIM_BOOK;
+				givableItem = ProtectItItems.CLAIM_BOOK.get();
 				break;
 			case "remove claim stake":
-				givableItem = Item.byBlock(ProtectItBlocks.REMOVE_CLAIM);
+				givableItem = Item.byBlock(ProtectItBlocks.REMOVE_CLAIM.get());
 				break;
 			}
 			if (givableItem == null) {
-				source.sendSuccess(new TranslationTextComponent("message.protectit.non_givable_item"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.non_givable_item"), true);
 				return 1;
 			}
-			source.getPlayerOrException().inventory.add(new ItemStack(givableItem));
+			source.getPlayerOrException().getInventory().add(new ItemStack(givableItem));
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error on give -> ", e);
@@ -682,11 +681,11 @@ public class ProtectCommand {
 	 * @param pos
 	 * @return
 	 */
-	private static int addWhitelist(CommandSource source, BlockPos pos) {
+	private static int addWhitelist(CommandSourceStack source, BlockPos pos) {
 		return addWhitelist(source, pos, pos, null);
 	}
 
-	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2) {
+	private static int addWhitelist(CommandSourceStack source, BlockPos pos, BlockPos pos2) {
 		return addWhitelist(source, pos, pos2, null);
 	}
 	
@@ -697,21 +696,21 @@ public class ProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int addWhitelist(CommandSource source, BlockPos pos, BlockPos pos2, @Nullable ServerPlayerEntity player) {
+	private static int addWhitelist(CommandSourceStack source, BlockPos pos, BlockPos pos2, @Nullable ServerPlayer player) {
 		ProtectIt.LOGGER.debug("Executing protect command...");
 
 		try {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslationTextComponent("message.protectit.invalid_coords_format"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 				return 1;
 			}
 
 			// second, check if the area is not protected.
 			if (!ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
 				// send message
-				source.sendSuccess(new TranslationTextComponent("message.protectit.block_region_not_protected_or_owner"), true);
+				source.sendSuccess(new TranslatableComponent("message.protectit.block_region_not_protected_or_owner"), true);
 				return 1;
 			}
 
@@ -723,7 +722,7 @@ public class ProtectCommand {
 				uuid = player.getStringUUID();
 				name.set(player.getName().getString());
 			}
-			ServerPlayerEntity owner = source.getPlayerOrException();
+			ServerPlayer owner = source.getPlayerOrException();
 
 			// TODO update
 			// add protection on server
@@ -734,14 +733,14 @@ public class ProtectCommand {
 			// TODO convert to claims
 
 			// save world data
-			ServerWorld world = source.getLevel();
+			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			if (savedData != null) {
 				savedData.setDirty();
 			}
 
 			// send message to add protection on all clients
-//			if(((ServerWorld)world).getServer().isDedicatedServer()) {
+//			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 //				RegistryMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
 //						RegistryMutatorMessageToClient.BLOCK_TYPE, 
 //						RegistryWhitelistMutatorMessageToClient.WHITELIST_ADD_ACTION,
@@ -761,7 +760,7 @@ public class ProtectCommand {
 		// TODO add targetEntity's uuid & name to whitelist of protection(s)
 		// TODO send update message
 		// TEMP
-		source.sendSuccess(new StringTextComponent("You attempted to whitelist someone"), true);
+		source.sendSuccess(new TextComponent("You attempted to whitelist someone"), true);
 		return 1;
 	}
 }

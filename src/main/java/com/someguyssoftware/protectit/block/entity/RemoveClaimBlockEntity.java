@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -19,6 +19,9 @@
  */
 package com.someguyssoftware.protectit.block.entity;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+
 /**
  * 
  * @author Mark Gottschling on Dec 2, 2021
@@ -29,7 +32,7 @@ public class RemoveClaimBlockEntity extends ClaimLeverBlockEntity {
 	/**
 	 * 
 	 */
-	public RemoveClaimBlockEntity() {
-		super(ProtectItBlockEntities.REMOVE_CLAIM_TYPE);
+	public RemoveClaimBlockEntity(BlockPos pos, BlockState state) {
+		super(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), pos, state);
 	}
 }
