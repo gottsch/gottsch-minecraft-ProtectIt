@@ -78,19 +78,19 @@ public class ClaimLeverMessageHandlerOnClient {
 	 * @param message
 	 */
 	private static void processMessage(Level worldClient, ClaimLeverMessageToClient message) {
-		ProtectIt.LOGGER.debug("received claim lever message -> {}", message);
+		ProtectIt.LOGGER.info("received claim lever message -> {}", message);
 
 		try {			
 			if (message.getCoords() == ClaimLeverMessageToClient.EMPTY_COORDS ||
 					message.getClaimCoords() == ClaimLeverMessageToClient.EMPTY_COORDS) {
-				ProtectIt.LOGGER.debug("coords/claimCoords are missing -> {}", message);
+				ProtectIt.LOGGER.info("coords/claimCoords are missing -> {}", message);
 				return;
 			}
 			BlockEntity tileEntity = worldClient.getBlockEntity(message.getCoords().toPos());
-			ProtectIt.LOGGER.debug("tileEntity -> {}", tileEntity.getClass().getSimpleName());
+			ProtectIt.LOGGER.info("tileEntity -> {}", tileEntity.getClass().getSimpleName());
 			if (tileEntity instanceof ClaimLeverBlockEntity) {
 				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(message.getClaimCoords());
-				ProtectIt.LOGGER.debug("set the TE claim coords -> {}", message.getClaimCoords());
+				ProtectIt.LOGGER.info("set the TE claim coords -> {}", message.getClaimCoords());
 			}
 		}			
 		catch(Exception e) {

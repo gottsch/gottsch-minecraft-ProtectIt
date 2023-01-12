@@ -37,9 +37,9 @@ import net.minecraftforge.network.NetworkEvent;
  */
 public class RegistryLoadMessageHandlerOnServer {
 	
-	public static boolean isThisProtocolAcceptedByServer(String protocolVersion) {
-		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
-	}
+//	public static boolean isThisProtocolAcceptedByServer(String protocolVersion) {
+//		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
+//	}
 
 	public static void onMessageReceived(final RegistryLoadMessageToServer message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
@@ -47,11 +47,11 @@ public class RegistryLoadMessageHandlerOnServer {
 		ctx.setPacketHandled(true);
 
 		if (sideReceived != LogicalSide.SERVER) {
-			ProtectIt.LOGGER.warn("PoisonMistMessageToServer received on wrong side -> {}", ctx.getDirection().getReceptionSide());
+			ProtectIt.LOGGER.warn("RegistryLoadMessageToServer received on wrong side -> {}", ctx.getDirection().getReceptionSide());
 			return;
 		}
 		if (!message.isValid()) {
-			ProtectIt.LOGGER.warn("PoisonMessageToServer was invalid -> {}", message.toString());
+			ProtectIt.LOGGER.warn("RegistryLoadMessageToServer was invalid -> {}", message.toString());
 			return;
 		}
 

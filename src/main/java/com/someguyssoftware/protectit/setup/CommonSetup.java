@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.init;
+package com.someguyssoftware.protectit.setup;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
@@ -30,7 +30,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
  * @author Mark Gottschling on Nov 3, 2021
  *
  */
-public class ProtectItSetup {
+public class CommonSetup {
 	/**
 	 * 
 	 * @param event

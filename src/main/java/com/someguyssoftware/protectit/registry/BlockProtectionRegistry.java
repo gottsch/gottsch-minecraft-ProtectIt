@@ -412,7 +412,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 		ListTag list = new ListTag();
 		CLAIMS_BY_COORDS.forEach((coords, claim) -> {
-//			ProtectIt.LOGGER.info("registry saving claim -> {}", claim);
+			ProtectIt.LOGGER.info("registry saving claim -> {}", claim);
 			CompoundTag claimNbt = new CompoundTag();
 			claim.save(claimNbt);
 			list.add(claimNbt);
@@ -429,14 +429,14 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		ProtectIt.LOGGER.debug("loading registry...");
 		clear();
 
-		//tree.load(nbt);
+//		tree.load(nbt);
 
 		if (nbt.contains(CLAIMS_KEY)) {
 			ListTag list = nbt.getList(CLAIMS_KEY, 10);
 			list.forEach(element -> {
 //			for (CompoundTag compound : list.listIterator().
 				Claim claim = new Claim().load((CompoundTag)element);
-//				ProtectIt.LOGGER.debug("loaded claim -> {}", claim);
+				ProtectIt.LOGGER.info("loaded claim -> {}", claim);
 				CLAIMS_BY_COORDS.put(claim.getCoords(), claim);
 //				ProtectIt.LOGGER.debug("coords mapped claim -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
 				
@@ -445,16 +445,16 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 					CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
 				}
 				CLAIMS_BY_OWNER.get(claim.getOwner().getUuid()).add(claim);
-//				ProtectIt.LOGGER.debug("claim BEFORE inserting into tree -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
+				ProtectIt.LOGGER.info("claim BEFORE inserting into tree -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
 				tree.insert(new Interval(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), new OwnershipData(claim.getOwner().getUuid(), claim.getOwner().getName())));
-//				ProtectIt.LOGGER.debug("claim AFTER inserting into tree -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
-//				ProtectIt.LOGGER.debug("running loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
+				ProtectIt.LOGGER.info("claim AFTER inserting into tree -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
+				ProtectIt.LOGGER.info("running loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
 			});
-//			ProtectIt.LOGGER.debug("0.all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
+//			ProtectIt.LOGGER.info("0.all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
 		}
 		// print the loaded claim again
-//		ProtectIt.LOGGER.debug("1. all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
-//		ProtectIt.LOGGER.debug("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
+		ProtectIt.LOGGER.info("1. all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
+		ProtectIt.LOGGER.info("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
 	}
 
 	/**

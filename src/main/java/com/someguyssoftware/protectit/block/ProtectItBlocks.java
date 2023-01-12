@@ -81,7 +81,7 @@ public class ProtectItBlocks {
 				.setBounds(new VoxelShape[] {  largeClaimShape, largeClaimShape, largeClaimShape, largeClaimShape }));
 		
 		REMOVE_CLAIM = Registration.BLOCKS.register("remove_claim", 
-				() -> new ClaimBlock(ClaimSizes.MEDIUM_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+				() -> new RemoveClaimBlock(ClaimSizes.MEDIUM_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 				.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape }));
 	}
 	

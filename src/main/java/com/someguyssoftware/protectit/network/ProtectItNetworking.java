@@ -42,7 +42,7 @@ public class ProtectItNetworking {
 	public static final int REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID = 17;
 	public static final int CLAIM_BOOK_MESSAGE_ID = 18;
 	public static final int CLAIM_LEVER_MESSAGE_ID = 19;
-	
+
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
 	public static SimpleChannel channel;    // used to transmit your network messages
@@ -58,59 +58,37 @@ public class ProtectItNetworking {
 				.clientAcceptedVersions(PROTOCOL_VERSION::equals)
 				.serverAcceptedVersions(PROTOCOL_VERSION::equals)
 				.simpleChannel();
-		
-//				, () -> MESSAGE_PROTOCOL_VERSION,
-//	            ProtectItNetworking::isThisProtocolAcceptedByClient,
-//	            ProtectItNetworking::isThisProtocolAcceptedByServer);
-		
-		// register the messages
-		
+
+		// register the messages		
 		channel.registerMessage(REGISTRY_MUTATOR_MESSAGE_ID, RegistryMutatorMessageToClient.class,
 				RegistryMutatorMessageToClient::encode, RegistryMutatorMessageToClient::decode,
 				RegistryMutatorMessageHandlerOnClient::onMessageReceived,
-		            Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-		
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
 		channel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, RegistryWhitelistMutatorMessageToClient.class,
 				RegistryWhitelistMutatorMessageToClient::encode, RegistryWhitelistMutatorMessageToClient::decode,
 				RegistryWhitelistMutatorMessageHandlerOnClient::onMessageReceived,
-		            Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-		
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
 		channel.registerMessage(REGISTRY_LOAD_MESSAGE_ID, RegistryLoadMessageToClient.class,
 				RegistryLoadMessageToClient::encode, RegistryLoadMessageToClient::decode,
 				RegistryLoadMessageHandlerOnClient::onMessageReceived,
-		            Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-		
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
 		channel.registerMessage(REGISTRY_LOAD_MESSAGE_TO_SERVER_ID, RegistryLoadMessageToServer.class,
 				RegistryLoadMessageToServer::encode, RegistryLoadMessageToServer::decode,
 				RegistryLoadMessageHandlerOnServer::onMessageReceived,
-	            Optional.of(NetworkDirection.PLAY_TO_SERVER));
-		
+				Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
 		channel.registerMessage(CLAIM_BOOK_MESSAGE_ID, ClaimBookMessageToServer.class,
 				ClaimBookMessageToServer::encode, ClaimBookMessageToServer::decode,
 				ClaimBookMessageHandlerOnServer::onMessageReceived,
-	            Optional.of(NetworkDirection.PLAY_TO_SERVER));
-		
+				Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
 		channel.registerMessage(CLAIM_LEVER_MESSAGE_ID, ClaimLeverMessageToClient.class,
 				ClaimLeverMessageToClient::encode, ClaimLeverMessageToClient::decode,
 				ClaimLeverMessageHandlerOnClient::onMessageReceived,
-		            Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 	}
-	
-	/**
-	 * 
-	 * @param protocolVersion
-	 * @return
-	 */
-	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return PROTOCOL_VERSION.equals(protocolVersion);
-	}
-	
-	/**
-	 * 
-	 * @param protocolVersion
-	 * @return
-	 */
-	public static boolean isThisProtocolAcceptedByServer(String protocolVersion) {
-		return PROTOCOL_VERSION.equals(protocolVersion);
-	}
+
 }

@@ -63,18 +63,6 @@ public class ClientSetup {
 		});
 	}
 
-	/**
-	 *
-	 */
-	//	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-
-	/**
-	 * 
-	 * @author Mark Gottschling on Dec 7, 2021
-	 *
-	 */
-	//	public static class RegistrationHandler {
-
 	@SubscribeEvent
 	public static void onTextureStitchEvent(TextureStitchEvent.Pre event) {
 		TextureAtlas map = event.getAtlas();
@@ -83,15 +71,13 @@ public class ClientSetup {
 		}
 		event.addSprite(new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
 	}
-	//	}
-	
+
 	/**
 	 * register renderers
 	 * @param event
 	 */
 	@SubscribeEvent
     public static void onRegisterRenderer(EntityRenderersEvent.RegisterRenderers event) {
-	    // TODO try (Dispatcher d)-> { return new StandardChestRenderer(d, texture); }
 		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_TYPE.get(), ClaimTileEntityRenderer::new);
 		event.registerBlockEntityRenderer(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), RemoveClaimTileEntityRenderer::new);
 		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_LEVER_TYPE.get(), ClaimLeverTileEntityRenderer::new);

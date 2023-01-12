@@ -85,14 +85,14 @@ public class RemoveClaimBlock extends ClaimBlock {
 		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
 		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get the claim for this position
-			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
-			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
+			ProtectIt.LOGGER.info("current protections -> {}", ProtectionRegistries.block().toStringList());
+			ProtectIt.LOGGER.info("search for claim @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			if (!list.isEmpty()) {				
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
-				ProtectIt.LOGGER.debug("found protection -> {}", claim);
+				ProtectIt.LOGGER.info("found protection -> {}", claim);
 				if (claim != null) {
-					ProtectIt.LOGGER.debug("found claim -> {}", claim);
+					ProtectIt.LOGGER.info("found claim -> {}", claim);
 					((RemoveClaimBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 				}
 			}
