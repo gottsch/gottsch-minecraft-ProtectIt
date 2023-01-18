@@ -82,14 +82,14 @@ public class ClaimLectern extends LecternBlock {
 	@Override
 	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
-		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
+		ProtectIt.LOGGER.info("lectern TE -> {}", tileEntity.getClass().getSimpleName());
 		if (tileEntity instanceof ClaimLecternBlockEntity) {
 			// get the claim for this position
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
-			ProtectIt.LOGGER.debug("found claim list -> {}", list);
+			ProtectIt.LOGGER.info("found claim list -> {}", list);
 			if (!list.isEmpty()) {
 				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
-				ProtectIt.LOGGER.debug("found claim -> {}", claim);
+				ProtectIt.LOGGER.info("found claim -> {}", claim);
 				((ClaimLecternBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}
 		}
@@ -97,17 +97,17 @@ public class ClaimLectern extends LecternBlock {
 
 	@Override
 	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTrace) {
-		ProtectIt.LOGGER.debug("using lectern block");
+		ProtectIt.LOGGER.info("using lectern block");
 		if (state.getValue(HAS_BOOK)) {
-			ProtectIt.LOGGER.debug("has  book");
+			ProtectIt.LOGGER.info("has  book");
 			if (!world.isClientSide) {
-				ProtectIt.LOGGER.debug("server side");
+				ProtectIt.LOGGER.info("server side");
 				this.openScreen(world, pos, player);
 			}
 
 			return InteractionResult.sidedSuccess(world.isClientSide);
 		} else {
-			ProtectIt.LOGGER.debug("testing if book is in hand.");
+			ProtectIt.LOGGER.info("testing if book is in hand.");
 			ItemStack itemStack = player.getItemInHand(hand);
 			// if Book in hand, replace with claim book
 			if (!itemStack.isEmpty() && itemStack.getItem() == Items.BOOK) {
@@ -130,28 +130,28 @@ public class ClaimLectern extends LecternBlock {
 	 * @param itemStack
 	 * @return
 	 */
-	public static boolean tryPlaceBook(Level world, BlockPos pos, BlockState state, Player player, ItemStack itemStack) {
-		ProtectIt.LOGGER.debug("trying to place book.");
+	public static boolean tryPlaceBook(@Nullable Player player, Level world, BlockPos pos, BlockState state, ItemStack itemStack) {
+		ProtectIt.LOGGER.info("trying to place book.");
 		if (!state.getValue(HAS_BOOK)) {
-			ProtectIt.LOGGER.debug("doesn't have a book yet.");
+			ProtectIt.LOGGER.info("doesn't have a book yet.");
 			if (!world.isClientSide) {
-				ProtectIt.LOGGER.debug("on server side.");
+				ProtectIt.LOGGER.info("on server side.");
 				
 				// test if the player is the owner
 				BlockEntity tileEntity = world.getBlockEntity(pos);
 				
 				if (tileEntity instanceof ClaimLecternBlockEntity) {
-					ProtectIt.LOGGER.debug("it is a claim lectern TE");
+					ProtectIt.LOGGER.info("it is a claim lectern TE");
 					ClaimLecternBlockEntity lecternTileEntity = (ClaimLecternBlockEntity)tileEntity;
-					ProtectIt.LOGGER.debug("claim coords -> {}", lecternTileEntity.getClaimCoords());
+					ProtectIt.LOGGER.info("claim coords -> {}", lecternTileEntity.getClaimCoords());
 					Claim lecternClaim = ProtectionRegistries.block().getClaimByCoords(lecternTileEntity.getClaimCoords());
-					ProtectIt.LOGGER.debug("lectern claim -> {}", lecternClaim);
+					ProtectIt.LOGGER.info("lectern claim -> {}", lecternClaim);
 					if (lecternClaim == null || !lecternClaim.getOwner().getUuid().equalsIgnoreCase(player.getStringUUID())) {
-						ProtectIt.LOGGER.debug("claim is null or not owner");
+						ProtectIt.LOGGER.info("claim is null or not owner");
 						// TODO display a message to the user
 						return false;
 					}
-					ProtectIt.LOGGER.debug("claim owner -> {}", lecternClaim.getOwner().getUuid() );
+					ProtectIt.LOGGER.info("claim owner -> {}", lecternClaim.getOwner().getUuid() );
 				}
 				else {
 					return false;
@@ -160,7 +160,7 @@ public class ClaimLectern extends LecternBlock {
 			}
 			return true;
 		} else {
-			ProtectIt.LOGGER.debug("tryPlaceBook -> has book!");
+			ProtectIt.LOGGER.info("tryPlaceBook -> has book!");
 			return false;
 		}
 	}
@@ -173,19 +173,19 @@ public class ClaimLectern extends LecternBlock {
 	 * @param itemStack
 	 */
 	private static void placeBook(Level world, BlockPos pos, BlockState state, ItemStack itemStack) {
-		ProtectIt.LOGGER.debug("placing book");
+		ProtectIt.LOGGER.info("placing book");
 		BlockEntity tileEntity = world.getBlockEntity(pos);
-		ProtectIt.LOGGER.debug("lectern TE -> {}", tileEntity.getClass().getSimpleName());
+		ProtectIt.LOGGER.info("lectern TE -> {}", tileEntity.getClass().getSimpleName());
 		if (tileEntity instanceof ClaimLecternBlockEntity) {
 			ClaimLecternBlockEntity lecternTileEntity = (ClaimLecternBlockEntity)tileEntity;
-			ProtectIt.LOGGER.debug("settings the book.");
+			ProtectIt.LOGGER.info("setting the book.");
 			lecternTileEntity.setBook(itemStack.split(1));
 			// update the block state
 			resetBookState(world, pos, state, true);
 			world.playSound((Player)null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
 		}
 		else {
-			ProtectIt.LOGGER.debug("not the right TE.");
+			ProtectIt.LOGGER.info("not the right TE.");
 		}
 	}
 
@@ -204,16 +204,16 @@ public class ClaimLectern extends LecternBlock {
 	@Nullable
 	public MenuProvider getMenuProvider(BlockState state, Level world, BlockPos pos) {
 		if (!state.getValue(HAS_BOOK)) {
-			ProtectIt.LOGGER.debug("doesn't have book");
+			ProtectIt.LOGGER.info("doesn't have book");
 		}
 		return !state.getValue(HAS_BOOK) ? null : super.getMenuProvider(state, world, pos);
 	}
 
 	private void openScreen(Level world, BlockPos pos, Player player) {
-		ProtectIt.LOGGER.debug("opening screen");
+		ProtectIt.LOGGER.info("opening screen");
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		if (blockEntity instanceof ClaimLecternBlockEntity) {
-			ProtectIt.LOGGER.debug("it is a BE");
+			ProtectIt.LOGGER.info("it is a BE");
 			player.openMenu((ClaimLecternBlockEntity)blockEntity);
 		}
 	}

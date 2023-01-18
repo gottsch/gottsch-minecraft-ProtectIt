@@ -146,6 +146,7 @@ public class ProtectIt {
 		}
 	}
 
+	// permission events
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
 		LOGGER.info("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());

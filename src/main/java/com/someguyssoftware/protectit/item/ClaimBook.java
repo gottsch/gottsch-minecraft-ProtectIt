@@ -76,18 +76,18 @@ public class ClaimBook extends Item {
 	 * 
 	 */
 	public InteractionResult useOn(UseOnContext context) {
-		ProtectIt.LOGGER.debug("using ClaimBook...");
+		ProtectIt.LOGGER.info("using ClaimBook...");
 		Level world = context.getLevel();
 		BlockPos pos = context.getClickedPos();
 		BlockState state = world.getBlockState(pos);
 		// TODO maybe have to change to instanceof interface in future
 		if (state.is(ProtectItBlocks.CLAIM_LECTERN.get())) {
-			ProtectIt.LOGGER.debug("lectern is a ClaimLectern");
+			ProtectIt.LOGGER.info("lectern is a ClaimLectern");
 			return ClaimLectern.tryPlaceBook(context.getPlayer(), world, pos, state, context.getItemInHand())
 					? InteractionResult.sidedSuccess(world.isClientSide)
 					: InteractionResult.PASS;
 		} else {
-			ProtectIt.LOGGER.debug("what is it then? -> {}", state.getBlock().getRegistryName().toString());
+			ProtectIt.LOGGER.info("what is it then? -> {}", state.getBlock().getRegistryName().toString());
 			return InteractionResult.PASS;
 		}
 	}
@@ -96,6 +96,7 @@ public class ClaimBook extends Item {
 	 * 
 	 */
 	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+		ProtectIt.LOGGER.info("right-using ClaimBook in hand..");
 		ItemStack itemStack = player.getItemInHand(hand);
 		if ( world.isClientSide()) {
 			/*
