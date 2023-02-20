@@ -27,7 +27,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -64,7 +64,7 @@ public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLe
 		
 		BlockPos pos = tileEntity.getBlockPos();
 		BlockState state =  tileEntity.getLevel().getBlockState(pos);
-		Claim claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
+		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 
 		if (!state.is(ProtectItBlocks.CLAIM_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || claim == null) {
 			return;
@@ -107,7 +107,7 @@ public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLe
 	
 	@Override
 	public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
+		Property claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
 
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);

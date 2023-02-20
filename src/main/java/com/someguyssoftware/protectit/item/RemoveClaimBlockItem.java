@@ -21,7 +21,7 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
@@ -63,7 +63,7 @@ public class RemoveClaimBlockItem extends BlockItem {
 		Coords coords = new Coords(context.getClickedPos());
 		List<Box> list = ProtectionRegistries.block().getProtections(coords, coords.add(1, 1,1), false, false);
 		if (!list.isEmpty()) {				
-			Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+			Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 			if (claim != null && !context.getPlayer().getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
 				context.getPlayer().sendMessage(new TranslatableComponent("message.protectit.block_region_not_owner"), context.getPlayer().getUUID());
 				return false;

@@ -24,7 +24,7 @@ import java.awt.Color;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
@@ -56,7 +56,7 @@ public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer 
 
 		BlockPos pos = tileEntity.getBlockPos();	
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
-		Claim claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
+		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 		
 		if (claim == null) {
 //			ProtectIt.LOGGER.info("or claim is null", block);

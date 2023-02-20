@@ -59,7 +59,7 @@ public class ClientSetup {
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.LARGE_CLAIM.get(), RenderType.cutoutMipped());
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.REMOVE_CLAIM.get(), RenderType.cutoutMipped());
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.CLAIM_LEVER.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.CLAIM_LECTERN.get(), RenderType.cutoutMipped());
+//            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.CLAIM_LECTERN.get(), RenderType.cutoutMipped());
 		});
 	}
 

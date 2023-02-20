@@ -48,6 +48,8 @@ public class Config extends AbstractConfig {
 	public static final General GENERAL;
 	public static final Protection PROTECTION;
 	
+	public static Config instance = new Config();
+	
 	static {
 		LOGGING = new Logging(COMMON_BUILDER);
 		GUI = new Gui(CLIENT_BUILDER);

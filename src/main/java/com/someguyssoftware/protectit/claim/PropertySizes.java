@@ -27,7 +27,7 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
  * @author Mark Gottschling on Oct 30, 2021
  *
  */
-public class ClaimSizes {
+public class PropertySizes {
 
 	public static final ICoords SMALL_CLAIM_SIZE = new Coords(8, 16, 8);
 	public static final ICoords MEDIUM_CLAIM_SIZE = new Coords(16, 32, 16);

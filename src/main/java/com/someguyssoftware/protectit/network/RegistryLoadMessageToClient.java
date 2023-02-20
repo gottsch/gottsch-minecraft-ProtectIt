@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
@@ -46,13 +46,13 @@ public class RegistryLoadMessageToClient {
 	private boolean valid;
 	private String type;
 	private int size;
-	private List<Claim> claims;
+	private List<Property> claims;
 	
 	public RegistryLoadMessageToClient() {
 		valid = false;
 	}
 
-	public RegistryLoadMessageToClient(String type, List<Claim> claims) {
+	public RegistryLoadMessageToClient(String type, List<Property> claims) {
 		this.valid = true;
 		this.type = type;
 		this.size = claims.size();
@@ -75,7 +75,7 @@ public class RegistryLoadMessageToClient {
 		});
 	}
 
-	private void writeClaim(FriendlyByteBuf buf, Claim claim) {
+	private void writeClaim(FriendlyByteBuf buf, Property claim) {
 		buf.writeUtf(StringUtils.defaultString(claim.getOwner().getUuid(), NULL_UUID));
 		buf.writeUtf(StringUtils.defaultString(claim.getOwner().getName(), ""));
 
@@ -122,7 +122,7 @@ public class RegistryLoadMessageToClient {
 		RegistryLoadMessageToClient message;
 		
 		// List<Interval> intervals = new ArrayList<>();
-		List<Claim> claims = new ArrayList<>();
+		List<Property> claims = new ArrayList<>();
 
 		try {
 			String type = buf.readUtf();
@@ -136,7 +136,7 @@ public class RegistryLoadMessageToClient {
 			// }
 
 			for (int index = 0; index < size; index++) {
-				Claim claim = readClaim(buf);
+				Property claim = readClaim(buf);
 				claims.add(claim);
 			}
 			
@@ -153,7 +153,7 @@ public class RegistryLoadMessageToClient {
 	/**
 	 *
 	 */
-	public static Claim readClaim(FriendlyByteBuf buf) {
+	public static Property readClaim(FriendlyByteBuf buf) {
 		List<PlayerData> whitelist = new ArrayList<>();
 
 		String ownerUuid = buf.readUtf();
@@ -168,7 +168,7 @@ public class RegistryLoadMessageToClient {
 			String playerName = buf.readUtf();
 			whitelist.add(new PlayerData(playerUuid, playerName));
 		}
-		Claim claim = new Claim(coords, new Box(coords1, coords2), new PlayerData(ownerUuid, ownerName), name);
+		Property claim = new Property(coords, new Box(coords1, coords2), new PlayerData(ownerUuid, ownerName), name);
 		claim.setWhitelist(whitelist);
 		ProtectIt.LOGGER.debug("decoded claim -> {}", claim);
 		return claim;
@@ -220,11 +220,11 @@ public class RegistryLoadMessageToClient {
 		this.type = type;
 	}
 
-	protected List<Claim> getClaims() {
+	protected List<Property> getClaims() {
 		return claims;
 	}
 
-	protected void setClaims(List<Claim> claims) {
+	protected void setClaims(List<Property> claims) {
 		this.claims = claims;
 	}
 

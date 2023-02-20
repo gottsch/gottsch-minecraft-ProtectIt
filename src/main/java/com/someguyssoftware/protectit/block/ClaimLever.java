@@ -25,7 +25,7 @@ import java.util.Random;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.network.ClaimLeverMessageToClient;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -158,7 +158,7 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 		BlockEntity tileEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
 		if (tileEntity instanceof ClaimLeverBlockEntity) {
-			Claim claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
+			Property claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
 			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
 					claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return InteractionResult.FAIL;
@@ -203,7 +203,7 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 //			ProtectIt.LOGGER.debug("found protections -> {}", list);
 			if (!list.isEmpty()) {				
-				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+				Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 //				ProtectIt.LOGGER.debug("found claim -> {}", claim);
 				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}

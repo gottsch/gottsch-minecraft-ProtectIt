@@ -21,6 +21,7 @@ package com.someguyssoftware.protectit.claim;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.registry.PlayerData;
@@ -37,17 +38,19 @@ import net.minecraft.nbt.ListTag;
  * @author Mark Gottschling on Nov 4, 2021
  *
  */
-public class Claim {
-	public static Claim EMPTY = new Claim(Coords.EMPTY, Box.EMPTY);
+public class Property {
+	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
 
 	public static final String NO_NAME = "";
 	public static final String NAME_KEY = "name";
+	public static final String UUID_KEY = "uuid";
 	public static final String OWNER_KEY = "owner";
 	public static final String COORDS_KEY = "coords";
 	public static final String BOX_KEY = "box";
 	public static final String WHITELIST_KEY = "whitelist";
 	
 	private String name;
+	private UUID uuid;
 	private PlayerData owner;
 	private List<PlayerData> whitelist;
 	private ICoords coords;
@@ -59,7 +62,7 @@ public class Claim {
 	/**
 	 * Empty constructor
 	 */
-	public Claim() {
+	public Property() {
 		this(Coords.EMPTY, Box.EMPTY);
 	}
 
@@ -68,21 +71,27 @@ public class Claim {
 	 * @param coords
 	 * @param box
 	 */
-	public Claim(ICoords coords, Box box) {
+	public Property(ICoords coords, Box box) {
 		setCoords(coords);
 		setBox(box);
 		setOwner(new PlayerData());
 		setName(NO_NAME);
+		setUuid(UUID.randomUUID());
 	}
 
-	public Claim(ICoords coords, Box box, PlayerData data) {
+	public Property(ICoords coords, Box box, PlayerData data) {
 		this(coords, box);
 		setOwner(data);
 	}
 	
-	public Claim(ICoords coords, Box box, PlayerData data, String name) {
+	public Property(ICoords coords, Box box, PlayerData data, String name) {
 		this(coords, box, data);
 		setName(name);
+	}
+	
+	public Property(ICoords coords, Box box, PlayerData data, String name, UUID uuid) {
+		this(coords, box, data, name);
+		setUuid(uuid);
 	}
 	
 	/**
@@ -105,7 +114,8 @@ public class Claim {
 		nbt.put(BOX_KEY, boxNbt);
 
 		nbt.putString(NAME_KEY, getName());
-
+		nbt.putUUID(UUID_KEY, getUuid());
+		
 		ListTag list = new ListTag();
 		getWhitelist().forEach(data -> {
 			CompoundTag playerNbt = new CompoundTag();
@@ -120,7 +130,7 @@ public class Claim {
 	 * @param nbt
 	 * @return
 	 */
-	public Claim load(CompoundTag nbt) {
+	public Property load(CompoundTag nbt) {
 //		ProtectIt.LOGGER.debug("loading claim...");
 
 		if (nbt.contains(OWNER_KEY)) {
@@ -134,6 +144,12 @@ public class Claim {
 		}
 		if (nbt.contains(NAME_KEY)) {
 			setName(nbt.getString(NAME_KEY));
+		}
+		if (nbt.contains(UUID_KEY)) {
+			setUuid(nbt.getUUID(UUID_KEY));
+		}
+		else if (this.getUuid() == null) {
+			setUuid(UUID.randomUUID());
 		}
 		if (nbt.contains(WHITELIST_KEY)) {
 			ListTag list = nbt.getList(WHITELIST_KEY, 10);
@@ -215,7 +231,7 @@ public class Claim {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Claim other = (Claim) obj;
+		Property other = (Property) obj;
 		if (box == null) {
 			if (other.box != null)
 				return false;
@@ -242,5 +258,13 @@ public class Claim {
 		} else if (!whitelist.equals(other.whitelist))
 			return false;
 		return true;
+	}
+
+	public UUID getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(UUID uuid) {
+		this.uuid = uuid;
 	}
 }

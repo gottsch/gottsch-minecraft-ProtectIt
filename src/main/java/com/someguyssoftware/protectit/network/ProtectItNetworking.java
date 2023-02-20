@@ -40,9 +40,15 @@ public class ProtectItNetworking {
 	public static final int REGISTRY_LOAD_MESSAGE_ID = 15;
 	public static final int REGISTRY_LOAD_MESSAGE_TO_SERVER_ID = 16;
 	public static final int REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID = 17;
+	@Deprecated
 	public static final int CLAIM_BOOK_MESSAGE_ID = 18;
+	@Deprecated
 	public static final int CLAIM_LEVER_MESSAGE_ID = 19;
-
+	
+	public static final int WHITELIST_ADD_ID = 20;
+	public static final int WHITELIST_REMOVE_ID = 21;
+	public static final int WHITELIST_CLEAR_ID = 22;
+	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
 	public static SimpleChannel channel;    // used to transmit your network messages
@@ -65,8 +71,8 @@ public class ProtectItNetworking {
 				RegistryMutatorMessageHandlerOnClient::onMessageReceived,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
-		channel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, RegistryWhitelistMutatorMessageToClient.class,
-				RegistryWhitelistMutatorMessageToClient::encode, RegistryWhitelistMutatorMessageToClient::decode,
+		channel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, WhitelistMutatorS2C.class,
+				WhitelistMutatorS2C::encode, WhitelistMutatorS2C::decode,
 				RegistryWhitelistMutatorMessageHandlerOnClient::onMessageReceived,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
@@ -88,6 +94,21 @@ public class ProtectItNetworking {
 		channel.registerMessage(CLAIM_LEVER_MESSAGE_ID, ClaimLeverMessageToClient.class,
 				ClaimLeverMessageToClient::encode, ClaimLeverMessageToClient::decode,
 				ClaimLeverMessageHandlerOnClient::onMessageReceived,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
+		channel.registerMessage(WHITELIST_ADD_ID, WhitelistAddS2CPush.class,
+				WhitelistAddS2CPush::encode, WhitelistAddS2CPush::decode,
+				WhitelistAddS2CPush::handle,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
+		channel.registerMessage(WHITELIST_REMOVE_ID, WhitelistRemoveS2CPush.class,
+				WhitelistRemoveS2CPush::encode, WhitelistRemoveS2CPush::decode,
+				WhitelistRemoveS2CPush::handle,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
+		channel.registerMessage(WHITELIST_CLEAR_ID, WhitelistClearS2CPush.class,
+				WhitelistClearS2CPush::encode, WhitelistClearS2CPush::decode,
+				WhitelistClearS2CPush::handle,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 	}
 

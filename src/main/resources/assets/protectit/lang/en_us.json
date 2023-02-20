@@ -3,7 +3,7 @@
 	"block.protectit.medium_claim":"Medium Claim Stake",
 	"block.protectit.large_claim":"Large Claim Stake",
 	"block.protectit.remove_claim":"Remove Claim Stake",
-	"block.protectit.claim_lever":"Claim Visualizer Lever",
+	"block.protectit.claim_lever":"Property Lever",
 	"block.protectit.claim_lectern":"Claim Access Lectern",
 	
 	"item.protectit.claim_book":"Claim Access Manifest",
@@ -20,6 +20,14 @@
 	"message.protectit.non_givable_item": "That is not a valid item to give.",
 	"message.protectit.max_claims_met": "You have already reached your max. number of claims.",
 	"message.protectit.claim_successfully_removed": "The claim has been removed.",
+	"message.protectit.unable_locate_player": "Unable to locate the player.",
+	"message.protectit.property.list": "Your Protected Properties",
+	"message.protectit.property.rename.success": "The property was successfully renamed to ",
+	"message.protectit.property.name.unknown": "Player does not own a property named ",
+	"message.protectit.whitelist.property.list": "Whitelist for property ",
+	"message.protectit.whitelist.add.success": "The player was successfully added to ",
+	"message.protectit.whitelist.remove.success": "The player was successfully removed from ",
+	"message.protectit.whitelist.clear.success": "The whitelist was successfully cleared from ",
 	
 	"label.protectit.claim_book.title": "Claim Access Manifest",
 	"tooltip.protectit.claim_book.howto": "A players name to the manifast to allow them\naccess to interact or modify your land ie. a whitelist.",

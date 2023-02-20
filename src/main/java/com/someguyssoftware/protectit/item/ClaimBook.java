@@ -27,7 +27,7 @@ import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.client.screen.OpenScreenUtil;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
@@ -55,6 +55,8 @@ import net.minecraftforge.fml.DistExecutor;
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
+// REMOVE until a suitable GUI is added
+@Deprecated
 public class ClaimBook extends Item {
 	public static final String PAGES_TAG = "pages";
 	public static final String PLAYER_DATA_TAG = "playerData";
@@ -75,21 +77,25 @@ public class ClaimBook extends Item {
 	/**
 	 * 
 	 */
+	@Deprecated
 	public InteractionResult useOn(UseOnContext context) {
-		ProtectIt.LOGGER.info("using ClaimBook...");
-		Level world = context.getLevel();
-		BlockPos pos = context.getClickedPos();
-		BlockState state = world.getBlockState(pos);
-		// TODO maybe have to change to instanceof interface in future
-		if (state.is(ProtectItBlocks.CLAIM_LECTERN.get())) {
-			ProtectIt.LOGGER.info("lectern is a ClaimLectern");
-			return ClaimLectern.tryPlaceBook(context.getPlayer(), world, pos, state, context.getItemInHand())
-					? InteractionResult.sidedSuccess(world.isClientSide)
-					: InteractionResult.PASS;
-		} else {
-			ProtectIt.LOGGER.info("what is it then? -> {}", state.getBlock().getRegistryName().toString());
-			return InteractionResult.PASS;
-		}
+		return InteractionResult.PASS;
+//		ProtectIt.LOGGER.info("using ClaimBook...");
+//		Level world = context.getLevel();
+//		BlockPos pos = context.getClickedPos();
+//		BlockState state = world.getBlockState(pos);
+//		// TODO maybe have to change to instanceof interface in future
+//		if (state.is(ProtectItBlocks.CLAIM_LECTERN.get())) {
+//			ProtectIt.LOGGER.info("lectern is a ClaimLectern");
+//			InteractionResult result = ClaimLectern.tryPlaceBook(context.getPlayer(), world, pos, state, context.getItemInHand())
+//					? InteractionResult.sidedSuccess(world.isClientSide)
+//					: InteractionResult.PASS; // consume?
+//			ProtectIt.LOGGER.debug("book item useOn -> {}", result);
+//			return result;
+//		} else {
+//			ProtectIt.LOGGER.info("what is it then? -> {}", state.getBlock().getRegistryName().toString());
+//			return InteractionResult.PASS;
+//		}
 	}
 
 	/**
@@ -137,23 +143,24 @@ public class ClaimBook extends Item {
 	 * @param itemStack
 	 * @return
 	 */
+	@Deprecated
 	public static List<PlayerData> loadPlayerData(ItemStack itemStack) {
 		List<PlayerData> result = Lists.newArrayList();
-		if (itemStack.getItem() != ProtectItItems.CLAIM_BOOK.get()) {
-			return result;
-		}
-		
-		// get white list from book stack
-		CompoundTag nbt = itemStack.getTag();
-		if (nbt != null) {
-			// load the PlayerData			
-			ListTag playerDataListTag = nbt.getList(ClaimBook.PLAYER_DATA_TAG, 10);
-			playerDataListTag.forEach(element -> {
-				PlayerData playerData = new PlayerData();
-				playerData.load((CompoundTag)element);
-				result.add(playerData);
-			});
-		}
+//		if (itemStack.getItem() != ProtectItItems.CLAIM_BOOK.get()) {
+//			return result;
+//		}
+//		
+//		// get white list from book stack
+//		CompoundTag nbt = itemStack.getTag();
+//		if (nbt != null) {
+//			// load the PlayerData			
+//			ListTag playerDataListTag = nbt.getList(ClaimBook.PLAYER_DATA_TAG, 10);
+//			playerDataListTag.forEach(element -> {
+//				PlayerData playerData = new PlayerData();
+//				playerData.load((CompoundTag)element);
+//				result.add(playerData);
+//			});
+//		}
 		return result;
 	}
 	
@@ -162,12 +169,12 @@ public class ClaimBook extends Item {
 	 * @param itemStack
 	 * @return
 	 */
-	public static Claim loadClaim(ItemStack itemStack) {
-		Claim claim = null;
+	public static Property loadClaim(ItemStack itemStack) {
+		Property claim = null;
 		CompoundTag nbt = itemStack.getTag();
 		if (nbt != null) {
 			CompoundTag claimNbt = nbt.getCompound("claim");
-			claim = new Claim();
+			claim = new Property();
 			claim.load(claimNbt);
 		}
 		return claim;
@@ -197,7 +204,7 @@ public class ClaimBook extends Item {
 	 * @param registryClaim
 	 * @return
 	 */
-	public static CompoundTag saveClaim(ItemStack itemStack, Claim registryClaim) {
+	public static CompoundTag saveClaim(ItemStack itemStack, Property registryClaim) {
 		CompoundTag claimNbt = new CompoundTag();
 		registryClaim.save(claimNbt);
 		itemStack.removeTagKey("claim");

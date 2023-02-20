@@ -19,7 +19,7 @@
  */
 package com.someguyssoftware.protectit.inventory;
 
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -42,7 +42,7 @@ public class ClaimLecternMenu extends AbstractContainerMenu {
 	private final Container lectern;
 	private final ContainerData lecternData;
 
-	private Claim claim;
+	private Property claim;
 	
 	/**
 	 * 
@@ -146,11 +146,11 @@ public class ClaimLecternMenu extends AbstractContainerMenu {
 		return this.lecternData.get(0);
 	}
 
-	public Claim getClaim() {
+	public Property getClaim() {
 		return claim;
 	}
 
-	public void setClaim(Claim claim) {
+	public void setClaim(Property claim) {
 		this.claim = claim;
 	}
 }

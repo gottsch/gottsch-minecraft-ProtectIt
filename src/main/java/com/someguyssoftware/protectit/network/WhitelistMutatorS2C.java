@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
@@ -39,10 +39,11 @@ import net.minecraft.network.FriendlyByteBuf;
  * @author Mark Gottschling on Nov 5, 2021
  *
  */
-public class RegistryWhitelistMutatorMessageToClient {
-	public static final String WHITELIST_ADD_ACTION = "whitelist add";
-	public static final String WHITELIST_REMOVE_ACTION = "whitelist remove";
-	public static final String WHITELIST_REPLACE_ACTION = "whitelist replace";
+@Deprecated
+public class WhitelistMutatorS2C {
+	public static final String ADD_ACTION = "add";
+	public static final String REMOVE_ACTION = "remove";
+	public static final String REPLACE_ACTION = "replace";
 
 	public static final ICoords EMPTY_COORDS = new Coords(0, -255, 0);
 	public static final String NULL_UUID = "NULL";	
@@ -50,14 +51,14 @@ public class RegistryWhitelistMutatorMessageToClient {
 	private boolean valid;
 	public String type;						// 0
 	public String action;					// 1
-	public List<Claim> claims;	// 2
+	public List<Property> claims;	// 2
 
 	public static class Builder {
 		public String type;
 		public String action;
-		public List<Claim> claims;
+		public List<Property> claims;
 
-		public Builder(String type, String action, List<Claim> claims) {
+		public Builder(String type, String action, List<Property> claims) {
 			this.type = type;
 			this.action = action;
 			this.claims = claims;
@@ -68,8 +69,8 @@ public class RegistryWhitelistMutatorMessageToClient {
 			return this;
 		}
 
-		public RegistryWhitelistMutatorMessageToClient build() {
-			return  new RegistryWhitelistMutatorMessageToClient(this);
+		public WhitelistMutatorS2C build() {
+			return  new WhitelistMutatorS2C(this);
 		}
 	}
 
@@ -77,7 +78,7 @@ public class RegistryWhitelistMutatorMessageToClient {
 	 * 
 	 * @param builder
 	 */
-	protected RegistryWhitelistMutatorMessageToClient(Builder builder) {
+	protected WhitelistMutatorS2C(Builder builder) {
 		setValid(true);
 		setType(builder.type);
 		setAction(builder.action);
@@ -87,7 +88,7 @@ public class RegistryWhitelistMutatorMessageToClient {
 	/**
 	 * 
 	 */
-	public RegistryWhitelistMutatorMessageToClient() {
+	public WhitelistMutatorS2C() {
 		setValid(false);
 	}
 
@@ -127,10 +128,10 @@ public class RegistryWhitelistMutatorMessageToClient {
 	 * @param buf
 	 * @return
 	 */
-	public static RegistryWhitelistMutatorMessageToClient decode(FriendlyByteBuf buf) {
-		RegistryWhitelistMutatorMessageToClient message;
+	public static WhitelistMutatorS2C decode(FriendlyByteBuf buf) {
+		WhitelistMutatorS2C message;
 
-		List<Claim> claims = Lists.newArrayList();
+		List<Property> claims = Lists.newArrayList();
 		
 		try {
 			String type = buf.readUtf();
@@ -147,17 +148,17 @@ public class RegistryWhitelistMutatorMessageToClient {
 					PlayerData data = new PlayerData(uuid, name);
 					whitelist.add(data);
 				}
-				Claim claim = new Claim(coords, new Box(coords, coords));
+				Property claim = new Property(coords, new Box(coords, coords));
 				claim.setWhitelist(whitelist);
 				claims.add(claim);
 			}
 
-			message = new RegistryWhitelistMutatorMessageToClient.Builder(type, action, claims).build();
+			message = new WhitelistMutatorS2C.Builder(type, action, claims).build();
 			message.setValid(true);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("An error occurred attempting to read message: ", e);
-			message = new RegistryWhitelistMutatorMessageToClient();
+			message = new WhitelistMutatorS2C();
 		}
 		return message;
 	}
@@ -191,11 +192,11 @@ public class RegistryWhitelistMutatorMessageToClient {
 		this.action = action;
 	}
 
-	public List<Claim> getClaims() {
+	public List<Property> getClaims() {
 		return claims;
 	}
 
-	public void setClaims(List<Claim> claims) {
+	public void setClaims(List<Property> claims) {
 		this.claims = claims;
 	}
 

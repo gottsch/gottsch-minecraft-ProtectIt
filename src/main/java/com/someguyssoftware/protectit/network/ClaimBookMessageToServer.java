@@ -30,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
  * @author Mark Gottschling on Nov 20, 2021
  *
  */
+@Deprecated
 public class ClaimBookMessageToServer {
 	private boolean valid;
 	private ItemStack book;

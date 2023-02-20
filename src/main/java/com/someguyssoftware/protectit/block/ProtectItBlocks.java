@@ -24,7 +24,7 @@ import java.util.List;
 
 import com.google.common.base.Preconditions;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.ClaimSizes;
+import com.someguyssoftware.protectit.claim.PropertySizes;
 import com.someguyssoftware.protectit.item.ClaimBlockItem;
 import com.someguyssoftware.protectit.item.ClaimLecternBlockItem;
 import com.someguyssoftware.protectit.item.ClaimLeverBlockItem;
@@ -60,8 +60,8 @@ public class ProtectItBlocks {
 	public static final RegistryObject<Block> CLAIM_LEVER = Registration.BLOCKS.register("claim_lever", 
 			() -> new ClaimLever(Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.75F)));
 	
-	public static final RegistryObject<Block> CLAIM_LECTERN = Registration.BLOCKS.register("claim_lectern", 
-			() -> new ClaimLectern(Properties.of(Material.WOOD, MaterialColor.WOOD).strength(2.5F)));
+//	public static final RegistryObject<Block> CLAIM_LECTERN = Registration.BLOCKS.register("claim_lectern", 
+//			() -> new ClaimLectern(Properties.of(Material.WOOD, MaterialColor.WOOD).strength(2.5F)));
 	
 	static {
 		VoxelShape smallClaimShape = Block.box(7, 0, 7, 9, 10, 9);
@@ -69,19 +69,19 @@ public class ProtectItBlocks {
 		VoxelShape largeClaimShape = Block.box(7, 0, 7, 9, 16, 9);
 		
 		SMALL_CLAIM = Registration.BLOCKS.register("small_claim", 
-				() -> new ClaimBlock(ClaimSizes.SMALL_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+				() -> new ClaimBlock(PropertySizes.SMALL_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 				.setBounds(new VoxelShape[] {  smallClaimShape, smallClaimShape, smallClaimShape, smallClaimShape }));
 		
 		MEDIUM_CLAIM = Registration.BLOCKS.register("medium_claim", 
-				() -> new ClaimBlock(ClaimSizes.MEDIUM_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+				() -> new ClaimBlock(PropertySizes.MEDIUM_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 				.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape }));
 		
 		LARGE_CLAIM = Registration.BLOCKS.register("large_claim", 
-				() -> new ClaimBlock(ClaimSizes.LARGE_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+				() -> new ClaimBlock(PropertySizes.LARGE_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 				.setBounds(new VoxelShape[] {  largeClaimShape, largeClaimShape, largeClaimShape, largeClaimShape }));
 		
 		REMOVE_CLAIM = Registration.BLOCKS.register("remove_claim", 
-				() -> new RemoveClaimBlock(ClaimSizes.MEDIUM_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
+				() -> new RemoveClaimBlock(PropertySizes.MEDIUM_CLAIM_SIZE, Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.5F))
 				.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape }));
 	}
 	

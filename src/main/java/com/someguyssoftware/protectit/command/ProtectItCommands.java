@@ -1,6 +1,6 @@
 /*
  * This file is part of  Protect It.
- * Copyright (c) 2021, Mark Gottschling (gottsch)
+ * Copyright (c) 2021 Mark Gottschling (gottsch)
  * 
  * All rights reserved.
  *
@@ -34,8 +34,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ProtectItCommands {
 	@SubscribeEvent
 	public static void onServerStarting(RegisterCommandsEvent event) {
+		OpsProtectCommand.register(event.getDispatcher());
 		ProtectCommand.register(event.getDispatcher());
-//		UnprotectCommand.register(event.getDispatcher());
-//		ProtectionsCommand.register(event.getDispatcher());
 	}
 }

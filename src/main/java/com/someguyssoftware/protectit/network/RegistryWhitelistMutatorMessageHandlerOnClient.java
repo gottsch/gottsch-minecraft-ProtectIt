@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -43,7 +43,7 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
-	public static void onMessageReceived(final RegistryWhitelistMutatorMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
+	public static void onMessageReceived(final WhitelistMutatorS2C message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 		ctx.setPacketHandled(true);
@@ -77,7 +77,7 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(Level worldClient, RegistryWhitelistMutatorMessageToClient message) {
+	private static void processMessage(Level worldClient, WhitelistMutatorS2C message) {
 		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
@@ -91,12 +91,12 @@ public class RegistryWhitelistMutatorMessageHandlerOnClient {
 				break;
 			}
 
-			if (message.getAction().equals(RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION)) {
+			if (message.getAction().equals(WhitelistMutatorS2C.REPLACE_ACTION)) {
 				if (!message.getClaims().isEmpty()) {
 					message.getClaims().forEach(c -> {
 						// update the claim - NOTE this should update the CLAIMS_BY_COORDS and CLAIMS_BY_OWNER as
 						// they both reference the same object.
-						Claim claim = ProtectionRegistries.block().getClaimByCoords(c.getBox().getMinCoords());
+						Property claim = ProtectionRegistries.block().getClaimByCoords(c.getBox().getMinCoords());
 						if (claim != null) {
 							claim.getWhitelist().clear();
 							claim.getWhitelist().addAll(c.getWhitelist());

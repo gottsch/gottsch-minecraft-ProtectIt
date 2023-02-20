@@ -23,7 +23,7 @@ import java.util.List;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.RemoveClaimBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -89,7 +89,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			ProtectIt.LOGGER.info("search for claim @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			if (!list.isEmpty()) {				
-				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+				Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.info("found protection -> {}", claim);
 				if (claim != null) {
 					ProtectIt.LOGGER.info("found claim -> {}", claim);
@@ -118,7 +118,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
-			Claim claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
+			Property claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
 				player.sendMessage(new TranslatableComponent("message.protectit.block_region_not_protected_or_owner"), player.getUUID());
 				return InteractionResult.SUCCESS;

@@ -23,7 +23,7 @@ import java.util.List;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
@@ -134,7 +134,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
 //		ProtectIt.LOGGER.info("setPlacedBy claimBlock TE -> {}", tileEntity.getClass().getSimpleName());
 		// gather the number of claims the player has
-		List<Claim> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
+		List<Property> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
 		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
 			placer.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), placer.getUUID());
 			return;
@@ -167,7 +167,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
 		// gather the number of claims the player has
-		List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());		
+		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());		
 		ProtectIt.LOGGER.info("claims -> {}", claims);
 		
 		// prevent the use of claim if max claims is met
@@ -187,7 +187,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 				// check if player already owns protections
 //				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
 				// create a claim
-				Claim claim = new Claim(
+				Property claim = new Property(
 						box.getMinCoords(), 
 						box,
 						new PlayerData(player.getStringUUID(), player.getName().getString()),
@@ -219,10 +219,10 @@ public class ClaimBlock extends Block implements EntityBlock {
 				level.removeBlock(pos, false);
 
 				// give player Claim Lectern and Lever
-				ItemStack lecternStack = new ItemStack(ProtectItBlocks.CLAIM_LECTERN.get());
-				if (!player.getInventory().add(lecternStack)) {
-					player.drop(lecternStack, false);
-				}
+//				ItemStack lecternStack = new ItemStack(ProtectItBlocks.CLAIM_LECTERN.get());
+//				if (!player.getInventory().add(lecternStack)) {
+//					player.drop(lecternStack, false);
+//				}
 				ItemStack leverStack = new ItemStack(ProtectItBlocks.CLAIM_LEVER.get());
 				if (!player.getInventory().add(leverStack)) {
 					player.drop(leverStack, false);

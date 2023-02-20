@@ -46,6 +46,7 @@ import net.minecraft.world.item.ItemStack;
  * @author Mark Gottschling on Nov 19, 2021
  *
  */
+@Deprecated
 public class ClaimLecternScreen extends ReadClaimBookScreen implements MenuAccess<ClaimLecternMenu> {
 
 	private final ContainerListener listener = new ContainerListener() {
@@ -126,25 +127,25 @@ public class ClaimLecternScreen extends ReadClaimBookScreen implements MenuAcces
 	 * 
 	 */
 	private void bookChanged() {
-		ProtectIt.LOGGER.debug("bookChanged!");
-		ItemStack bookStack = this.menu.getBook();
-		ProtectIt.LOGGER.debug("book item? -> {}", bookStack);
-		try {
-			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
-				// TODO replace with ClaimBook.loadPlayerData()
-				CompoundTag bookNbt = bookStack.getTag();
-				ListTag list = bookNbt.getList("playerData", 10).copy();
-				List<PlayerData> playerDataList = Lists.newArrayList();
-				list.forEach(element -> {
-					PlayerData playerData = new PlayerData().load((CompoundTag) element);
-					ProtectIt.LOGGER.debug("updating player names with name -> {}", playerData.getName());
-					playerDataList.add(playerData);
-				});
-				this.setPlayerDataCache(playerDataList);
-				this.setClaim(ClaimBook.loadClaim(bookStack));
-			}
-		} catch (Exception e) {
-			ProtectIt.LOGGER.error("An error occurred reading the Claim Book data", e);
-		}
+//		ProtectIt.LOGGER.debug("bookChanged!");
+//		ItemStack bookStack = this.menu.getBook();
+//		ProtectIt.LOGGER.debug("book item? -> {}", bookStack);
+//		try {
+//			if (bookStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
+//				// TODO replace with ClaimBook.loadPlayerData()
+//				CompoundTag bookNbt = bookStack.getTag();
+//				ListTag list = bookNbt.getList("playerData", 10).copy();
+//				List<PlayerData> playerDataList = Lists.newArrayList();
+//				list.forEach(element -> {
+//					PlayerData playerData = new PlayerData().load((CompoundTag) element);
+//					ProtectIt.LOGGER.debug("updating player names with name -> {}", playerData.getName());
+//					playerDataList.add(playerData);
+//				});
+//				this.setPlayerDataCache(playerDataList);
+//				this.setClaim(ClaimBook.loadClaim(bookStack));
+//			}
+//		} catch (Exception e) {
+//			ProtectIt.LOGGER.error("An error occurred reading the Claim Book data", e);
+//		}
 	}
 }

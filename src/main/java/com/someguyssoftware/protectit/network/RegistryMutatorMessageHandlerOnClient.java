@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -97,7 +97,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 			
 			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
 				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
-				Claim claim = new Claim(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
+				Property claim = new Property(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
 				registry.addProtection(claim);
 			}
 			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {

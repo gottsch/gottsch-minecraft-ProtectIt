@@ -19,19 +19,11 @@
  */
 package com.someguyssoftware.protectit.network;
 
-import java.util.List;
 import java.util.function.Supplier;
 
-import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.item.ProtectItItems;
-import com.someguyssoftware.protectit.registry.PlayerData;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -40,6 +32,7 @@ import net.minecraftforge.network.NetworkEvent;
  * @author Mark Gottschling on Nov 20, 2021
  *
  */
+@Deprecated
 public class ClaimBookMessageHandlerOnServer {
 	private static final String PLAYER_DATA_TAG = "playerData";
 
@@ -82,42 +75,43 @@ public class ClaimBookMessageHandlerOnServer {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			if (sendingPlayer != null) {
-				if (message.getBook().getItem() == ProtectItItems.CLAIM_BOOK.get()) {
-					CompoundTag nbt = message.getBook().getTag();
-
-					List<PlayerData> playerDataList = Lists.newArrayList();
-					ListTag sourceListNbt = nbt.getList(PLAYER_DATA_TAG, 10);
-					ProtectIt.LOGGER.debug("sourceListNbt.size -> {}", sourceListNbt.size());
-					List<ServerPlayer> players = sendingPlayer.getLevel().players();
-					sourceListNbt.forEach(element -> {
-						PlayerData data = new PlayerData().load((CompoundTag) element);
-						ProtectIt.LOGGER.debug("loaded data -> {}", data);
-						// check for player on server if missing uuid and add it
-						if (data.getUuid().isEmpty()) {
-							players.forEach(player -> {
-								ProtectIt.LOGGER.debug("checking data -> {} against player -> {}", data.getName(), player.getDisplayName());
-								if (player.getDisplayName().getString().equals(data.getName())) {									
-									data.setUuid(player.getStringUUID());
-								}
-							});
-						}
-						ProtectIt.LOGGER.debug("adding data to playerDataList -> {}", data);
-						playerDataList.add(data);
-					});
-
-					int slot = message.getSlot();
-					if (Inventory.isHotbarSlot(slot) || slot == 40) {
-						ItemStack itemStack = sendingPlayer.getInventory().getItem(slot);
-						if (itemStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
-							ListTag destListNbt = new ListTag();
-							playerDataList.forEach(data -> {
-								CompoundTag dataNbt = data.save();
-								destListNbt.add(dataNbt);
-							});
-							itemStack.addTagElement("playerData", destListNbt);
-						}
-					}
-				}
+				// TEMP REMOVE
+//				if (message.getBook().getItem() == ProtectItItems.CLAIM_BOOK.get()) {
+//					CompoundTag nbt = message.getBook().getTag();
+//
+//					List<PlayerData> playerDataList = Lists.newArrayList();
+//					ListTag sourceListNbt = nbt.getList(PLAYER_DATA_TAG, 10);
+//					ProtectIt.LOGGER.debug("sourceListNbt.size -> {}", sourceListNbt.size());
+//					List<ServerPlayer> players = sendingPlayer.getLevel().players();
+//					sourceListNbt.forEach(element -> {
+//						PlayerData data = new PlayerData().load((CompoundTag) element);
+//						ProtectIt.LOGGER.debug("loaded data -> {}", data);
+//						// check for player on server if missing uuid and add it
+//						if (data.getUuid().isEmpty()) {
+//							players.forEach(player -> {
+//								ProtectIt.LOGGER.debug("checking data -> {} against player -> {}", data.getName(), player.getDisplayName());
+//								if (player.getDisplayName().getString().equals(data.getName())) {									
+//									data.setUuid(player.getStringUUID());
+//								}
+//							});
+//						}
+//						ProtectIt.LOGGER.debug("adding data to playerDataList -> {}", data);
+//						playerDataList.add(data);
+//					});
+//
+//					int slot = message.getSlot();
+//					if (Inventory.isHotbarSlot(slot) || slot == 40) {
+//						ItemStack itemStack = sendingPlayer.getInventory().getItem(slot);
+//						if (itemStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
+//							ListTag destListNbt = new ListTag();
+//							playerDataList.forEach(data -> {
+//								CompoundTag dataNbt = data.save();
+//								destListNbt.add(dataNbt);
+//							});
+//							itemStack.addTagElement("playerData", destListNbt);
+//						}
+//					}
+//				}
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unexpected error ->", e);

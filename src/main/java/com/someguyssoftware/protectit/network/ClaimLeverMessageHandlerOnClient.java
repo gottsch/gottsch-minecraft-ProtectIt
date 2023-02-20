@@ -27,9 +27,12 @@ import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent.Context;
 
 
 /**
@@ -45,13 +48,12 @@ public class ClaimLeverMessageHandlerOnClient {
 
 	public static void onMessageReceived(final ClaimLeverMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
-		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
-		ctx.setPacketHandled(true);
-
-		if (sideReceived != LogicalSide.CLIENT) {
-			ProtectIt.LOGGER.warn("ClaimLeverMessageToClient received on wrong side -> {}", ctx.getDirection().getReceptionSide());
-			return;
-		}
+//		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
+//
+//		if (sideReceived != LogicalSide.CLIENT) {
+//			ProtectIt.LOGGER.warn("ClaimLeverMessageToClient received on wrong side -> {}", ctx.getDirection().getReceptionSide());
+//			return;
+//		}
 		if (!message.isValid()) {
 			ProtectIt.LOGGER.warn("ClaimLeverMessageToClient was invalid -> {}", message.toString());
 			return;
@@ -61,15 +63,30 @@ public class ClaimLeverMessageHandlerOnClient {
 		//  that the ctx handler is a client, and that Minecraft exists.
 		// Packets received on the server side must be handled differently!  See MessageHandlerOnServer
 
-		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
-		if (!clientWorld.isPresent()) {
-			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
-			return;
-		}
+//		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+//		if (!clientWorld.isPresent()) {
+//			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
+//			return;
+//		}
 
 		// This code creates a new task which will be executed by the client during the next tick
 		//  In this case, the task is to call messageHandlerOnClient.processMessage(worldclient, message)
-		ctx.enqueueWork(() -> processMessage(clientWorld.get(), message));
+		ctx.enqueueWork(() -> 
+		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage(ctx, message))
+				);
+		ctx.setPacketHandled(true);
+	}
+
+	private static void processMessage(Context ctx, ClaimLeverMessageToClient message) {
+		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
+		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+		ProtectIt.LOGGER.debug("world -> {}", clientWorld.get());
+		if (sideReceived != LogicalSide.CLIENT) {
+			ProtectIt.LOGGER.warn("VaultCountMessageToClient received on wrong side -> {}", ctx.getDirection().getReceptionSide());
+			return;
+		}		
+		Level level = clientWorld.get();
+		processMessage(level, message);
 	}
 
 	/**

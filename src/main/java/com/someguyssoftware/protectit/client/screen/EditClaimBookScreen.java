@@ -39,7 +39,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.network.ClaimBookMessageToServer;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
@@ -77,6 +77,8 @@ import net.minecraft.world.item.ItemStack;
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
+// REMOVE until a sutiable GUI is added.
+@Deprecated
 public class EditClaimBookScreen extends Screen {
 	private static final String PLAYER_DATA_TAG = "playerData";
 
@@ -98,7 +100,7 @@ public class EditClaimBookScreen extends Screen {
 
 	// persistent book state properties
 	private final List<PlayerData> playerDataCache = Lists.newArrayList();
-	private Claim claim;
+	private Property claim;
 
 	private final TextFieldHelper pageEdit = new TextFieldHelper(this::getCurrentPageText, this::setCurrentPageText, this::getClipboard, this::setClipboard, (p_238774_1_) -> {
 		return p_238774_1_.length() < 1024 && this.font.wordWrapHeight(p_238774_1_, 114) <= 128;
@@ -693,11 +695,11 @@ public class EditClaimBookScreen extends Screen {
 		return playerDataCache;
 	}
 
-	protected Claim getClaim() {
+	protected Property getClaim() {
 		return claim;
 	}
 
-	protected void setClaim(Claim claim) {
+	protected void setClaim(Property claim) {
 		this.claim = claim;
 	}
 }

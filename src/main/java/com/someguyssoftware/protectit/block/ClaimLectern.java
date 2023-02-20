@@ -25,13 +25,14 @@ import javax.annotation.Nullable;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimLecternBlockEntity;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -47,6 +48,7 @@ import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.NetworkHooks;
 
 
 /**
@@ -54,6 +56,8 @@ import net.minecraft.world.phys.BlockHitResult;
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
+// REMOVE until a suitable GUI is added
+@Deprecated
 public class ClaimLectern extends LecternBlock {
 
 	/**
@@ -88,7 +92,7 @@ public class ClaimLectern extends LecternBlock {
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			ProtectIt.LOGGER.info("found claim list -> {}", list);
 			if (!list.isEmpty()) {
-				Claim claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+				Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 				ProtectIt.LOGGER.info("found claim -> {}", claim);
 				((ClaimLecternBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}
@@ -110,13 +114,16 @@ public class ClaimLectern extends LecternBlock {
 			ProtectIt.LOGGER.info("testing if book is in hand.");
 			ItemStack itemStack = player.getItemInHand(hand);
 			// if Book in hand, replace with claim book
-			if (!itemStack.isEmpty() && itemStack.getItem() == Items.BOOK) {
-				itemStack.shrink(1);
-				player.setItemInHand(hand, new ItemStack(ProtectItItems.CLAIM_BOOK.get()));
-			}
-			else if (!itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK.get()) {
-				return InteractionResult.CONSUME;
-			}
+			
+//			TEMP REMOVE
+//			if (!itemStack.isEmpty() && itemStack.getItem() == Items.BOOK) {
+//				itemStack.shrink(1);
+//				player.setItemInHand(hand, new ItemStack(ProtectItItems.CLAIM_BOOK.get()));
+//			}
+//			else if (!itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK.get()) {
+//				return InteractionResult.CONSUME; // TODO this should consume the book
+//			}
+			
 //			return !itemStack.isEmpty() && itemStack.getItem() != ProtectItItems.CLAIM_BOOK ? ActionResultType.CONSUME : ActionResultType.PASS;
 			return InteractionResult.PASS;
 		}
@@ -144,7 +151,7 @@ public class ClaimLectern extends LecternBlock {
 					ProtectIt.LOGGER.info("it is a claim lectern TE");
 					ClaimLecternBlockEntity lecternTileEntity = (ClaimLecternBlockEntity)tileEntity;
 					ProtectIt.LOGGER.info("claim coords -> {}", lecternTileEntity.getClaimCoords());
-					Claim lecternClaim = ProtectionRegistries.block().getClaimByCoords(lecternTileEntity.getClaimCoords());
+					Property lecternClaim = ProtectionRegistries.block().getClaimByCoords(lecternTileEntity.getClaimCoords());
 					ProtectIt.LOGGER.info("lectern claim -> {}", lecternClaim);
 					if (lecternClaim == null || !lecternClaim.getOwner().getUuid().equalsIgnoreCase(player.getStringUUID())) {
 						ProtectIt.LOGGER.info("claim is null or not owner");
@@ -210,11 +217,13 @@ public class ClaimLectern extends LecternBlock {
 	}
 
 	private void openScreen(Level world, BlockPos pos, Player player) {
-		ProtectIt.LOGGER.info("opening screen");
+		ProtectIt.LOGGER.info("opening lectern screen...");
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		if (blockEntity instanceof ClaimLecternBlockEntity) {
 			ProtectIt.LOGGER.info("it is a BE");
 			player.openMenu((ClaimLecternBlockEntity)blockEntity);
+//			NetworkHooks.openGui((ServerPlayer) player, (ClaimLecternBlockEntity)blockEntity, pos);
+			ProtectIt.LOGGER.info("after opening menu");
 		}
 	}
 }

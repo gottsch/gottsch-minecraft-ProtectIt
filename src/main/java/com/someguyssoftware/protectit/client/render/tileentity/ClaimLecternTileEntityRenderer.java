@@ -46,7 +46,6 @@ import net.minecraft.world.level.block.state.BlockState;
 public class ClaimLecternTileEntityRenderer implements BlockEntityRenderer<ClaimLecternBlockEntity> {
 	private final BookModel bookModel;
 	public static final Material BOOK_LOCATION = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
-//	   public static final Material BOOK_LOCATION = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation("entity/enchanting_table_book"));
 
 //	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(ProtectIt.MODID, "claim_lecturn_book"), "main");
 //	public static final ResourceLocation CAULDRON_CHEST_RENDERER_ATLAS_TEXTURE = new ResourceLocation(Treasure.MODID, "entity/chest/cauldron_chest");
@@ -58,9 +57,9 @@ public class ClaimLecternTileEntityRenderer implements BlockEntityRenderer<Claim
 	}
 
 	@Override
-	public void render(ClaimLecternBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+	public void render(ClaimLecternBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
-		BlockState blockstate = tileEntity.getBlockState();
+		BlockState blockstate = blockEntity.getBlockState();
 		if (blockstate.getValue(LecternBlock.HAS_BOOK)) {
 			matrixStack.pushPose();
 			matrixStack.translate(0.5D, 1.0625D, 0.5D);
@@ -69,8 +68,8 @@ public class ClaimLecternTileEntityRenderer implements BlockEntityRenderer<Claim
 			matrixStack.mulPose(Vector3f.ZP.rotationDegrees(67.5F));
 			matrixStack.translate(0.0D, -0.125D, 0.0D);
 			this.bookModel.setupAnim(0.0F, 0.1F, 0.9F, 1.2F);
-			VertexConsumer ivertexbuilder = BOOK_LOCATION.buffer(renderTypeBuffer, RenderType::entitySolid);
-			this.bookModel.render(matrixStack, ivertexbuilder, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+			VertexConsumer vertexConsumer = BOOK_LOCATION.buffer(renderTypeBuffer, RenderType::entitySolid);
+			this.bookModel.render(matrixStack, vertexConsumer, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
 			matrixStack.popPose();
 		}
 	}

@@ -28,13 +28,13 @@ import javax.annotation.Nullable;
 import com.google.common.collect.Lists;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ClaimLectern;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.inventory.ClaimLecternMenu;
 import com.someguyssoftware.protectit.item.ClaimBook;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
-import com.someguyssoftware.protectit.network.RegistryWhitelistMutatorMessageToClient;
+import com.someguyssoftware.protectit.network.WhitelistMutatorS2C;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -65,6 +65,8 @@ import net.minecraftforge.network.PacketDistributor;
  * @author Mark Gottschling on Nov 16, 2021
  *
  */
+// REMOVE until a suitable GUI is added
+@Deprecated
 public class ClaimLecternBlockEntity extends BlockEntity implements Clearable, MenuProvider {
 	private static final String BOOK_TAG = "book";
 	private static final String PAGE_TAG = "page";
@@ -103,9 +105,10 @@ public class ClaimLecternBlockEntity extends BlockEntity implements Clearable, M
 		return new TranslatableComponent("container.claim_lectern");
 	}
 
+	@Override
 	public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
 		ClaimLecternMenu container = new ClaimLecternMenu(id, this.bookAccess, this.dataAccess);
-		Claim claim = ProtectionRegistries.block().getClaimByCoords(claimCoords);
+		Property claim = ProtectionRegistries.block().getClaimByCoords(claimCoords);
 		container.setClaim(claim);
 		return container;
 	}
@@ -184,56 +187,57 @@ public class ClaimLecternBlockEntity extends BlockEntity implements Clearable, M
 	 */
 	public void setBook(ItemStack bookStack) {
 		// get the claim from the registry (use min coords as key instead of coords)
-		Claim registryClaim = ProtectionRegistries.block().getClaimByCoords(getClaimCoords());
+		Property registryClaim = ProtectionRegistries.block().getClaimByCoords(getClaimCoords());
 
 		if (registryClaim !=null) {
-			if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
-				List<PlayerData> bookPlayerDataList = ClaimBook.loadPlayerData(bookStack);
-				/*
-				 * compare white lists and update
-				 */
-				// get list of everything in B (book list) that is net new to A (registry list)
-				List<PlayerData> netNew = new ArrayList<>(bookPlayerDataList);
-				netNew.removeAll(registryClaim.getWhitelist());
-				ProtectIt.LOGGER.debug("net new list -> {}", netNew);
-				// add net new to registryClaim
-				registryClaim.getWhitelist()
-					.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
-				ProtectIt.LOGGER.debug("registry claim white list after ADD net new -> {}", registryClaim.getWhitelist());
-
-				// remove from registryClaim that are no longer contained in bookPlayerDataList.
-				// note, not using difference of lists as only the name is tested, not the equals() of the object
-				List<String> newNames = bookPlayerDataList.stream().map(data -> data.getName())
-						.collect(Collectors.toList());
-				registryClaim.getWhitelist().removeIf(data -> !newNames.contains(data.getName()));
-				ProtectIt.LOGGER.debug("registry claim white list after REMOVE names -> {}", registryClaim.getWhitelist());
-
-				// update registry on client side
-				List<Claim> claims = Lists.newArrayList();
-				claims.add(registryClaim);
-				if(((ServerLevel)this.level).getServer().isDedicatedServer()) {
-					// send message to add protection on all clients
-					RegistryWhitelistMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
-							RegistryMutatorMessageToClient.BLOCK_TYPE, 
-							RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION, 
-							claims).build();
-					ProtectIt.LOGGER.info("sending message to sync client side -> {}", message);
-					ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
-				}
-				
-				// update this claim - mark as dirty
-				ProtectItSavedData savedData = ProtectItSavedData.get(getLevel());
-				if (savedData != null) {
-					savedData.setDirty();
-				}
-
-				// update bookStack				
-				ClaimBook.savePlayerData(bookStack, bookPlayerDataList);
-				ClaimBook.saveClaim(bookStack, registryClaim);
-			}
-			else {
-				registryClaim.getWhitelist().clear();
-			}
+			// TEMP REMOVE
+//			if (bookStack != null && bookStack.getItem() == ProtectItItems.CLAIM_BOOK.get()) {
+//				List<PlayerData> bookPlayerDataList = ClaimBook.loadPlayerData(bookStack);
+//				/*
+//				 * compare white lists and update
+//				 */
+//				// get list of everything in B (book list) that is net new to A (registry list)
+//				List<PlayerData> netNew = new ArrayList<>(bookPlayerDataList);
+//				netNew.removeAll(registryClaim.getWhitelist());
+//				ProtectIt.LOGGER.debug("net new list -> {}", netNew);
+//				// add net new to registryClaim
+//				registryClaim.getWhitelist()
+//					.addAll(netNew.stream().filter(data -> !data.getUuid().isEmpty()).collect(Collectors.toList()));
+//				ProtectIt.LOGGER.debug("registry claim white list after ADD net new -> {}", registryClaim.getWhitelist());
+//
+//				// remove from registryClaim that are no longer contained in bookPlayerDataList.
+//				// note, not using difference of lists as only the name is tested, not the equals() of the object
+//				List<String> newNames = bookPlayerDataList.stream().map(data -> data.getName())
+//						.collect(Collectors.toList());
+//				registryClaim.getWhitelist().removeIf(data -> !newNames.contains(data.getName()));
+//				ProtectIt.LOGGER.debug("registry claim white list after REMOVE names -> {}", registryClaim.getWhitelist());
+//
+//				// update registry on client side
+//				List<Claim> claims = Lists.newArrayList();
+//				claims.add(registryClaim);
+//				if(((ServerLevel)this.level).getServer().isDedicatedServer()) {
+//					// send message to add protection on all clients
+//					RegistryWhitelistMutatorMessageToClient message = new RegistryWhitelistMutatorMessageToClient.Builder(
+//							RegistryMutatorMessageToClient.BLOCK_TYPE, 
+//							RegistryWhitelistMutatorMessageToClient.WHITELIST_REPLACE_ACTION, 
+//							claims).build();
+//					ProtectIt.LOGGER.info("sending message to sync client side -> {}", message);
+//					ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+//				}
+//				
+//				// update this claim - mark as dirty
+//				ProtectItSavedData savedData = ProtectItSavedData.get(getLevel());
+//				if (savedData != null) {
+//					savedData.setDirty();
+//				}
+//
+//				// update bookStack				
+//				ClaimBook.savePlayerData(bookStack, bookPlayerDataList);
+//				ClaimBook.saveClaim(bookStack, registryClaim);
+//			}
+//			else {
+//				registryClaim.getWhitelist().clear();
+//			}
 		}
 		this.setBook(bookStack, (Player) null);
 	}

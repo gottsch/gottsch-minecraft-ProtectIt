@@ -21,7 +21,7 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -59,7 +59,7 @@ public class ClaimBlockItem extends BlockItem {
 	@Override
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// gather the number of claims the player has
-		List<Claim> claims = ProtectionRegistries.block().getProtections(context.getPlayer().getStringUUID());
+		List<Property> claims = ProtectionRegistries.block().getProtections(context.getPlayer().getStringUUID());
 		
 		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
 			if (WorldInfo.isServerSide(context.getLevel())) {

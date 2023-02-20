@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.someguyssoftware.protectit.claim.Claim;
+import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.ChatFormatting;
@@ -51,7 +51,7 @@ public class ReadClaimBookScreen extends Screen {
 	public static final ResourceLocation BOOK_LOCATION = new ResourceLocation("textures/gui/book.png");
 
 	private List<PlayerData> playerDataCache = Lists.newArrayList();
-	private Claim claim;
+	private Property claim;
 
 	/**
 	 * 
@@ -120,11 +120,11 @@ public class ReadClaimBookScreen extends Screen {
 		this.playerDataCache = playerDataCache;
 	}
 
-	public Claim getClaim() {
+	public Property getClaim() {
 		return claim;
 	}
 
-	public void setClaim(Claim claim) {
+	public void setClaim(Property claim) {
 		this.claim = claim;
 	}
 }
