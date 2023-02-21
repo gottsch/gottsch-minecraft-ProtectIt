@@ -48,7 +48,7 @@ public class OwnershipData {
 	
 	public void save(CompoundTag nbt) {
 		CompoundTag ownerNbt = new CompoundTag();
-		ProtectIt.LOGGER.info("saving owner -> {}, {}", getOwner().getName(), getOwner().getUuid());
+		ProtectIt.LOGGER.debug("saving owner -> {}, {}", getOwner().getName(), getOwner().getUuid());
 		getOwner().save(ownerNbt);
 		nbt.put("owner", ownerNbt);
 		
@@ -63,9 +63,9 @@ public class OwnershipData {
 	
 	public OwnershipData load(CompoundTag nbt) {		
 		if (nbt.contains("owner")) {
-			ProtectIt.LOGGER.info("loading owner");
+			ProtectIt.LOGGER.debug("loading owner");
 			getOwner().load(nbt.getCompound("owner"));
-			ProtectIt.LOGGER.info("loaded owner -> {}, {}", getOwner().getName(), getOwner().getUuid());
+			ProtectIt.LOGGER.debug("loaded owner -> {}, {}", getOwner().getName(), getOwner().getUuid());
 		}
 		if (nbt.contains("whitelist")) {
 			ListTag list = nbt.getList("whitelist", 10);

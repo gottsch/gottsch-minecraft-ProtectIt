@@ -59,7 +59,7 @@ public class RemoveClaimTileEntityRenderer extends PropertyLeverTileEntityRender
 		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 		
 		if (claim == null) {
-//			ProtectIt.LOGGER.info("or claim is null", block);
+//			ProtectIt.LOGGER.debug("or claim is null", block);
 			return;
 		}
 

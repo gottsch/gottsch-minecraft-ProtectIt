@@ -89,7 +89,7 @@ public class Config extends AbstractConfig {
 	 */
 	public static class General {
 		public IntValue giveCommandLevel;
-		public IntValue claimsPerPlayer;
+		public IntValue propertiesPerPlayer;
 		public IntValue opsPermissionLevel;
 		
 		General(final ForgeConfigSpec.Builder builder) {
@@ -98,9 +98,9 @@ public class Config extends AbstractConfig {
 			giveCommandLevel = builder
 					.comment("The access level required for the 'give' command.")
 					.defineInRange("'give' command level:", 2, 0, 4);
-			claimsPerPlayer = builder
-					.comment(" The number of claims each player can place per world.")
-					.defineInRange("Number of claims per player:", 5, 1, 100);
+			propertiesPerPlayer = builder
+					.comment(" The number of properties each player can own per world.")
+					.defineInRange("Number of properties per player:", 5, 1, 100);
 			opsPermissionLevel = builder
 					.comment(" The permission level required to be Ops within Protect It.","This is not the op-permission-level that is set in the server.propeties.",
 							"This allows players who are not server-level ops, to have Protect It Ops permissions. ie protections don't protect against Ops.",
@@ -127,37 +127,37 @@ public class Config extends AbstractConfig {
 		Protection(final ForgeConfigSpec.Builder builder) {
 			builder.comment(CATEGORY_DIV, 
 					" Protection properties for Protect It mod.",
-					" Note: these properties are for enabling the protections in the claim, not for enabling the actions.",
-					" ex. Block break protection = true, enables the PROTECTION AGAINST breaking blocks in the claim,",
+					" Note: these config settings are for enabling the protections of the property, not for enabling the actions.",
+					" ex. Block break protection = true, enables the PROTECTION AGAINST breaking blocks in the property,",
 					" it does NOT enable the player TO BREAK a block.",
 					CATEGORY_DIV).push(PROTECTION_CATEGORY);
 			
 			enableBlockBreakEvent = builder
-					.comment(" Enables block break protection. If enabled, blocks in claim are protected from being broken by others.")
+					.comment(" Enables block break protection. If enabled, blocks in property are protected from being broken by others.")
 					.define("Block break proctection:", true);
 			
 			enableEntityPlaceEvent = builder
-					.comment(" Enables block placement protection. If enabled, blocks are not allowed to be placed in the claim by others.")
+					.comment(" Enables block placement protection. If enabled, blocks are not allowed to be placed in the property by others.")
 					.define("Block placement proctection:", true);
 			
 			enableEntityMultiPlaceEvent = builder
-					.comment(" Enables multi-block placement protection. If enabled, multi-blocks are not allowed to be placed in the claim by others.")
+					.comment(" Enables multi-block placement protection. If enabled, multi-blocks are not allowed to be placed in the property by others.")
 					.define("Multi-block placement proctection:", true);
 
 			enableBlockToolInteractEvent = builder					
-					.comment(" Enables block tool interaction protection. If enabled, blocks in claim will not change state when right-clicked with tool. Ex. axe will not strip a log.")
+					.comment(" Enables block tool interaction protection. If enabled, blocks in the property will not change state when right-clicked with tool. Ex. axe will not strip a log.")
 					.define("Block tool interact proctection:", true);
 			
 			enableRightClickBlockEvent = builder					
-					.comment(" Enables right click protection. If enabled, blocks in claim will not perform any action if right-clicked. Ex. chests will not open for others.")
+					.comment(" Enables right click protection. If enabled, blocks in the property will not perform any action if right-clicked. Ex. chests will not open for others.")
 					.define("Right-click block proctection:", true);
 
 			enableLivingDestroyBlockEvent = builder
-					.comment(" Enables block break protection from living entities. If enabled, blocks in claim are protected from being broken for living entities (mobs).")
+					.comment(" Enables block break protection from living entities. If enabled, blocks in the property  are protected from being broken for living entities (mobs).")
 					.define("Living destory block proctection:", true);
 			
 			enablePistionEvent = builder
-					.comment(" Enables piston movement protection. If enabled, pistons outside the claim will not fire if their movement would move protected blocks.")
+					.comment(" Enables piston movement protection. If enabled, pistons outside the property will not fire if their movement would move protected blocks.")
 					.define("Piston movement proctection:", true);
 			
 			enableExplosionDetonateEvent = builder

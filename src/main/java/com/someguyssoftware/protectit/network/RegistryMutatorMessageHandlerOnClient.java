@@ -82,7 +82,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 	 * @param message
 	 */
 	private static void processMessage(Level worldClient, RegistryMutatorMessageToClient message) {
-		ProtectIt.LOGGER.info("received registry mutator message -> {}", message);
+		ProtectIt.LOGGER.debug("received registry mutator message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
 			switch(message.getType()) {
@@ -102,14 +102,14 @@ public class RegistryMutatorMessageHandlerOnClient {
 			}
 			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
 				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
-					ProtectIt.LOGGER.info("has coords");
+					ProtectIt.LOGGER.debug("has coords");
 					// use methods that take coords
 					if (message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
-						ProtectIt.LOGGER.info("doesn't have uuid");
+						ProtectIt.LOGGER.debug("doesn't have uuid");
 						registry.removeProtection(message.getCoords1(), message.getCoords2());
 					}
 					else {
-						ProtectIt.LOGGER.info("has uuid");
+						ProtectIt.LOGGER.debug("has uuid");
 						registry.removeProtection(message.getCoords1(), message.getCoords2(), message.getUuid());
 					}
 				}
@@ -121,10 +121,8 @@ public class RegistryMutatorMessageHandlerOnClient {
 				}
 			}
 			else if (message.getAction().equals(RegistryMutatorMessageToClient.CLEAR_ACTION)) {
-				registry.clear();
+				registry.removeProtection(message.getUuid());
 			}
-			
-
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unexpected error ->", e);

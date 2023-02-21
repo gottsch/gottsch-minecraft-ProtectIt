@@ -28,6 +28,7 @@ import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
+import com.someguyssoftware.protectit.util.LangUtil;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -73,7 +74,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
 		}
-		ProtectIt.LOGGER.info("createNewTileEntity | blockEntity -> {}}", blockEntity);
+		ProtectIt.LOGGER.debug("createNewTileEntity | blockEntity -> {}}", blockEntity);
 		return blockEntity;
 	}
 
@@ -85,14 +86,14 @@ public class RemoveClaimBlock extends ClaimBlock {
 		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
 		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get the claim for this position
-			ProtectIt.LOGGER.info("current protections -> {}", ProtectionRegistries.block().toStringList());
-			ProtectIt.LOGGER.info("search for claim @ -> {}", new Coords(pos).toShortString());
+			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
+			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			if (!list.isEmpty()) {				
 				Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
-				ProtectIt.LOGGER.info("found protection -> {}", claim);
+				ProtectIt.LOGGER.debug("found protection -> {}", claim);
 				if (claim != null) {
-					ProtectIt.LOGGER.info("found claim -> {}", claim);
+					ProtectIt.LOGGER.debug("found claim -> {}", claim);
 					((RemoveClaimBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 				}
 			}
@@ -120,14 +121,14 @@ public class RemoveClaimBlock extends ClaimBlock {
 			// prevent use if not the owner
 			Property claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				player.sendMessage(new TranslatableComponent("message.protectit.block_region.not_protected_or_owner"), player.getUUID());
+				player.sendMessage(new TranslatableComponent(LangUtil.message("block_region.not_protected_or_owner")), player.getUUID());
 				return InteractionResult.SUCCESS;
 			}
 
 			// remove claim
 			ProtectionRegistries.block().removeProtection(claim.getBox().getMinCoords());
 
-			ProtectIt.LOGGER.info("should've removed -> {} {}", claim, player.getStringUUID());
+			ProtectIt.LOGGER.debug("should've removed -> {} {}", claim, player.getStringUUID());
 
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
 			// mark data as dirty
@@ -145,7 +146,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 							$.coords2 = claim.getBox().getMaxCoords();
 							$.playerName = player.getName().getString();
 						}).build();
-				ProtectIt.LOGGER.info("sending message to sync client side ");
+				ProtectIt.LOGGER.debug("sending message to sync client side ");
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
@@ -159,7 +160,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			}
 
 			// send message to player
-			player.sendMessage(new TranslatableComponent("message.protectit.claim_successfully_removed"), player.getUUID());
+			player.sendMessage(new TranslatableComponent(LangUtil.message("claim_successfully_removed")), player.getUUID());
 
 		}
 

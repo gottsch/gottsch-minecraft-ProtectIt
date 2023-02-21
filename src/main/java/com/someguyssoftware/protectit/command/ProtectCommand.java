@@ -65,6 +65,12 @@ public class ProtectCommand {
 		List<String> namedClaims = claims.stream().map(claim -> claim.getName().toUpperCase()).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(namedClaims, builder);
 	};
+	
+	private static final SuggestionProvider<CommandSourceStack> WHITELIST_NAMES = (source, builder) -> {
+		List<Property> claims = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> names = claims.stream().flatMap(x -> x.getWhitelist().stream().map(y -> y.getName().toUpperCase())).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
 
 	/*
 	 * protect [block | pvp] [give | list | rename | whitelist [add | remove | clear | list]]
@@ -129,10 +135,11 @@ public class ProtectCommand {
 								.then(Commands.literal(CommandHelper.REMOVE)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
 												.suggests(PROPERTY_NAMES)
-												.then(Commands.argument(CommandHelper.TARGET,EntityArgument.player())
+												.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
+														.suggests(WHITELIST_NAMES)
 														.executes(source -> {
 															return whitelistRemovePlayer(source.getSource(), 
-																	StringArgumentType.getString(source, PROPERTY_NAME), EntityArgument.getPlayer(source, CommandHelper.TARGET));
+																	StringArgumentType.getString(source, PROPERTY_NAME), StringArgumentType.getString(source, CommandHelper.TARGET));
 														})
 														)
 												)
@@ -209,7 +216,7 @@ public class ProtectCommand {
 			}
 
 			source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.add.success"))
-					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), true);
+					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistAddPlayer command:", e);
@@ -227,10 +234,13 @@ public class ProtectCommand {
 	 * @param player
 	 * @return
 	 */
-	public static int whitelistRemovePlayer(CommandSourceStack source, String propertyName, @Nullable ServerPlayer player) {
+	public static int whitelistRemovePlayer(CommandSourceStack source, String propertyName, @Nullable String playerName) {
 		ProtectIt.LOGGER.debug("Executing whitelistRemovePlayer() command...");
-
+		
 		try {
+			// get the player by name
+//			List<ServerPlayer> players  = source.getLevel().getPlayers(p -> p.getName().getString().equalsIgnoreCase(playerName));
+//			if (!players.isEmpty())
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
 			// get the owner's properties
@@ -244,22 +254,23 @@ public class ProtectCommand {
 			}
 			Property claim = namedClaims.get(0);
 			// update property whitelist with player
-			claim.getWhitelist().remove(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
+//			claim.getWhitelist().remove(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
+			boolean result = claim.getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
 			CommandHelper.saveData(source.getLevel());
 
 			// send update to client
-			if(source.getLevel().getServer().isDedicatedServer()) {
+			if(result && source.getLevel().getServer().isDedicatedServer()) {
 				WhitelistRemoveS2CPush message = new WhitelistRemoveS2CPush(
 						owner.getUUID(),
 						claim.getUuid(),
-						player.getName().getString(),
-						player.getUUID()
+						playerName.toUpperCase(),
+						null
 						);
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 			
 			source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.remove.success"))
-					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), true);
+					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistRemovePlayer command:", e);
@@ -307,7 +318,7 @@ public class ProtectCommand {
 			}
 
 			source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.clear.success"))
-					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), true);
+					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistClear command:", e);
@@ -342,13 +353,13 @@ public class ProtectCommand {
 					.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 			return 1;
 		}
-		source.sendSuccess(new TranslatableComponent(LangUtil.NEWLINE), true);
+		source.sendSuccess(new TranslatableComponent(LangUtil.NEWLINE), false);
 		source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD)
-				.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), true);
-		source.sendSuccess(new TranslatableComponent(LangUtil.NEWLINE), true);
+				.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
+		source.sendSuccess(new TranslatableComponent(LangUtil.NEWLINE), false);
 
 		namedClaims.get(0).getWhitelist().forEach(data -> {
-			source.sendSuccess(new TranslatableComponent(data.getName()).withStyle(ChatFormatting.GREEN), true);
+			source.sendSuccess(new TranslatableComponent(data.getName()).withStyle(ChatFormatting.GREEN), false);
 		});
 
 		return 1;

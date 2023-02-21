@@ -66,7 +66,7 @@ public class ClaimTileEntityRenderer implements BlockEntityRenderer<ClaimBlockEn
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
 
 		if (!(block instanceof ClaimBlock)) {
-			ProtectIt.LOGGER.info("not the right block -> {}", block);
+			ProtectIt.LOGGER.debug("not the right block -> {}", block);
 			return; // should never happen
 		}
 

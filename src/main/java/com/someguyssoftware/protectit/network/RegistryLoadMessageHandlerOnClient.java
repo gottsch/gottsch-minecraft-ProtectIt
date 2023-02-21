@@ -47,7 +47,7 @@ public class RegistryLoadMessageHandlerOnClient {
 	}
 
 	public static void onMessageReceived(final RegistryLoadMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
-		ProtectIt.LOGGER.info("registry load message received");
+		ProtectIt.LOGGER.debug("registry load message received");
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 		ctx.setPacketHandled(true);
@@ -82,7 +82,7 @@ public class RegistryLoadMessageHandlerOnClient {
 	 * @param message
 	 */
 	private static void processMessage(Level worldClient, RegistryLoadMessageToClient message) {
-		ProtectIt.LOGGER.info("received registry load message -> {}", message);
+		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
 			IBlockProtectionRegistry registry = null;
 			switch(message.getType()) {
@@ -94,11 +94,11 @@ public class RegistryLoadMessageHandlerOnClient {
 				// TODO
 				break;
 			}
-			ProtectIt.LOGGER.info("using registry -> {}", registry);
+			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
 			// load registry from interval list
 			for(Property claim : message.getClaims()) {
-				ProtectIt.LOGGER.info("adding claim to registry -> {}", claim);
+				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
 				registry.addProtection(claim);
 			}
 		}

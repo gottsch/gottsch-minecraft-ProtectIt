@@ -122,9 +122,9 @@ public class ProtectIt {
 	public void onWorldLoad(WorldEvent.Load event) {
 		if (!event.getWorld().isClientSide()) {
 			Level world = (Level) event.getWorld();
-			ProtectIt.LOGGER.info("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
+			ProtectIt.LOGGER.debug("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
 			if (WorldInfo.isSurfaceWorld(world)) {
-				LOGGER.info("loading Protect It data...");
+				LOGGER.debug("loading Protect It data...");
 				ProtectionRegistries.block().clear();
 				ProtectItSavedData.get(world);
 			}
@@ -135,11 +135,11 @@ public class ProtectIt {
 	public void onPlayerLoggedIn(PlayerLoggedInEvent event) {
 		ServerPlayer player = (ServerPlayer) event.getPlayer();
 		if(player.getServer().isDedicatedServer()) {
-			ProtectIt.LOGGER.info("player logged in -> {}, sending registry data...", player.getDisplayName().getString());
+			ProtectIt.LOGGER.debug("player logged in -> {}, sending registry data...", player.getDisplayName().getString());
 			// TODO will need two different message types now - block & pvp
 			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
 			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().getAll());
-			ProtectIt.LOGGER.info("player logged in, sending all claim data -> {}", ProtectionRegistries.block().getAll());
+			ProtectIt.LOGGER.debug("player logged in, sending all claim data -> {}", ProtectionRegistries.block().getAll());
 			ProtectItNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
@@ -147,14 +147,16 @@ public class ProtectIt {
 	// permission events
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
-		LOGGER.info("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 		// prevent protected blocks from breaking
 		if (Config.PROTECTION.enableBlockBreakEvent.get()
 				&& !event.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())
 				&& ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
-			LOGGER.info("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
-			sendProtectedMessage(event.getWorld(), event.getPlayer());
+			if (!event.getWorld().isClientSide()) {
+				LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+				sendProtectedMessage(event.getWorld(), event.getPlayer());
+			}
 		}
 	}
 
@@ -170,8 +172,7 @@ public class ProtectIt {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
 				if (!event.getWorld().isClientSide()) {
-					// TODO remove
-					LOGGER.info("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+					LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 					sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
 				}
 			}
@@ -192,8 +193,10 @@ public class ProtectIt {
 		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID())) {
 				event.setCanceled(true);
-				LOGGER.info("denied multi-block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
-				sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
+				if (!event.getWorld().isClientSide()) {
+					LOGGER.debug("denied multi-block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+					sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
+				}
 			}
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
@@ -210,7 +213,9 @@ public class ProtectIt {
 
 		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 			event.setCanceled(true);
-			sendProtectedMessage(event.getWorld(), event.getPlayer());
+			if (!event.getWorld().isClientSide()) {
+				sendProtectedMessage(event.getWorld(), event.getPlayer());
+			}
 		}
 	}
 
@@ -227,9 +232,11 @@ public class ProtectIt {
 			// get the item in the player's hand
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID())) {
 				event.setCanceled(true);
-				LOGGER.info("denied right click -> {} @ {} w/ hand -> {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
-				if (event.getHand() == InteractionHand.MAIN_HAND) {
-					sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
+				LOGGER.debug("denied right click -> {} @ {} w/ hand -> {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
+				if (event.getHand() == InteractionHand.MAIN_HAND) { // reduces to only 1 message per action
+					if (!event.getWorld().isClientSide()) {
+						sendProtectedMessage(event.getWorld(), (Player) event.getEntity());
+					}
 				}
 			}
 			// TODO check if Claim Lectern and if one already exists in claim?

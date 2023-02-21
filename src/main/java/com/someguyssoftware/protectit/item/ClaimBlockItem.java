@@ -61,7 +61,7 @@ public class ClaimBlockItem extends BlockItem {
 		// gather the number of claims the player has
 		List<Property> claims = ProtectionRegistries.block().getProtections(context.getPlayer().getStringUUID());
 		
-		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
+		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			if (WorldInfo.isServerSide(context.getLevel())) {
 				context.getPlayer().sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), context.getPlayer().getUUID());
 			}

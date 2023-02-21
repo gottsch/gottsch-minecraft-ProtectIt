@@ -115,7 +115,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
 		}
-		ProtectIt.LOGGER.info("createNewTileEntity | blockEntity -> {}}", blockEntity);
+		ProtectIt.LOGGER.debug("createNewTileEntity | blockEntity -> {}}", blockEntity);
 		return blockEntity;
 	}
 
@@ -132,21 +132,21 @@ public class ClaimBlock extends Block implements EntityBlock {
 	@Override
 	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
-//		ProtectIt.LOGGER.info("setPlacedBy claimBlock TE -> {}", tileEntity.getClass().getSimpleName());
+//		ProtectIt.LOGGER.debug("setPlacedBy claimBlock TE -> {}", tileEntity.getClass().getSimpleName());
 		// gather the number of claims the player has
 		List<Property> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
-		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
+		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			placer.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), placer.getUUID());
 			return;
 		}
 		
 		if (tileEntity instanceof ClaimBlockEntity) {
 			((ClaimBlockEntity) tileEntity).setOwnerUuid(placer.getStringUUID());
-//			ProtectIt.LOGGER.info("setting ower to -> {}",( (ClaimTileEntity) tileEntity).getOwnerUuid());
+//			ProtectIt.LOGGER.debug("setting ower to -> {}",( (ClaimTileEntity) tileEntity).getOwnerUuid());
 			// save any overlaps to the TileEntity
 			Box box = getBox(tileEntity.getBlockPos());
 			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
-			ProtectIt.LOGGER.info("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
+			ProtectIt.LOGGER.debug("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
 				((ClaimBlockEntity)tileEntity).getOverlaps().addAll(overlaps);
 			}
@@ -168,10 +168,10 @@ public class ClaimBlock extends Block implements EntityBlock {
 
 		// gather the number of claims the player has
 		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());		
-		ProtectIt.LOGGER.info("claims -> {}", claims);
+		ProtectIt.LOGGER.debug("claims -> {}", claims);
 		
 		// prevent the use of claim if max claims is met
-		if (claims.size() >= Config.GENERAL.claimsPerPlayer.get()) {
+		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			player.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), player.getUUID());
 			return InteractionResult.SUCCESS;
 		}
@@ -183,7 +183,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 
 			// add area to protections registry if this is a dedicated server
 			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords(), false)) {
-				ProtectIt.LOGGER.info("not protected");
+				ProtectIt.LOGGER.debug("not protected");
 				// check if player already owns protections
 //				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
 				// create a claim
@@ -195,7 +195,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 				ProtectionRegistries.block().addProtection(claim);
 //				ProtectionRegistries.block().addProtection(box.getMinCoords(), box.getMaxCoords(), new PlayerData(player.getStringUUID(), player.getName().getString()));
 				
-				ProtectIt.LOGGER.info("should've added -> {} {}", box, player.getStringUUID());
+				ProtectIt.LOGGER.debug("should've added -> {} {}", box, player.getStringUUID());
 				ProtectItSavedData savedData = ProtectItSavedData.get(level);
 				// mark data as dirty
 				if (savedData != null) {
@@ -212,7 +212,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 								$.coords2 = box.getMaxCoords();//ref2.get();
 								$.playerName = player.getName().getString();
 							}).build();
-					ProtectIt.LOGGER.info("sending message to sync client side ");
+					ProtectIt.LOGGER.debug("sending message to sync client side ");
 					ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 				}
 				// remove claim block

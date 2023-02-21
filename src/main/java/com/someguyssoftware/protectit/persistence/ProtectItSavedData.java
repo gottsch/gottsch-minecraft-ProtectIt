@@ -47,7 +47,7 @@ public class ProtectItSavedData extends SavedData {
 	}
 
 	public static ProtectItSavedData load(CompoundTag tag) {
-		ProtectIt.LOGGER.info("world data loading...");
+		ProtectIt.LOGGER.debug("world data loading...");
 		if (tag.contains(PROTECTION_REGISTRY)) {
 			ProtectionRegistries.block().load(tag.getCompound(PROTECTION_REGISTRY));
 		}
@@ -56,7 +56,7 @@ public class ProtectItSavedData extends SavedData {
 
 	@Override
 	public CompoundTag save(CompoundTag tag) {
-		ProtectIt.LOGGER.info("world data saving...");
+		ProtectIt.LOGGER.debug("world data saving...");
 		tag.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundTag()));
 		return tag;
 	}

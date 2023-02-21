@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
@@ -47,6 +48,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -141,15 +143,26 @@ public class OpsProtectCommand {
 										)
 								)
 						)
+				///// LIST OPTION /////
+				.then(Commands.literal(CommandHelper.LIST)
+						.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+							.executes(source -> {
+								return CommandHelper.list(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
+							})
+							)
+						)
+				
 				///// CLEAR OPTION /////
 				.then(Commands.literal("clear")
 						.requires(source -> {
 							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 						})
-						.executes(source -> {
-							return clear(source.getSource());
-						})
+						.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+							.executes(source -> {
+								return clear(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
+							})
 						)
+					)
 				///// GIVE OPTION /////
 				.then(Commands.literal(CommandHelper.GIVE)
 						.requires(source -> {
@@ -173,7 +186,6 @@ public class OpsProtectCommand {
 				));
 	}
 	
-	
 	/**
 	 * 
 	 * @param source
@@ -193,7 +205,7 @@ public class OpsProtectCommand {
 	 */
 	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2) {
 		// first, check that pos2 > pos1
-		Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
+		Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 		if (!validCoords.isPresent()) {
 			source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 			return 1;
@@ -226,7 +238,7 @@ public class OpsProtectCommand {
 	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, String uuid) {
 		try {
 			// first, check that pos2 > pos1
-			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
+			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
 				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
 				return 1;
@@ -316,9 +328,9 @@ public class OpsProtectCommand {
 	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, Collection<? extends Entity> entities) {
 		try {
 			// first, check that pos2 > pos1
-			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
+			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
+				source.sendSuccess(new TranslatableComponent(LangUtil.message("invalid_coords_format")), true);
 				return 1;
 			}
 
@@ -385,9 +397,9 @@ public class OpsProtectCommand {
 		ProtectIt.LOGGER.debug("Executing add command...");
 		try {
 			// first, check that pos2 > pos1
-			Optional<Tuple<ICoords, ICoords>> validCoords = CommandUtils.validateCoords(new Coords(pos), new Coords(pos2));
+			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format")
+				source.sendSuccess(new TranslatableComponent(LangUtil.message("invalid_coords_format"))
 						.withStyle(ChatFormatting.RED), true);
 				return 1;
 			}
@@ -395,7 +407,7 @@ public class OpsProtectCommand {
 			// second, check if any block in the area is already protected.
 			if (ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
 				// send message
-				source.sendSuccess(new TranslatableComponent("message.protectit.block_region.protected")
+				source.sendSuccess(new TranslatableComponent(LangUtil.message("block_region.protected"))
 						.withStyle(ChatFormatting.RED), true);
 				return 1;
 			}
@@ -417,7 +429,7 @@ public class OpsProtectCommand {
 			List<Property> claims = ProtectionRegistries.block().getProtections(uuid);
 
 			// check if the max # of claims has been reached (via config value)
-			if (claims.size() >= Config.GENERAL.claimsPerPlayer.get() && !overrideLimit) {
+			if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get() && !overrideLimit) {
 				source.sendFailure(new TranslatableComponent(LangUtil.message("player_properties_max_limit"))
 						.append(new TranslatableComponent(String.valueOf(claims.size())).withStyle(ChatFormatting.AQUA)));
 				return 1;
@@ -463,8 +475,9 @@ public class OpsProtectCommand {
 	 * @param source
 	 * @return
 	 */
-	private static int clear(CommandSourceStack source) {
-		ProtectionRegistries.block().clear();
+	private static int clear(CommandSourceStack source, ServerPlayer player) {
+		// remove all properties from player
+		ProtectionRegistries.block().removeProtection(player.getStringUUID());
 
 		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -477,7 +490,7 @@ public class OpsProtectCommand {
 			RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 					RegistryMutatorMessageToClient.BLOCK_TYPE, 
 					RegistryMutatorMessageToClient.CLEAR_ACTION, 
-					RegistryMutatorMessageToClient.NULL_UUID).build();
+					player.getStringUUID()).build();
 			ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 		}
 		return 1;

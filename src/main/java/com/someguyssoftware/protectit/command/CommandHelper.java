@@ -46,6 +46,8 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -93,7 +95,7 @@ public class CommandHelper {
 	 * @return
 	 */
 	static int unavailable(CommandSourceStack source) {
-		source.sendSuccess(new TranslatableComponent("message.protectit.option_unavailable"), true);
+		source.sendSuccess(new TranslatableComponent("message.protectit.option_unavailable"), false);
 		return 1;
 	}
 	
@@ -126,7 +128,7 @@ public class CommandHelper {
 		namedClaims.get(0).setName(newName.toUpperCase());
 		
 		source.sendSuccess(new TranslatableComponent(LangUtil.message("property.rename.success"))
-				.append(new TranslatableComponent(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), true);
+				.append(new TranslatableComponent(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), false);
 
 		saveData(source.getLevel());
 		// NOTE it is not necessary to send message to client as rename() method is called from server
@@ -144,26 +146,43 @@ public class CommandHelper {
 		ServerPlayer player;
 		try {
 			player = source.getPlayerOrException();
+			return list(source, player);
 		}
 		catch(CommandSyntaxException 	e) {
-			// TODO unable to locate player
-			return 1;
+			source.sendFailure(new TranslatableComponent(LangUtil.message("unable_locate_player")));
 		}
-		List<Component> components = formatList(ProtectionRegistries.block().getProtections(player.getStringUUID()));
+		return 1;
+	}
+	
+	/**
+	 * 
+	 * @param source
+	 * @param player
+	 * @return
+	 */
+	public static int list(CommandSourceStack source, ServerPlayer player) {
+		List<Component> messages = new ArrayList<>();
+		messages.add(new TextComponent(""));
+		messages.add(new TranslatableComponent(LangUtil.message("property.list"), player.getName().getString()).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE));
+		messages.add(new TextComponent(""));
+		
+		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
 		components.forEach(component -> {
-			source.sendSuccess(component, true);
+			source.sendSuccess(component, false);
 		});
 		return 1;
 	}
 
-	private static List<Component> formatList(List<Property> list) {
-		List<Component> messages = new ArrayList<>();
-		messages.add(new TextComponent(""));
-		messages.add(new TranslatableComponent(LangUtil.message("property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE));
-		messages.add(new TextComponent(""));
+	/**
+	 * 
+	 * @param messages
+	 * @param list
+	 * @return
+	 */
+	static List<Component> formatList(List<Component> messages, List<Property> list) {
 		
 		if (list.isEmpty()) {
-			messages.add(new TranslatableComponent(LangUtil.message("empty_list")).withStyle(ChatFormatting.AQUA));
+			messages.add(new TranslatableComponent(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
 		}
 		else {			
 			list.forEach(claim -> {
@@ -206,7 +225,7 @@ public class CommandHelper {
 				break;
 			}
 			if (givableItem == null) {
-				source.sendSuccess(new TranslatableComponent("message.protectit.non_givable_item"), true);
+				source.sendSuccess(new TranslatableComponent(LangUtil.message("non_givable_item")), false);
 				return 1;
 			}
 			source.getPlayerOrException().getInventory().add(new ItemStack(givableItem));
@@ -267,5 +286,38 @@ public class CommandHelper {
 			return Optional.empty();
 		}
 		return Optional.ofNullable(namedClaims.get(0));
+	}
+	
+	/**
+	 * 
+	 * @param c1
+	 * @param c2
+	 * @return
+	 */
+	public static Optional<Tuple<ICoords, ICoords>> validateCoords(ICoords c1, ICoords c2) {
+		Optional<Tuple<ICoords, ICoords>> coords = Optional.of (new Tuple<ICoords, ICoords>(c1, c2));
+		if (!isDownField(c1, c2)) {
+			// attempt to flip coords and test again
+			if (isDownField(c2, c1)) {
+				coords = Optional.of(new Tuple<ICoords, ICoords>(c2, c1));
+			}
+			else {
+				coords = Optional.empty();
+			}
+		}
+		return coords;
+	}
+
+	/**
+	 * TODO When updating to allow Y values, update this method to include Y check
+	 * @param from
+	 * @param to
+	 * @return
+	 */
+	public static boolean isDownField(ICoords from, ICoords to) {
+		if (to.getX() >= from.getX() && to.getZ() >= from.getZ()) {
+			return true;
+		}
+		return false;
 	}
 }

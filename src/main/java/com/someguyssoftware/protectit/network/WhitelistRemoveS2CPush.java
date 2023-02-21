@@ -125,7 +125,12 @@ public class WhitelistRemoveS2CPush {
 			// get the property by uuid
 			Optional<Property> claim = CommandHelper.getProperty(message.owner, message.property);
 			if (claim.isPresent()) {
-				claim.get().getWhitelist().remove(new PlayerData(message.playerUuid.toString(), message.playerName));
+				if (message.playerName != null && message.playerUuid != null) {
+					claim.get().getWhitelist().remove(new PlayerData(message.playerUuid.toString(), message.playerName));
+				}
+				else {
+					claim.get().getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(message.playerName));
+				}
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to update whitelist on client: ", e);

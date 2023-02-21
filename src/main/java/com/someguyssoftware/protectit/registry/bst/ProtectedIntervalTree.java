@@ -366,17 +366,17 @@ public class ProtectedIntervalTree {
 //    	ProtectIt.LOGGER.debug("testing x: i.startx -> {}, t.endx -> {}, i.endx -> {}, t.startx -> {}", interval.getStart(), testInterval.getEnd(),
 //    			interval.getEnd(), testInterval.getStart());
 		if (!((interval.getStart() >= testInterval.getEnd()) || (interval.getEnd() <= testInterval.getStart()))) { // TESTING - adding >= and <= to all comparisons
-//			ProtectIt.LOGGER.info("has x overlap");
+//			ProtectIt.LOGGER.debug("has x overlap");
 //	    	ProtectIt.LOGGER.debug("testing z: i.startz -> {}, t.endz -> {}, i.endz -> {}, t.startz -> {}", interval.getStartZ(), testInterval.getEndZ(),
 //	    			interval.getEndZ(), testInterval.getStartZ());
 			// x-axis overlaps, check z-axis
 			if (!((interval.getStartZ() >= testInterval.getEndZ()) || (interval.getEndZ() <= testInterval.getStartZ()))) {
-//				ProtectIt.LOGGER.info("has z overlap");
+//				ProtectIt.LOGGER.debug("has z overlap");
 //		    	ProtectIt.LOGGER.debug("testing y: i.starty -> {}, t.endy -> {}, i.endy -> {}, t.starty -> {}", interval.getStartY(), testInterval.getEndY(),
 //		    			interval.getEndY(), testInterval.getStartY());
 				// z-axis overlaps, check y-axis
 				if (!((interval.getStartY() >= testInterval.getEndY()) || (interval.getEndY() <= testInterval.getStartY()))) {
-//					ProtectIt.LOGGER.info("has y overlap - adding to overlaps");
+//					ProtectIt.LOGGER.debug("has y overlap - adding to overlaps");
 					results.add(interval);
 					if (findFast) {
 						return true;

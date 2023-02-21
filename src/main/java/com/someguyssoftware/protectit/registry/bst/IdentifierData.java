@@ -45,17 +45,17 @@ public class IdentifierData {
 	public void save(CompoundTag tag) {
 		tag.putString("uuid", getUuid());
 		tag.putString("name", (getName() == null) ? "" : getName());
-		ProtectIt.LOGGER.info("saved uuid -> {}", tag.getString("uuid"));
-		ProtectIt.LOGGER.info("saved name -> {}", tag.getString("name"));
+		ProtectIt.LOGGER.debug("saved uuid -> {}", tag.getString("uuid"));
+		ProtectIt.LOGGER.debug("saved name -> {}", tag.getString("name"));
 	}
 	
 	public IdentifierData load(CompoundTag tag) {
 		if (tag.contains("uuid")) {
-			ProtectIt.LOGGER.info("loading uuid -> {}", tag.getString("uuid"));
+			ProtectIt.LOGGER.debug("loading uuid -> {}", tag.getString("uuid"));
 			setUuid(tag.getString("uuid"));
 		}
 		if (tag.contains("name")) {
-			ProtectIt.LOGGER.info("loading name -> {}", tag.getString("name"));
+			ProtectIt.LOGGER.debug("loading name -> {}", tag.getString("name"));
 			setName(tag.getString("name"));
 		}
 		return this;

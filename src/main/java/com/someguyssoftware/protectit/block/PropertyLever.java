@@ -105,7 +105,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
 		}
-		ProtectIt.LOGGER.info("newBlockEntity() blockEntity -> {}}", blockEntity);
+		ProtectIt.LOGGER.debug("newBlockEntity() blockEntity -> {}}", blockEntity);
 		return blockEntity;
 	}
 
@@ -222,7 +222,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				// send message to add protection on all clients
 				PropertyLeverMessageToClient message = new PropertyLeverMessageToClient(coords, claimCoords);
-				ProtectIt.LOGGER.info("sending claim lever message to sync client side -> {}", message);
+				ProtectIt.LOGGER.debug("sending claim lever message to sync client side -> {}", message);
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		}
