@@ -19,7 +19,7 @@
  */
 package com.someguyssoftware.protectit.block;
 
-import com.someguyssoftware.protectit.claim.PropertySizes;
+import com.someguyssoftware.protectit.property.PropertySizes;
 import com.someguyssoftware.protectit.setup.Registration;
 
 import net.minecraft.world.level.block.Block;

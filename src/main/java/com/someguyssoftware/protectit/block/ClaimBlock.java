@@ -23,11 +23,11 @@ import java.util.List;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
-import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 

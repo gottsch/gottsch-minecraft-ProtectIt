@@ -21,8 +21,8 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
-import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.world.WorldInfo;

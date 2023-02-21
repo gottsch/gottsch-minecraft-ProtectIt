@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.claim;
+package com.someguyssoftware.protectit.property;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;

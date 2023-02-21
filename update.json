@@ -1,11 +1,12 @@
 {
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/protect-it",
     "promos": {
-    "1.18.2-latest": "2.5.0",
-    "1.18.2-recommended": "2.5.0"
+    "1.18.2-latest": "3.0.0",
+    "1.18.2-recommended": "3.0.0"
   },
     "1.18.2": {
          "2.4.0": "Initial port release.",
-         "2.5.0": "Removed Claim Lectern.\nRemoved Claim Book (Access Manifest).\nAdded Whitelist command options.\nSplit out OPS protect command.\nAdded UUID property to Claim.\nRefactored naming -> "
+         "2.5.0": "Removed Claim Lectern.\nRemoved Claim Book (Access Manifest).\nAdded Whitelist command options.\nSplit out OPS protect command.\nAdded UUID property to Claim.\nRefactored naming -> ",
+         "3.0.0": "..."
     }
 }

@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
@@ -46,17 +46,17 @@ public class RegistryLoadMessageToClient {
 	private boolean valid;
 	private String type;
 	private int size;
-	private List<Property> claims;
+	private List<Property> properties;
 	
 	public RegistryLoadMessageToClient() {
 		valid = false;
 	}
 
-	public RegistryLoadMessageToClient(String type, List<Property> claims) {
+	public RegistryLoadMessageToClient(String type, List<Property> properties) {
 		this.valid = true;
 		this.type = type;
-		this.size = claims.size();
-		this.claims = claims;
+		this.size = properties.size();
+		this.properties = properties;
 	}
 	
 	/**
@@ -68,14 +68,14 @@ public class RegistryLoadMessageToClient {
 			return;
 		}
 		 buf.writeUtf(StringUtils.defaultString(type, ""));
-		 buf.writeInt(claims.size());
+		 buf.writeInt(properties.size());
 
-		claims.forEach(claim -> {
-			writeClaim(buf, claim);
+		properties.forEach(claim -> {
+			writeProperty(buf, claim);
 		});
 	}
 
-	private void writeClaim(FriendlyByteBuf buf, Property claim) {
+	private void writeProperty(FriendlyByteBuf buf, Property claim) {
 		buf.writeUtf(StringUtils.defaultString(claim.getOwner().getUuid(), NULL_UUID));
 		buf.writeUtf(StringUtils.defaultString(claim.getOwner().getName(), ""));
 
@@ -220,17 +220,17 @@ public class RegistryLoadMessageToClient {
 		this.type = type;
 	}
 
-	protected List<Property> getClaims() {
-		return claims;
+	protected List<Property> getProperties() {
+		return properties;
 	}
 
-	protected void setClaims(List<Property> claims) {
-		this.claims = claims;
+	protected void setProperties(List<Property> claims) {
+		this.properties = claims;
 	}
 
 	@Override
 	public String toString() {
 		return "RegistryLoadMessageToClient [valid=" + valid + ", type=" + type + ", size=" + size + ", claims="
-				+ claims + "]";
+				+ properties + "]";
 	}
 }

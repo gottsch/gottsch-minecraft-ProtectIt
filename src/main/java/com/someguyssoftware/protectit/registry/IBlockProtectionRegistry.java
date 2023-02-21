@@ -22,7 +22,7 @@ package com.someguyssoftware.protectit.registry;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.property.Property;
 
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 
@@ -47,11 +47,11 @@ public interface IBlockProtectionRegistry extends IProtectionRegistry {
 	 * @return 
 	  * @return
 	  */
-	boolean isProtectedAgainst(ICoords coords, String uuid);
-	boolean isProtectedAgainst(ICoords coords1, ICoords coords2, String uuid);
+	boolean isProtectedAgainst(ICoords coords, String uuid, int permission);
+	boolean isProtectedAgainst(ICoords coords1, ICoords coords2, String uuid, int permission);
 	
 	// TODO this replaces old PlayerData methods
-	public void addProtection(Property claim);
+	public void addProtection(Property property);
 	public List<Property> getAll();
 	public List<Property> getProtections(String uuid);
 	public List<Property> findByClaim(Predicate<Property> predicate);

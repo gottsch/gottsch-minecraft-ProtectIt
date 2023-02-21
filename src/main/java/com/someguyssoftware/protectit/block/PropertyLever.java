@@ -25,9 +25,9 @@ import java.util.Random;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.network.PropertyLeverMessageToClient;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;

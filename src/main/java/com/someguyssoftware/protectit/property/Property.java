@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.claim;
+package com.someguyssoftware.protectit.property;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +41,20 @@ import net.minecraft.nbt.ListTag;
 public class Property {
 	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
 
-	public static final String NO_NAME = "";
-	public static final String NAME_KEY = "name";
-	public static final String UUID_KEY = "uuid";
-	public static final String OWNER_KEY = "owner";
-	public static final String COORDS_KEY = "coords";
-	public static final String BOX_KEY = "box";
-	public static final String WHITELIST_KEY = "whitelist";
+	private static final String NO_NAME = "";
+	private static final String NAME_KEY = "name";
+	private static final String UUID_KEY = "uuid";
+	private static final String OWNER_KEY = "owner";
+	private static final String COORDS_KEY = "coords";
+	private static final String BOX_KEY = "box";
+	private static final String WHITELIST_KEY = "whitelist";
+	private static final String PERMISSION_KEY = "permissions";
+
+//	public static final int BLOCK_BREAK_PERMISSION = 0;
+//	public static final int BLOCK_PLACE_PERMISSION = 1;
+//	public static final int MULTIBLOCK_PLACE_PERMISSION = 2;
+//	public static final int TOOL_PERMISSION = 3;
+//	public static final int INTERACT_PERMISSION = 4;
 	
 	private String name;
 	private UUID uuid;
@@ -55,6 +62,7 @@ public class Property {
 	private List<PlayerData> whitelist;
 	private ICoords coords;
 	private Box box;
+	private byte permissions;
 	
 	// TODO probably a good candidate for a Builder
 	// TODO add equals, hashCode()
@@ -77,6 +85,7 @@ public class Property {
 		setOwner(new PlayerData());
 		setName(NO_NAME);
 		setUuid(UUID.randomUUID());
+		setPermissions((byte)0); // ie no permission granted
 	}
 
 	public Property(ICoords coords, Box box, PlayerData data) {
@@ -123,6 +132,8 @@ public class Property {
 			list.add(playerNbt);
 		});
 		nbt.put(WHITELIST_KEY, list);
+		
+		nbt.putByte(PERMISSION_KEY, getPermissions());
 	}
 
 	/**
@@ -159,9 +170,63 @@ public class Property {
 				getWhitelist().add(playerData);
 			});
 		}
+		
+		if (nbt.contains(PERMISSION_KEY)) {
+			setPermissions(nbt.getByte(PERMISSION_KEY));
+		}
 		return this;
 	}
 
+	/**
+	 * Specific interact permission query
+	 * @return
+	 */
+	public boolean hasInteractPermission() {
+		return getPermission(Permission.INTERACT_PERMISSION.value) == 1;
+	}
+	
+	/**
+	 * General permission query.
+	 * @param permission
+	 * @return
+	 */
+	public boolean hasPermission(int permission) {
+		return getPermission(permission) == 1;
+	}
+	
+	/**
+	 * 
+	 * @param position
+	 * @return
+	 */
+	public byte getPermission(int position) {
+		return (byte) ((getPermissions() >> position) & 1);
+	}
+	
+	/**
+	 * 
+	 * @param position
+	 * @param value
+	 */
+	public void setPermission(int position, boolean value) {
+		byte data = getPermissions();
+		if (value) {
+			data |= 1 << position;
+		}
+		else {
+			data &= ~(1 << position);
+		}
+		setPermissions(data);
+	}
+	
+	public byte getPermissions() {
+		return permissions;
+	}
+
+	public void setPermissions(byte permissions) {
+		this.permissions = permissions;
+	}
+	
 	public PlayerData getOwner() {
 		return owner;
 	}

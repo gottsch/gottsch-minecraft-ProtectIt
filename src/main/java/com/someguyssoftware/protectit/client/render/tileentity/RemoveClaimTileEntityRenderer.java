@@ -24,7 +24,7 @@ import java.awt.Color;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.ICoords;

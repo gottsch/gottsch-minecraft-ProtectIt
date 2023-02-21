@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -97,7 +97,7 @@ public class RegistryLoadMessageHandlerOnClient {
 			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
 			// load registry from interval list
-			for(Property claim : message.getClaims()) {
+			for(Property claim : message.getProperties()) {
 				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
 				registry.addProtection(claim);
 			}

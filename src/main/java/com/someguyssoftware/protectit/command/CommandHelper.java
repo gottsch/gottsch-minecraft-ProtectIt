@@ -32,8 +32,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
-import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.util.LangUtil;
 

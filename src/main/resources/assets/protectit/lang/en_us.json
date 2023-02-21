@@ -26,6 +26,9 @@
 	"message.protectit.whitelist.add.success": "The player was successfully added to ",
 	"message.protectit.whitelist.remove.success": "The player was successfully removed from ",
 	"message.protectit.whitelist.clear.success": "The whitelist was successfully cleared from ",
+	"message.protectit.property.permission.list":"Permissions of Property %s",
+	"message.protectit.permission.state.on": "ON",
+	"message.protectit.permission.state.off": "OFF",
 	
 	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
 	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land."

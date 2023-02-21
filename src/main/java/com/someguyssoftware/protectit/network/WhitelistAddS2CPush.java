@@ -26,8 +26,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.command.CommandHelper;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.util.LangUtil;

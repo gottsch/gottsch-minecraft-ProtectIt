@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.property.Property;
 import com.someguyssoftware.protectit.registry.IBlockProtectionRegistry;
 import com.someguyssoftware.protectit.registry.PlayerData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
