@@ -30,6 +30,7 @@ import net.minecraft.network.FriendlyByteBuf;
  * @author Mark Gottschling on Oct 14, 2021
  *
  */
+@Deprecated
 public class RegistryLoadMessageToServer {
 	private boolean valid;
 	private String uuid;

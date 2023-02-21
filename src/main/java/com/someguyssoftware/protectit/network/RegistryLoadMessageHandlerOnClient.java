@@ -97,9 +97,9 @@ public class RegistryLoadMessageHandlerOnClient {
 			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
 			// load registry from interval list
-			for(Property claim : message.getClaims()) {
-				ProtectIt.LOGGER.debug("adding claim to registry -> {}", claim);
-				registry.addProtection(claim);
+			for(Property property : message.getProperties()) {
+				ProtectIt.LOGGER.debug("adding property to registry -> {}", property);
+				registry.addProtection(property);
 			}
 		}
 		catch(Exception e) {

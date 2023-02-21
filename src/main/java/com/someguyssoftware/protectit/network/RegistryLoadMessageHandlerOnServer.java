@@ -23,7 +23,6 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -35,6 +34,7 @@ import net.minecraftforge.network.NetworkEvent;
  * @author Mark Gottschling on Oct 14, 2021
  *
  */
+@Deprecated
 public class RegistryLoadMessageHandlerOnServer {
 	
 //	public static boolean isThisProtocolAcceptedByServer(String protocolVersion) {
