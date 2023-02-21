@@ -395,7 +395,7 @@ public class OpsProtectCommand {
 			// second, check if any block in the area is already protected.
 			if (ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
 				// send message
-				source.sendSuccess(new TranslatableComponent("message.protectit.block_region_protected")
+				source.sendSuccess(new TranslatableComponent("message.protectit.block_region.protected")
 						.withStyle(ChatFormatting.RED), true);
 				return 1;
 			}

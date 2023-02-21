@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
+import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,13 +40,13 @@ import net.minecraftforge.network.NetworkEvent.Context;
  * @author Mark Gottschling on Dec 9, 2021
  *
  */
-public class ClaimLeverMessageHandlerOnClient {
+public class PropertyLeverMessageHandlerOnClient {
 
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
 		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
-	public static void onMessageReceived(final ClaimLeverMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
+	public static void onMessageReceived(final PropertyLeverMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 //		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 //
@@ -77,7 +77,7 @@ public class ClaimLeverMessageHandlerOnClient {
 		ctx.setPacketHandled(true);
 	}
 
-	private static void processMessage(Context ctx, ClaimLeverMessageToClient message) {
+	private static void processMessage(Context ctx, PropertyLeverMessageToClient message) {
 		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
 		ProtectIt.LOGGER.debug("world -> {}", clientWorld.get());
@@ -94,19 +94,19 @@ public class ClaimLeverMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(Level worldClient, ClaimLeverMessageToClient message) {
+	private static void processMessage(Level worldClient, PropertyLeverMessageToClient message) {
 		ProtectIt.LOGGER.info("received claim lever message -> {}", message);
 
 		try {			
-			if (message.getCoords() == ClaimLeverMessageToClient.EMPTY_COORDS ||
-					message.getClaimCoords() == ClaimLeverMessageToClient.EMPTY_COORDS) {
+			if (message.getCoords() == PropertyLeverMessageToClient.EMPTY_COORDS ||
+					message.getClaimCoords() == PropertyLeverMessageToClient.EMPTY_COORDS) {
 				ProtectIt.LOGGER.info("coords/claimCoords are missing -> {}", message);
 				return;
 			}
 			BlockEntity tileEntity = worldClient.getBlockEntity(message.getCoords().toPos());
 			ProtectIt.LOGGER.info("tileEntity -> {}", tileEntity.getClass().getSimpleName());
-			if (tileEntity instanceof ClaimLeverBlockEntity) {
-				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(message.getClaimCoords());
+			if (tileEntity instanceof PropertyLeverBlockEntity) {
+				((PropertyLeverBlockEntity)tileEntity).setClaimCoords(message.getClaimCoords());
 				ProtectIt.LOGGER.info("set the TE claim coords -> {}", message.getClaimCoords());
 			}
 		}			

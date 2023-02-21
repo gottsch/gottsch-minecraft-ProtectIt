@@ -120,7 +120,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			// prevent use if not the owner
 			Property claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				player.sendMessage(new TranslatableComponent("message.protectit.block_region_not_protected_or_owner"), player.getUUID());
+				player.sendMessage(new TranslatableComponent("message.protectit.block_region.not_protected_or_owner"), player.getUUID());
 				return InteractionResult.SUCCESS;
 			}
 

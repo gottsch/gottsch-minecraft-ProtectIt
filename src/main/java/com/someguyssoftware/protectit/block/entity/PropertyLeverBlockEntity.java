@@ -34,16 +34,16 @@ import net.minecraft.world.phys.AABB;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverBlockEntity extends BlockEntity {
+public class PropertyLeverBlockEntity extends BlockEntity {
 	private static final String CLAIM_COORDS_TAG = "claimCoords";
 
 	private ICoords claimCoords;
 	
-	public ClaimLeverBlockEntity(BlockPos pos, BlockState state) {
-		this(ProtectItBlockEntities.CLAIM_LEVER_TYPE.get(), pos, state);
+	public PropertyLeverBlockEntity(BlockPos pos, BlockState state) {
+		this(ProtectItBlockEntities.PROPERTY_LEVER_TYPE.get(), pos, state);
 	}
 
-	public ClaimLeverBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+	public PropertyLeverBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 	}
 

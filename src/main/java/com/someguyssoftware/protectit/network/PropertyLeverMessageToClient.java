@@ -31,7 +31,7 @@ import net.minecraft.network.FriendlyByteBuf;
  * @author Mark Gottschling on Dec 9, 2021
  *
  */
-public class ClaimLeverMessageToClient implements ICoordsHandler {
+public class PropertyLeverMessageToClient implements ICoordsHandler {
 	public static final ICoords EMPTY_COORDS = new Coords(0, -255, 0);
 
 	private boolean valid;
@@ -42,7 +42,7 @@ public class ClaimLeverMessageToClient implements ICoordsHandler {
 	 * 
 	 * @param builder
 	 */
-	public ClaimLeverMessageToClient(ICoords coords, ICoords claimCoords) {
+	public PropertyLeverMessageToClient(ICoords coords, ICoords claimCoords) {
 		setCoords(coords);
 		setClaimCoords(claimCoords);
 		setValid(true);
@@ -51,7 +51,7 @@ public class ClaimLeverMessageToClient implements ICoordsHandler {
 	/**
 	 * 
 	 */
-	public ClaimLeverMessageToClient() {
+	public PropertyLeverMessageToClient() {
 		setValid(false);
 	}
 
@@ -85,18 +85,18 @@ public class ClaimLeverMessageToClient implements ICoordsHandler {
 	 * @param buf
 	 * @return
 	 */
-	public static ClaimLeverMessageToClient decode(FriendlyByteBuf buf) {
-		ClaimLeverMessageToClient message;
+	public static PropertyLeverMessageToClient decode(FriendlyByteBuf buf) {
+		PropertyLeverMessageToClient message;
 		
 		try {
 			ICoords coords = ICoordsHandler.readCoords(buf);
 			ICoords claimCoords = ICoordsHandler.readCoords(buf);
-			message = new ClaimLeverMessageToClient(coords, claimCoords);
+			message = new PropertyLeverMessageToClient(coords, claimCoords);
 			message.setValid(true);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("An error occurred attempting to read message: ", e);
-			message = new ClaimLeverMessageToClient();
+			message = new PropertyLeverMessageToClient();
 		}
 		return message;
 	}

@@ -196,7 +196,7 @@ public class CommandHelper {
 //				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LECTERN.get());
 				break;
 			case "claim vizualizer lever":
-				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LEVER.get());
+				givableItem = Item.byBlock(ProtectItBlocks.PROPERTY_LEVER.get());
 				break;
 			case "claim access manifest":
 //				givableItem = ProtectItItems.CLAIM_BOOK.get();

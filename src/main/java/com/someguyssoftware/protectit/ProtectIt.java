@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
 import com.someguyssoftware.protectit.config.Config;
-import com.someguyssoftware.protectit.inventory.ProtectItContainers;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
@@ -103,7 +102,6 @@ public class ProtectIt {
 		ProtectItBlocks.register();
 		ProtectItItems.register();
 		ProtectItBlockEntities.register();
-		ProtectItContainers.register();
 		
 		// regular register
 		eventBus.addListener(CommonSetup::common);

@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling on Dec 2, 2021
  *
  */
-public class RemoveClaimBlockEntity extends ClaimLeverBlockEntity {
+public class RemoveClaimBlockEntity extends PropertyLeverBlockEntity {
 	
 	/**
 	 * 

@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
+import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -48,14 +48,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLeverBlockEntity>, IClaimRenderer {
+public class PropertyLeverTileEntityRenderer implements BlockEntityRenderer<PropertyLeverBlockEntity>, IClaimRenderer {
 
-	public ClaimLeverTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+	public PropertyLeverTileEntityRenderer(BlockEntityRendererProvider.Context context) {
 //		super(context);
 	}
 
 	@Override
-	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+	public void render(PropertyLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		
 		if (tileEntity == null) {
@@ -66,7 +66,7 @@ public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLe
 		BlockState state =  tileEntity.getLevel().getBlockState(pos);
 		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
 
-		if (!state.is(ProtectItBlocks.CLAIM_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || claim == null) {
+		if (!state.is(ProtectItBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || claim == null) {
 			return;
 		}
 		
@@ -101,13 +101,13 @@ public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLe
 
 	@Override
 	public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverBlockEntity)tileEntity).getClaimCoords()).negate();
+		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getClaimCoords()).negate();
 		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
 	}
 	
 	@Override
 	public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		Property claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
+		Property claim = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)tileEntity).getClaimCoords());
 
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);
@@ -120,7 +120,7 @@ public class ClaimLeverTileEntityRenderer implements BlockEntityRenderer<ClaimLe
 		highlightFloor = leverCoords.delta(highlightFloor).negate();
 		
 		ICoords delta = 
-				new Coords(tileEntity.getBlockPos()).delta(((ClaimLeverBlockEntity)tileEntity).getClaimCoords())
+				new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getClaimCoords())
 				.negate()
 				.withY(highlightFloor.getY());
 

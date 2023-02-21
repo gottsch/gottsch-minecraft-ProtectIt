@@ -1,10 +1,10 @@
 {
-	"credit": "Made with Blockbench",
+	"parent": "block/block",
 	"ambientocclusion": false,
 	"textures": {
 		"3": "block/cauldron_inner",
 		"4": "block/oak_log",
-		"5": "protectit:block/claim_lever_base",
+		"5": "protectit:block/property_lever_base",
 		"particle": "block/smooth_stone",
 		"base": "block/smooth_stone",
 		"lever": "block/lever"
@@ -27,7 +27,7 @@
 			"name": "arm",
 			"from": [5, 1, 7],
 			"to": [7, 9, 9],
-			"rotation": {"angle": 45, "axis": "x", "origin": [8, 1, 8]},
+			"rotation": {"angle": -45, "axis": "x", "origin": [8, 1, 8]},
 			"faces": {
 				"north": {"uv": [9, 6, 11, 16], "texture": "#4"},
 				"east": {"uv": [12, 6, 14, 16], "texture": "#4"},
@@ -40,7 +40,7 @@
 			"name": "arm2",
 			"from": [9, 1, 7],
 			"to": [11, 9, 9],
-			"rotation": {"angle": 45, "axis": "x", "origin": [8, 1, 8]},
+			"rotation": {"angle": -45, "axis": "x", "origin": [8, 1, 8]},
 			"faces": {
 				"north": {"uv": [8, 6, 10, 16], "texture": "#4"},
 				"east": {"uv": [7, 0, 9, 10], "texture": "#4"},
@@ -53,7 +53,7 @@
 			"name": "handle",
 			"from": [3, 9, 7],
 			"to": [13, 11, 9],
-			"rotation": {"angle": 45, "axis": "x", "origin": [8, 1, 8]},
+			"rotation": {"angle": -45, "axis": "x", "origin": [8, 1, 8]},
 			"faces": {
 				"north": {"uv": [3, 2, 13, 4], "texture": "#3"},
 				"east": {"uv": [12, 4, 14, 6], "texture": "#3"},

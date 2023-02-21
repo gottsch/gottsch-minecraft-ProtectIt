@@ -33,8 +33,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class ProtectItBlockEntities {
 	public static final RegistryObject<BlockEntityType<ClaimBlockEntity>> CLAIM_TYPE;
 	public static final RegistryObject<BlockEntityType<RemoveClaimBlockEntity>> REMOVE_CLAIM_TYPE;
-	public static final RegistryObject<BlockEntityType<ClaimLeverBlockEntity>> CLAIM_LEVER_TYPE;
-	public static final RegistryObject<BlockEntityType<ClaimLecternBlockEntity>> CLAIM_LECTERN_TYPE;
+	public static final RegistryObject<BlockEntityType<PropertyLeverBlockEntity>> PROPERTY_LEVER_TYPE;
 
 	static {
 		CLAIM_TYPE = Registration.BLOCK_ENTITIES.register("claim_te", () -> BlockEntityType.Builder.of(ClaimBlockEntity::new, 
@@ -47,12 +46,8 @@ public class ProtectItBlockEntities {
 				ProtectItBlocks.REMOVE_CLAIM.get()
 			).build(null));
 		
-		CLAIM_LEVER_TYPE = Registration.BLOCK_ENTITIES.register("claim_lever_te", () -> BlockEntityType.Builder.of(ClaimLeverBlockEntity::new, 
-				ProtectItBlocks.CLAIM_LEVER.get()
-			).build(null));
-		
-		CLAIM_LECTERN_TYPE = Registration.BLOCK_ENTITIES.register("claim_lectern_te", () -> BlockEntityType.Builder.of(ClaimLecternBlockEntity::new, 
-				ProtectItBlocks.CLAIM_LEVER.get()
+		PROPERTY_LEVER_TYPE = Registration.BLOCK_ENTITIES.register("property_lever_te", () -> BlockEntityType.Builder.of(PropertyLeverBlockEntity::new, 
+				ProtectItBlocks.PROPERTY_LEVER.get()
 			).build(null));
 	}
 	
@@ -63,44 +58,4 @@ public class ProtectItBlockEntities {
 		// cycle through all block and create items
 		Registration.registerBlockEntities();
 	}
-	
-//	@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = EventBusSubscriber.Bus.MOD)
-//	public static class RegistrationHandler {
-
-//		@SubscribeEvent
-//		public static void onBlockEntityTypeRegistration(final RegistryEvent.Register<BlockEntityType<?>> event) {
-//			CLAIM_TYPE = BlockEntityType.Builder
-//					.of(ClaimBlockEntity::new, ProtectItBlocks.SMALL_CLAIM, ProtectItBlocks.MEDIUM_CLAIM, ProtectItBlocks.LARGE_CLAIM)
-//					.build(null);
-//			CLAIM_TYPE.setRegistryName("claim_te");
-//			event.getRegistry().register(CLAIM_TYPE);
-			
-//			REMOVE_CLAIM_TYPE = BlockEntityType.Builder
-//					.of(RemoveClaimBlockEntity::new, ProtectItBlocks.REMOVE_CLAIM)
-//					.build(null);
-//			REMOVE_CLAIM_TYPE.setRegistryName("remove_claim_te");
-//			event.getRegistry().register(REMOVE_CLAIM_TYPE);
-
-			// lever
-//			CLAIM_LEVER_TYPE = BlockEntityType.Builder
-//					.of(ClaimLeverBlockEntity::new, ProtectItBlocks.CLAIM_LEVER)
-//					.build(null);
-//			CLAIM_LEVER_TYPE.setRegistryName("claim_lever_te");
-//			event.getRegistry().register(CLAIM_LEVER_TYPE);
-
-			// lectern
-//			CLAIM_LECTERN_TYPE = BlockEntityType.Builder
-//					.of(ClaimLecternBlockEntity::new, ProtectItBlocks.CLAIM_LECTERN)
-//					.build(null);
-//			CLAIM_LECTERN_TYPE.setRegistryName("claim_lectern_te");
-//			event.getRegistry().register(CLAIM_LECTERN_TYPE);
-
-
-			//			TEST_TYPE = BlockEntityType.Builder
-			//					.of(TestTE::new, ProtectItBlocks.CLAIM_LECTERN)
-			//					.build(null);
-			//			TEST_TYPE.setRegistryName("test_te");
-			//			event.getRegistry().register(TEST_TYPE);
-//		}
-//	}
 }

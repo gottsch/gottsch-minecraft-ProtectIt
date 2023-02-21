@@ -43,16 +43,13 @@ public class ProtectItItems {
 	public static final Supplier<Item.Properties> ITEM_PROPS_SUPPLIER = () -> new Item.Properties().tab(CreativeModeTab.TAB_MISC);
 
 	// items
-//	public static RegistryObject<Item> CLAIM_BOOK = Registration.ITEMS.register("claim_book", () -> new ClaimBook(new Item.Properties().stacksTo(1).tab(CreativeModeTab.TAB_MISC)));
-	
 	public static RegistryObject<Item> SMALL_CLAIM = fromClaimBlock(ProtectItBlocks.SMALL_CLAIM, ITEM_PROPS_SUPPLIER);
 	public static RegistryObject<Item> MEDIUM_CLAIM = fromClaimBlock(ProtectItBlocks.MEDIUM_CLAIM, ITEM_PROPS_SUPPLIER);
 	public static RegistryObject<Item> LARGE_CLAIM = fromClaimBlock(ProtectItBlocks.LARGE_CLAIM, ITEM_PROPS_SUPPLIER);
 	public static RegistryObject<Item> REMOVE_CLAIM = Registration.ITEMS.register("remove_claim", () -> new RemoveClaimBlockItem(ProtectItBlocks.REMOVE_CLAIM.get(), ITEM_PROPS_SUPPLIER.get()));
 
-	public static RegistryObject<Item> CLAIM_LEVER = Registration.ITEMS.register("claim_lever", () -> new ClaimLeverBlockItem(ProtectItBlocks.CLAIM_LEVER.get(), ITEM_PROPS_SUPPLIER.get()));
-//	public static RegistryObject<Item> CLAIM_LECTERN = Registration.ITEMS.register("claim_lectern", () -> new ClaimLecternBlockItem(ProtectItBlocks.CLAIM_LECTERN.get(), ITEM_PROPS_SUPPLIER.get()));
-	
+	public static RegistryObject<Item> PROPERTY_LEVER = Registration.ITEMS.register("property_lever", () -> new PropertyLeverBlockItem(ProtectItBlocks.PROPERTY_LEVER.get(), ITEM_PROPS_SUPPLIER.get()));
+
 	/**
 	 * 
 	 */

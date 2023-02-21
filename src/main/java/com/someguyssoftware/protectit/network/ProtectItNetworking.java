@@ -40,10 +40,8 @@ public class ProtectItNetworking {
 	public static final int REGISTRY_LOAD_MESSAGE_ID = 15;
 	public static final int REGISTRY_LOAD_MESSAGE_TO_SERVER_ID = 16;
 	public static final int REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID = 17;
-	@Deprecated
-	public static final int CLAIM_BOOK_MESSAGE_ID = 18;
-	@Deprecated
-	public static final int CLAIM_LEVER_MESSAGE_ID = 19;
+
+	public static final int PROPERTY_LEVER_MESSAGE_ID = 19;
 	
 	public static final int WHITELIST_ADD_ID = 20;
 	public static final int WHITELIST_REMOVE_ID = 21;
@@ -71,11 +69,6 @@ public class ProtectItNetworking {
 				RegistryMutatorMessageHandlerOnClient::onMessageReceived,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
-		channel.registerMessage(REGISTRY_WHITELIST_MUTATOR_MESSAGE_ID, WhitelistMutatorS2C.class,
-				WhitelistMutatorS2C::encode, WhitelistMutatorS2C::decode,
-				RegistryWhitelistMutatorMessageHandlerOnClient::onMessageReceived,
-				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
 		channel.registerMessage(REGISTRY_LOAD_MESSAGE_ID, RegistryLoadMessageToClient.class,
 				RegistryLoadMessageToClient::encode, RegistryLoadMessageToClient::decode,
 				RegistryLoadMessageHandlerOnClient::onMessageReceived,
@@ -86,14 +79,9 @@ public class ProtectItNetworking {
 				RegistryLoadMessageHandlerOnServer::onMessageReceived,
 				Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
-		channel.registerMessage(CLAIM_BOOK_MESSAGE_ID, ClaimBookMessageToServer.class,
-				ClaimBookMessageToServer::encode, ClaimBookMessageToServer::decode,
-				ClaimBookMessageHandlerOnServer::onMessageReceived,
-				Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-		channel.registerMessage(CLAIM_LEVER_MESSAGE_ID, ClaimLeverMessageToClient.class,
-				ClaimLeverMessageToClient::encode, ClaimLeverMessageToClient::decode,
-				ClaimLeverMessageHandlerOnClient::onMessageReceived,
+		channel.registerMessage(PROPERTY_LEVER_MESSAGE_ID, PropertyLeverMessageToClient.class,
+				PropertyLeverMessageToClient::encode, PropertyLeverMessageToClient::decode,
+				PropertyLeverMessageHandlerOnClient::onMessageReceived,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 		
 		channel.registerMessage(WHITELIST_ADD_ID, WhitelistAddS2CPush.class,

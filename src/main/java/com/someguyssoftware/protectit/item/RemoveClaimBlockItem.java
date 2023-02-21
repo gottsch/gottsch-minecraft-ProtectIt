@@ -23,6 +23,7 @@ import java.util.List;
 
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
+import com.someguyssoftware.protectit.util.LangUtil;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -65,19 +66,18 @@ public class RemoveClaimBlockItem extends BlockItem {
 		if (!list.isEmpty()) {				
 			Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 			if (claim != null && !context.getPlayer().getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				context.getPlayer().sendMessage(new TranslatableComponent("message.protectit.block_region_not_owner"), context.getPlayer().getUUID());
+				context.getPlayer().sendMessage(new TranslatableComponent(LangUtil.message("block_region.not_owner")), context.getPlayer().getUUID());
 				return false;
 			}
 		}
 		return context.getLevel().setBlock(context.getClickedPos(), state, 26);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
 
-		tooltip.add(new TranslatableComponent("tooltip.protectit.remove_claim.howto").withStyle(ChatFormatting.RED));
+		tooltip.add(new TranslatableComponent(LangUtil.tooltip("remove_claim.howto")).withStyle(ChatFormatting.RED));
 
 	}
 }

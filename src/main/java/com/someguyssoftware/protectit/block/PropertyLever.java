@@ -24,9 +24,9 @@ import java.util.Random;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
+import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Property;
-import com.someguyssoftware.protectit.network.ClaimLeverMessageToClient;
+import com.someguyssoftware.protectit.network.PropertyLeverMessageToClient;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -65,7 +65,7 @@ import net.minecraftforge.network.PacketDistributor;
  * @author Mark Gottschling on Nov 7, 2021
  *
  */
-public class ClaimLever extends LeverBlock implements EntityBlock {
+public class PropertyLever extends LeverBlock implements EntityBlock {
 
 	// redefine the VoxelShape as ClaimLever is larger than Minecraft Lever
 	protected static final VoxelShape NORTH_AABB = Block.box(4.0D, 3.0D, 10.0D, 12.0D, 13.0D, 16.0D);
@@ -83,7 +83,7 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 	 * @param name
 	 * @param material
 	 */
-	public ClaimLever(Block.Properties properties) {
+	public PropertyLever(Block.Properties properties) {
 		super(properties);
 	}
 
@@ -98,9 +98,9 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 
 	@Override
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-		ClaimLeverBlockEntity blockEntity = null;
+		PropertyLeverBlockEntity blockEntity = null;
 		try {
-			blockEntity = new ClaimLeverBlockEntity(pos, state);
+			blockEntity = new PropertyLeverBlockEntity(pos, state);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error(e);
@@ -157,8 +157,8 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		BlockEntity tileEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
-		if (tileEntity instanceof ClaimLeverBlockEntity) {
-			Property claim = ProtectionRegistries.block().getClaimByCoords(((ClaimLeverBlockEntity)tileEntity).getClaimCoords());
+		if (tileEntity instanceof PropertyLeverBlockEntity) {
+			Property claim = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)tileEntity).getClaimCoords());
 			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
 					claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return InteractionResult.FAIL;
@@ -167,9 +167,9 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 			if (world.isClientSide) {
 				BlockState blockstate1 = state.cycle(POWERED);
 				if (blockstate1.getValue(POWERED)) {
-					if (((ClaimLeverBlockEntity)tileEntity).getClaimCoords() == null) {
+					if (((PropertyLeverBlockEntity)tileEntity).getClaimCoords() == null) {
 						if (claim != null) {
-							((ClaimLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+							((PropertyLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 						}
 					}
 					makeParticle(blockstate1, world, pos, 1.0F);
@@ -196,7 +196,7 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 	@Override
 	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
-		if (tileEntity instanceof ClaimLeverBlockEntity) {
+		if (tileEntity instanceof PropertyLeverBlockEntity) {
 			// get the claim for this position
 //			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 //			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
@@ -205,7 +205,7 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 			if (!list.isEmpty()) {				
 				Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 //				ProtectIt.LOGGER.debug("found claim -> {}", claim);
-				((ClaimLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+				((PropertyLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
 			}
 		}
 		worldIn.markAndNotifyBlock(pos, null, state, state, 0, 0);
@@ -221,7 +221,7 @@ public class ClaimLever extends LeverBlock implements EntityBlock {
 		if (!world.isClientSide()) {
 			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				// send message to add protection on all clients
-				ClaimLeverMessageToClient message = new ClaimLeverMessageToClient(coords, claimCoords);
+				PropertyLeverMessageToClient message = new PropertyLeverMessageToClient(coords, claimCoords);
 				ProtectIt.LOGGER.info("sending claim lever message to sync client side -> {}", message);
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}

@@ -223,17 +223,17 @@ public class ClaimBlock extends Block implements EntityBlock {
 //				if (!player.getInventory().add(lecternStack)) {
 //					player.drop(lecternStack, false);
 //				}
-				ItemStack leverStack = new ItemStack(ProtectItBlocks.CLAIM_LEVER.get());
+				ItemStack leverStack = new ItemStack(ProtectItBlocks.PROPERTY_LEVER.get());
 				if (!player.getInventory().add(leverStack)) {
 					player.drop(leverStack, false);
 				}
 				
 				// send message to player
-				player.sendMessage(new TranslatableComponent("message.protectit.block_region_successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
+				player.sendMessage(new TranslatableComponent("message.protectit.block_region.successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
 			}
 			else {
 				// message player that the area is already protected
-				player.sendMessage(new TranslatableComponent("message.protectit.block_region_protected"), player.getUUID());
+				player.sendMessage(new TranslatableComponent("message.protectit.block_region.protected"), player.getUUID());
 			}
 		}
 		return InteractionResult.SUCCESS;

@@ -22,21 +22,14 @@ package com.someguyssoftware.protectit.setup;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
-import com.someguyssoftware.protectit.client.render.tileentity.ClaimLecternTileEntityRenderer;
-import com.someguyssoftware.protectit.client.render.tileentity.ClaimLeverTileEntityRenderer;
 import com.someguyssoftware.protectit.client.render.tileentity.ClaimTileEntityRenderer;
+import com.someguyssoftware.protectit.client.render.tileentity.PropertyLeverTileEntityRenderer;
 import com.someguyssoftware.protectit.client.render.tileentity.RemoveClaimTileEntityRenderer;
-import com.someguyssoftware.protectit.client.screen.ClaimLecternScreen;
-import com.someguyssoftware.protectit.inventory.ProtectItContainers;
 
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -51,25 +44,12 @@ public class ClientSetup {
 
 	public static void init(final FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
-        	// attach our container(s) to the screen(s)
-            MenuScreens.register(ProtectItContainers.CLAIM_LECTERN_CONTAINER_TYPE.get(), ClaimLecternScreen::new);           
-  
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.SMALL_CLAIM.get(), RenderType.cutoutMipped());
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.MEDIUM_CLAIM.get(), RenderType.cutoutMipped());
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.LARGE_CLAIM.get(), RenderType.cutoutMipped());
             ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.REMOVE_CLAIM.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.CLAIM_LEVER.get(), RenderType.cutoutMipped());
-//            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.CLAIM_LECTERN.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.PROPERTY_LEVER.get(), RenderType.cutoutMipped());
 		});
-	}
-
-	@SubscribeEvent
-	public static void onTextureStitchEvent(TextureStitchEvent.Pre event) {
-		TextureAtlas map = event.getAtlas();
-		if (!map.location().equals( TextureAtlas.LOCATION_BLOCKS)) {
-			return;
-		}
-		event.addSprite(new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
 	}
 
 	/**
@@ -80,7 +60,6 @@ public class ClientSetup {
     public static void onRegisterRenderer(EntityRenderersEvent.RegisterRenderers event) {
 		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_TYPE.get(), ClaimTileEntityRenderer::new);
 		event.registerBlockEntityRenderer(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), RemoveClaimTileEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_LEVER_TYPE.get(), ClaimLeverTileEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_LECTERN_TYPE.get(), ClaimLecternTileEntityRenderer::new);
+		event.registerBlockEntityRenderer(ProtectItBlockEntities.PROPERTY_LEVER_TYPE.get(), PropertyLeverTileEntityRenderer::new);
 	}
 }

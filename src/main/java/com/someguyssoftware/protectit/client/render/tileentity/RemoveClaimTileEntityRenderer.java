@@ -23,7 +23,7 @@ import java.awt.Color;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.someguyssoftware.protectit.block.entity.ClaimLeverBlockEntity;
+import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -40,7 +40,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * @author Mark Gottschling on Dec 2, 2021
  *
  */
-public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer {
+public class RemoveClaimTileEntityRenderer extends PropertyLeverTileEntityRenderer {
 	
 	/**
 	 * 
@@ -51,7 +51,7 @@ public class RemoveClaimTileEntityRenderer extends ClaimLeverTileEntityRenderer 
 	}
 
 	@Override
-	public void render(ClaimLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+	public void render(PropertyLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
 		BlockPos pos = tileEntity.getBlockPos();	

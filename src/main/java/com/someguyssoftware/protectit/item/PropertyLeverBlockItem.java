@@ -21,6 +21,8 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
+import com.someguyssoftware.protectit.util.LangUtil;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -36,23 +38,21 @@ import net.minecraft.world.level.block.Block;
  * @author Mark Gottschling on Dec 4, 2021
  *
  */
-public class ClaimLeverBlockItem extends BlockItem {
+public class PropertyLeverBlockItem extends BlockItem {
 
 	/**
 	 * 
 	 * @param block
 	 * @param properties
 	 */
-	public ClaimLeverBlockItem(Block block, Properties properties) {
+	public PropertyLeverBlockItem(Block block, Properties properties) {
 		super(block, properties);
 	}
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
 
-		tooltip.add(new TranslatableComponent("tooltip.protectit.claim_lever.howto").withStyle(ChatFormatting.GREEN));
-		
+		tooltip.add(new TranslatableComponent(LangUtil.tooltip("property_lever.howto")).withStyle(ChatFormatting.GREEN));
 	}
 }

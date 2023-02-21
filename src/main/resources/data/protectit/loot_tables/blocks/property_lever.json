@@ -2,12 +2,12 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "name": "claim_lever",
+      "name": "property_lever",
       "rolls": 1,
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "protectit:claim_lever"
+          "name": "protectit:property_lever"
         }
       ],
       "conditions": [

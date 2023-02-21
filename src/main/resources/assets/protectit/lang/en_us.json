@@ -3,17 +3,14 @@
 	"block.protectit.medium_claim":"Medium Claim Stake",
 	"block.protectit.large_claim":"Large Claim Stake",
 	"block.protectit.remove_claim":"Remove Claim Stake",
-	"block.protectit.claim_lever":"Property Lever",
-	"block.protectit.claim_lectern":"Claim Access Lectern",
-	
-	"item.protectit.claim_book":"Claim Access Manifest",
+	"block.protectit.property_lever":"Property Lever",
 			
-	"message.protectit.block_region_successfully_protected":"Region %s -> %s is now protected.",
+	"message.protectit.block_region.successfully_protected":"Region %s -> %s is now protected.",
 	"message.protectit.block_protected": "Block is protected.",
-	"message.protectit.block_region_protected":"A block(s) in that region are already protected.",
-	"message.protectit.block_region_not_protected":"That region is not protected.",
-	"message.protectit.block_region_not_owner":"You are not the owner of that region.",
-	"message.protectit.block_region_not_protected_or_owner":"That region is not protected or you are not the owner.",
+	"message.protectit.block_region.protected":"A block(s) in that region are already protected.",
+	"message.protectit.block_region.not_protected":"That region is not protected.",
+	"message.protectit.block_region.not_owner":"You are not the owner of that region.",
+	"message.protectit.block_region.not_protected_or_owner":"That region is not protected or you are not the owner.",
 	"message.protectit.invalid_coords_format": "Block pos B must be >= than block pos A.",
 	"message.protectit.empty_list": "Protections: [Empty]",
 	"message.protectit.option_unavailable": "That option is not available yet.",
@@ -29,10 +26,6 @@
 	"message.protectit.whitelist.remove.success": "The player was successfully removed from ",
 	"message.protectit.whitelist.clear.success": "The whitelist was successfully cleared from ",
 	
-	"label.protectit.claim_book.title": "Claim Access Manifest",
-	"tooltip.protectit.claim_book.howto": "A players name to the manifast to allow them\naccess to interact or modify your land ie. a whitelist.",
-	"tooltip.protectit.claim.howto": "Place block to highlight area.\nUse placed block to claim your land.",
-	"tooltip.protectit.remove_claim.howto": "Place block to highlight your claim.\nUse placed block to remove your claim.",
-	"tooltip.protectit.claim_lever.howto": "Place lever within protected area.\nUse placed block to highlight your land.",
-	"tooltip.protectit.claim_lectern.howto": "Place lectern within protected area.\nUse Claim Access Manifest (CAM) on lectern to modify the access (whitelist) to your land.\nYou can generate a CAM by using a Book on the lectern."
+	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
+	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land."
 }
