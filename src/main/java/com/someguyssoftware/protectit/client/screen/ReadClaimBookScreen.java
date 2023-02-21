@@ -46,6 +46,7 @@ import net.minecraft.resources.ResourceLocation;
  * @author Mark Gottschling on Nov 18, 2021
  *
  */
+@Deprecated
 //@OnlyIn(Dist.CLIENT)
 public class ReadClaimBookScreen extends Screen {
 	public static final ResourceLocation BOOK_LOCATION = new ResourceLocation("textures/gui/book.png");

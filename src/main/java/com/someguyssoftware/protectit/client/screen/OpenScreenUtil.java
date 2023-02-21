@@ -30,6 +30,7 @@ import net.minecraftforge.fml.DistExecutor;
  * @author Mark Gottschling on Nov 22, 2021
  *
  */
+@Deprecated
 public class OpenScreenUtil {
 	
 	/**

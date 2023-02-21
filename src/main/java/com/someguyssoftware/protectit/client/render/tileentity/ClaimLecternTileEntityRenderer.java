@@ -43,6 +43,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling on Nov 18, 2021
  *
  */
+@Deprecated
 public class ClaimLecternTileEntityRenderer implements BlockEntityRenderer<ClaimLecternBlockEntity> {
 	private final BookModel bookModel;
 	public static final Material BOOK_LOCATION = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(ProtectIt.MODID, "entity/claim_lectern_book"));
