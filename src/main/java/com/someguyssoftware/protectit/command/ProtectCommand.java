@@ -31,6 +31,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.network.PermissionChangeS2CPush;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.WhitelistAddS2CPush;
 import com.someguyssoftware.protectit.network.WhitelistClearS2CPush;
@@ -65,15 +66,9 @@ public class ProtectCommand {
 	private static final String NEW_NAME = "new_name";
 	private static final String PROPERTY_NAME = "property_name";
 
-	private static final SuggestionProvider<CommandSourceStack> PROPERTY_NAMES = (source, builder) -> {
-		List<Property> claims = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> namedClaims = claims.stream().map(claim -> claim.getName().toUpperCase()).collect(Collectors.toList());
-		return SharedSuggestionProvider.suggest(namedClaims, builder);
-	};
-
 	private static final SuggestionProvider<CommandSourceStack> WHITELIST_NAMES = (source, builder) -> {
-		List<Property> claims = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> names = claims.stream().flatMap(x -> x.getWhitelist().stream().map(y -> y.getName().toUpperCase())).collect(Collectors.toList());
+		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> names = properties.stream().flatMap(x -> x.getWhitelist().stream().map(y -> y.getName().toUpperCase())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
@@ -101,7 +96,7 @@ public class ProtectCommand {
 								///// PERMISSION CHANGE
 								.then(Commands.literal("change")
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.then(Commands.argument("permission", StringArgumentType.string())
 														.suggests(PERMISSIONS)
 														.then(Commands.literal("on")
@@ -124,7 +119,7 @@ public class ProtectCommand {
 								///// PERMISSION LIST
 								.then(Commands.literal("list")
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.executes(source -> {
 													return propertyListPermissions(source.getSource(), StringArgumentType.getString(source, PROPERTY_NAME));
 												})
@@ -134,7 +129,7 @@ public class ProtectCommand {
 						///// RENAME OPTION
 						.then(Commands.literal(RENAME)
 								.then(Commands.argument(CURRENT_NAME, StringArgumentType.string())
-										.suggests(PROPERTY_NAMES)
+										.suggests(CommandHelper.PROPERTY_NAMES)
 										.then(Commands.argument(NEW_NAME, StringArgumentType.string())
 												.executes(source -> {
 													return CommandHelper.rename(source.getSource(), 
@@ -164,7 +159,7 @@ public class ProtectCommand {
 								///// WHITELIST ADD /////
 								.then(Commands.literal(CommandHelper.ADD)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.then(Commands.argument(CommandHelper.TARGET,EntityArgument.player())
 														.executes(source -> {
 															return whitelistAddPlayer(source.getSource(), 
@@ -176,7 +171,7 @@ public class ProtectCommand {
 								///// WHITELIST REMOVE /////
 								.then(Commands.literal(CommandHelper.REMOVE)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
 														.suggests(WHITELIST_NAMES)
 														.executes(source -> {
@@ -192,7 +187,7 @@ public class ProtectCommand {
 											return source.hasPermission(0);
 										})
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.executes(source -> {
 													return whitelistListForProperty(source.getSource(), StringArgumentType.getString(source, PROPERTY_NAME));
 												})
@@ -201,7 +196,7 @@ public class ProtectCommand {
 								///// WHTIELIST CLEAR /////
 								.then(Commands.literal(CommandHelper.CLEAR)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.executes(source -> {
 													return whitelistClear(source.getSource(), StringArgumentType.getString(source, PROPERTY_NAME));
 												})
@@ -297,9 +292,19 @@ public class ProtectCommand {
 			// update permission on property
 			property.setPermission(Permission.valueOf(permissionName).value, value);
 			
-			// TODO update chat
+			//send update to client
+			if(source.getLevel().getServer().isDedicatedServer()) {
+				PermissionChangeS2CPush message = new PermissionChangeS2CPush(
+						owner.getUUID(),
+						property.getUuid(),
+						Permission.valueOf(permissionName).value,
+						value
+						);
+				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+			}
 			
-			// TODO send update to client
+			source.sendSuccess(new TranslatableComponent(LangUtil.message("permission.change.success"))
+					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
 			
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistAddPlayer command:", e);

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
@@ -48,9 +49,11 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 	private static final String CLAIMS_KEY = "claims";
 
-	private final Map<String, List<Property>> CLAIMS_BY_OWNER = new HashMap<>(); 
+	private final Map<String, List<Property>> PROPERTIES_BY_OWNER = new HashMap<>(); 
 	private final Map<ICoords, Property> PROPERTIES_BY_COORDS = new HashMap<>();
 
+	private final Map<UUID, ProtectedIntervalTree> NESTED_PROPERTIES = new HashMap<>();
+	
 	/**
 	 * Interval Binary Search Tree for fast lookups for block access/mutation actions
 	 */
@@ -87,11 +90,11 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		// add claims by owner
 		List<Property> claims = null;
 		// TODO make a method
-		if (!CLAIMS_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
+		if (!PROPERTIES_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
 			// create new list entry
-			CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
+			PROPERTIES_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
 		}
-		claims = CLAIMS_BY_OWNER.get(claim.getOwner().getUuid());
+		claims = PROPERTIES_BY_OWNER.get(claim.getOwner().getUuid());
 		claims.add(claim);
 		
 		// add claims by coords
@@ -149,10 +152,10 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	private void removeClaims(final List<Box> protections) {
 		if (!protections.isEmpty()) {
 			protections.forEach(p -> {
-				Property claim = PROPERTIES_BY_COORDS.remove(p.getMinCoords());
+				Property property = PROPERTIES_BY_COORDS.remove(p.getMinCoords());
 //				ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
 //				ProtectIt.LOGGER.debug("claims after removal from BY_COORDS -> {}", CLAIMS_BY_COORDS);
-				CLAIMS_BY_OWNER.values().forEach(l -> {
+				PROPERTIES_BY_OWNER.values().forEach(l -> {
 					l.removeIf(c -> c.getBox().getMinCoords().equals(p.getMinCoords()));
 				});
 //				ProtectIt.LOGGER.debug("claims_by_owner -> {}", CLAIMS_BY_OWNER);
@@ -183,7 +186,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 					PROPERTIES_BY_COORDS.remove(p.getMinCoords());
 //					ProtectIt.LOGGER.debug("claim was removed from BY_COORDS -> {}", claim);
 				}
-				List<Property> claims = CLAIMS_BY_OWNER.get(uuid);
+				List<Property> claims = PROPERTIES_BY_OWNER.get(uuid);
 				if (claims != null && !claims.isEmpty()) {
 					claims.removeIf(c -> c.getBox().getMinCoords().equals(p.getMinCoords()));
 				}
@@ -202,7 +205,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		// TODO wouldn't have to do do-while if used tree.delete2()
 		
 		//delete from CLAIMs registries
-		CLAIMS_BY_OWNER.remove(uuid);		
+		PROPERTIES_BY_OWNER.remove(uuid);		
 		PROPERTIES_BY_COORDS.entrySet().removeIf(entry -> entry.getValue().getOwner().getUuid().equalsIgnoreCase(uuid));
 	}
 
@@ -221,7 +224,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	@Override
 	public List<Property> getProtections(String uuid) {
-		List<Property> claims = CLAIMS_BY_OWNER.get(uuid);
+		List<Property> claims = PROPERTIES_BY_OWNER.get(uuid);
 		if (claims == null) {
 			claims = new ArrayList<>();
 		}
@@ -445,26 +448,26 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		if (nbt.contains(CLAIMS_KEY)) {
 			ListTag list = nbt.getList(CLAIMS_KEY, 10);
 			list.forEach(element -> {
-//			for (CompoundTag compound : list.listIterator().
-				Property claim = new Property().load((CompoundTag)element);
-				ProtectIt.LOGGER.debug("loaded claim -> {}", claim);
-				PROPERTIES_BY_COORDS.put(claim.getCoords(), claim);
+
+				Property property = new Property().load((CompoundTag)element);
+				ProtectIt.LOGGER.debug("loaded claim -> {}", property);
+				PROPERTIES_BY_COORDS.put(property.getCoords(), property);
 //				ProtectIt.LOGGER.debug("coords mapped claim -> {}", CLAIMS_BY_COORDS.get(claim.getCoords()));
 				
-				if (!CLAIMS_BY_OWNER.containsKey(claim.getOwner().getUuid())) {
+				if (!PROPERTIES_BY_OWNER.containsKey(property.getOwner().getUuid())) {
 					// create new list entry
-					CLAIMS_BY_OWNER.put(claim.getOwner().getUuid(), new ArrayList<>());
+					PROPERTIES_BY_OWNER.put(property.getOwner().getUuid(), new ArrayList<>());
 				}
-				CLAIMS_BY_OWNER.get(claim.getOwner().getUuid()).add(claim);
-				ProtectIt.LOGGER.debug("claim BEFORE inserting into tree -> {}", PROPERTIES_BY_COORDS.get(claim.getCoords()));
-				tree.insert(new Interval(claim.getBox().getMinCoords(), claim.getBox().getMaxCoords(), new OwnershipData(claim.getOwner().getUuid(), claim.getOwner().getName())));
-				ProtectIt.LOGGER.debug("claim AFTER inserting into tree -> {}", PROPERTIES_BY_COORDS.get(claim.getCoords()));
-				ProtectIt.LOGGER.debug("running loaded claims_by_coords -> {}", PROPERTIES_BY_COORDS);
+				PROPERTIES_BY_OWNER.get(property.getOwner().getUuid()).add(property);
+				ProtectIt.LOGGER.debug("claim BEFORE inserting into tree -> {}", PROPERTIES_BY_COORDS.get(property.getCoords()));
+				tree.insert(new Interval(property.getBox().getMinCoords(), property.getBox().getMaxCoords(), new OwnershipData(property.getOwner().getUuid(), property.getOwner().getName())));
+				ProtectIt.LOGGER.debug("claim AFTER inserting into tree -> {}", PROPERTIES_BY_COORDS.get(property.getCoords()));
+				ProtectIt.LOGGER.debug("running loaded properties_by_coords -> {}", PROPERTIES_BY_COORDS);
 			});
 //			ProtectIt.LOGGER.debug("0.all loaded claims_by_coords -> {}", CLAIMS_BY_COORDS);
 		}
 		// print the loaded claim again
-		ProtectIt.LOGGER.debug("1. all loaded claims_by_coords -> {}", PROPERTIES_BY_COORDS);
+		ProtectIt.LOGGER.debug("1. all loaded properties_by_coords -> {}", PROPERTIES_BY_COORDS);
 		ProtectIt.LOGGER.debug("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
 	}
 
@@ -472,7 +475,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * 
 	 */
 	public void clear() {
-		CLAIMS_BY_OWNER.clear();
+		PROPERTIES_BY_OWNER.clear();
 		PROPERTIES_BY_COORDS.clear();
 		tree.clear();
 	}

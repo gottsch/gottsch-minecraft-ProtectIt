@@ -77,11 +77,12 @@ public class OpsProtectCommand {
 			return source.hasPermission(Config.GENERAL.opsPermissionLevel.get()); // everyone can use base command
 		}).then(Commands.literal(CommandHelper.BLOCK)
 				///// ADD OPTION /////
-				.then(Commands.literal("add").requires(source -> {
+				.then(Commands.literal(CommandHelper.ADD).requires(source -> {
 					return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 				}).then(Commands.argument(CommandHelper.POS, BlockPosArgument.blockPos())
-						.then(Commands.argument(CommandHelper.POS2, BlockPosArgument.blockPos()).then(
-								Commands.argument(CommandHelper.TARGETS, EntityArgument.players()).executes(source -> {
+						.then(Commands.argument(CommandHelper.POS2, BlockPosArgument.blockPos())
+								.then(Commands.argument(CommandHelper.TARGETS, EntityArgument.players())
+										.executes(source -> {
 									return add(source.getSource(),
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),

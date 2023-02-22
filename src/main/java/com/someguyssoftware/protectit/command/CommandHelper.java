@@ -73,6 +73,8 @@ public class CommandHelper {
 	public static final String GIVE = "give";
 	public static final String GIVE_ITEM = "giveItem";
 	
+	public static final String PROPERTY_NAME = "property_name";
+	
 	///// SUGGESTIONS /////
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
 		return SharedSuggestionProvider.suggest(ProtectionRegistries.block().findByClaim(p -> !p.getOwner().getUuid().isEmpty()).stream()
@@ -87,6 +89,12 @@ public class CommandHelper {
 				"Remove Claim Stake"
 				);
 		return SharedSuggestionProvider.suggest(items, builder);
+	};
+	
+	static final SuggestionProvider<CommandSourceStack> PROPERTY_NAMES = (source, builder) -> {
+		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> names = properties.stream().map(claim -> claim.getName().toUpperCase()).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
 	/**

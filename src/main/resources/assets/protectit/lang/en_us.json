@@ -29,6 +29,7 @@
 	"message.protectit.property.permission.list":"Permissions of Property %s",
 	"message.protectit.permission.state.on": "ON",
 	"message.protectit.permission.state.off": "OFF",
+	"message.protectit.permission.change.success": "The permission was successfully changed for property ",
 	
 	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
 	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land."

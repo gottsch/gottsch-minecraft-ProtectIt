@@ -49,12 +49,8 @@ public class Property {
 	private static final String BOX_KEY = "box";
 	private static final String WHITELIST_KEY = "whitelist";
 	private static final String PERMISSION_KEY = "permissions";
-
-//	public static final int BLOCK_BREAK_PERMISSION = 0;
-//	public static final int BLOCK_PLACE_PERMISSION = 1;
-//	public static final int MULTIBLOCK_PLACE_PERMISSION = 2;
-//	public static final int TOOL_PERMISSION = 3;
-//	public static final int INTERACT_PERMISSION = 4;
+	private static final String HOTEL_KEY = "hotel";
+	private static final String ROOM_KEY = "room";
 	
 	private String name;
 	private UUID uuid;
@@ -63,6 +59,8 @@ public class Property {
 	private ICoords coords;
 	private Box box;
 	private byte permissions;
+	private boolean hotel;
+	private boolean room;
 	
 	// TODO probably a good candidate for a Builder
 	// TODO add equals, hashCode()
@@ -86,6 +84,8 @@ public class Property {
 		setName(NO_NAME);
 		setUuid(UUID.randomUUID());
 		setPermissions((byte)0); // ie no permission granted
+		setHotel(false);
+		setRoom(false);
 	}
 
 	public Property(ICoords coords, Box box, PlayerData data) {
@@ -108,7 +108,7 @@ public class Property {
 	 * @param nbt
 	 */
 	public void save(CompoundTag nbt) {
-		ProtectIt.LOGGER.debug("saving claim -> {}", this);
+		ProtectIt.LOGGER.debug("saving property -> {}", this);
 
 		CompoundTag ownerNbt = new CompoundTag();
 		getOwner().save(ownerNbt);
@@ -134,6 +134,8 @@ public class Property {
 		nbt.put(WHITELIST_KEY, list);
 		
 		nbt.putByte(PERMISSION_KEY, getPermissions());
+		nbt.putBoolean(HOTEL_KEY, hotel);
+		nbt.putBoolean(ROOM_KEY, room);
 	}
 
 	/**
@@ -142,7 +144,7 @@ public class Property {
 	 * @return
 	 */
 	public Property load(CompoundTag nbt) {
-//		ProtectIt.LOGGER.debug("loading claim...");
+//		ProtectIt.LOGGER.debug("loading property...");
 
 		if (nbt.contains(OWNER_KEY)) {
 			getOwner().load(nbt.getCompound(OWNER_KEY));
@@ -173,6 +175,13 @@ public class Property {
 		
 		if (nbt.contains(PERMISSION_KEY)) {
 			setPermissions(nbt.getByte(PERMISSION_KEY));
+		}
+		
+		if (nbt.contains(HOTEL_KEY)) {
+			setHotel(nbt.getBoolean(HOTEL_KEY));
+		}
+		if (nbt.contains(ROOM_KEY)) {
+			setRoom(nbt.getBoolean(ROOM_KEY));
 		}
 		return this;
 	}
@@ -331,5 +340,21 @@ public class Property {
 
 	public void setUuid(UUID uuid) {
 		this.uuid = uuid;
+	}
+
+	public boolean isHotel() {
+		return hotel;
+	}
+
+	public void setHotel(boolean hotel) {
+		this.hotel = hotel;
+	}
+
+	public boolean isRoom() {
+		return room;
+	}
+
+	public void setRoom(boolean room) {
+		this.room = room;
 	}
 }
