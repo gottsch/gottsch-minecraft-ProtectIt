@@ -61,14 +61,14 @@ public class ProtectCommand {
 	private static final String PROPERTY_NAME = "property_name";
 
 	private static final SuggestionProvider<CommandSourceStack> PROPERTY_NAMES = (source, builder) -> {
-		List<Property> claims = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> namedClaims = claims.stream().map(claim -> claim.getName().toUpperCase()).collect(Collectors.toList());
+		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> namedClaims = properties.stream().map(claim -> claim.getName().toUpperCase()).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(namedClaims, builder);
 	};
 	
 	private static final SuggestionProvider<CommandSourceStack> WHITELIST_NAMES = (source, builder) -> {
-		List<Property> claims = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> names = claims.stream().flatMap(x -> x.getWhitelist().stream().map(y -> y.getName().toUpperCase())).collect(Collectors.toList());
+		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> names = properties.stream().flatMap(x -> x.getWhitelist().stream().map(y -> y.getName())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
@@ -112,7 +112,8 @@ public class ProtectCommand {
 										.executes(source -> {
 											return CommandHelper.give(source.getSource(), StringArgumentType.getString(source, CommandHelper.GIVE_ITEM));
 										})
-										)
+										) // end of ITEM
+								// TODO add ownership
 								)
 						///// WHITELIST OPTION /////
 						.then(Commands.literal(CommandHelper.WHITELIST)
@@ -185,30 +186,31 @@ public class ProtectCommand {
 	 * @return
 	 */
 	public static int whitelistAddPlayer(CommandSourceStack source, String propertyName, @Nullable ServerPlayer player) {
-		ProtectIt.LOGGER.debug("Executing whitelist.add() command...");
+		ProtectIt.LOGGER.debug("executing whitelist.add() command...");
 
 		try {
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
 			// get the owner's properties
-			List<Property> claims = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
 			// get the named property
-			List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
-			if (namedClaims.isEmpty()) {
+			List<Property> namedProperties = properties.stream().filter(prop -> prop.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+			if (namedProperties.isEmpty()) {
 				source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
 						.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-			Property claim = namedClaims.get(0);
+			Property property = namedProperties.get(0);
 			// update property whitelist with player
-			claim.getWhitelist().add(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
-			CommandHelper.saveData(source.getLevel());
-
+			if (property.getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(player.getDisplayName().getString()))) {
+				property.getWhitelist().add(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
+				CommandHelper.saveData(source.getLevel());
+			}
 			//send update to client
 			if(source.getLevel().getServer().isDedicatedServer()) {
 				WhitelistAddS2CPush message = new WhitelistAddS2CPush(
 						owner.getUUID(),
-						claim.getUuid(),
+						property.getUuid(),
 						player.getName().getString(),
 						player.getUUID()
 						);
@@ -238,31 +240,28 @@ public class ProtectCommand {
 		ProtectIt.LOGGER.debug("Executing whitelistRemovePlayer() command...");
 		
 		try {
-			// get the player by name
-//			List<ServerPlayer> players  = source.getLevel().getPlayers(p -> p.getName().getString().equalsIgnoreCase(playerName));
-//			if (!players.isEmpty())
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
 			// get the owner's properties
-			List<Property> claims = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
 			// get the named property
-			List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
-			if (namedClaims.isEmpty()) {
+			List<Property> names = properties.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+			if (names.isEmpty()) {
 				source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
 						.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-			Property claim = namedClaims.get(0);
+			Property property = names.get(0);
 			// update property whitelist with player
 //			claim.getWhitelist().remove(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
-			boolean result = claim.getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
+			boolean result = property.getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
 			CommandHelper.saveData(source.getLevel());
 
 			// send update to client
 			if(result && source.getLevel().getServer().isDedicatedServer()) {
 				WhitelistRemoveS2CPush message = new WhitelistRemoveS2CPush(
 						owner.getUUID(),
-						claim.getUuid(),
+						property.getUuid(),
 						playerName.toUpperCase(),
 						null
 						);

@@ -19,6 +19,8 @@
  */
 package com.someguyssoftware.protectit.block.entity;
 
+import java.util.UUID;
+
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import net.minecraft.core.BlockPos;
@@ -35,9 +37,11 @@ import net.minecraft.world.phys.AABB;
  *
  */
 public class PropertyLeverBlockEntity extends BlockEntity {
-	private static final String CLAIM_COORDS_TAG = "claimCoords";
+	private static final String PROPERTY_COORDS_TAG = "propertyCoords";
+	private static final String PROPERTY_UUID_TAG = "propertyUuid";
 
-	private ICoords claimCoords;
+	private ICoords propertyCoords;
+	private UUID propertyUuid;
 	
 	public PropertyLeverBlockEntity(BlockPos pos, BlockState state) {
 		this(ProtectItBlockEntities.PROPERTY_LEVER_TYPE.get(), pos, state);
@@ -53,10 +57,13 @@ public class PropertyLeverBlockEntity extends BlockEntity {
 	@Override
 	public void saveAdditional(CompoundTag nbt) {
 		super.saveAdditional(nbt);
-		if (getClaimCoords() != null) {
+		if (getPropertyCoords() != null) {
 			CompoundTag coordsNbt = new CompoundTag();
-			getClaimCoords().save(coordsNbt);
-			nbt.put(CLAIM_COORDS_TAG, coordsNbt);
+			getPropertyCoords().save(coordsNbt);
+			nbt.put(PROPERTY_COORDS_TAG, coordsNbt);
+		}
+		if (getPropertyUuid() != null) {
+			nbt.putUUID(PROPERTY_UUID_TAG, getPropertyUuid());
 		}
 	}
 	
@@ -66,8 +73,11 @@ public class PropertyLeverBlockEntity extends BlockEntity {
 	@Override
 	public void load(CompoundTag nbt) {
 		super.load(nbt);
-		if (nbt.contains(CLAIM_COORDS_TAG)) {
-			setClaimCoords(Coords.EMPTY.load(nbt.getCompound(CLAIM_COORDS_TAG)));
+		if (nbt.contains(PROPERTY_COORDS_TAG)) {
+			setPropertyCoords(Coords.EMPTY.load(nbt.getCompound(PROPERTY_COORDS_TAG)));
+		}
+		if (nbt.contains(PROPERTY_UUID_TAG)) {
+			setPropertyUuid(nbt.getUUID(PROPERTY_UUID_TAG));
 		}
 	}
 	
@@ -100,11 +110,19 @@ public class PropertyLeverBlockEntity extends BlockEntity {
 		load(tag);
 	}
 
-	public ICoords getClaimCoords() {
-		return claimCoords;
+	public ICoords getPropertyCoords() {
+		return propertyCoords;
 	}
 
-	public void setClaimCoords(ICoords claimCoords) {
-		this.claimCoords = claimCoords;
+	public void setPropertyCoords(ICoords claimCoords) {
+		this.propertyCoords = claimCoords;
+	}
+
+	public UUID getPropertyUuid() {
+		return propertyUuid;
+	}
+
+	public void setPropertyUuid(UUID propertyUuid) {
+		this.propertyUuid = propertyUuid;
 	}
 }

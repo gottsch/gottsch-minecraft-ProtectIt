@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 
+import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -48,29 +49,12 @@ public class PropertyLeverMessageHandlerOnClient {
 
 	public static void onMessageReceived(final PropertyLeverMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
-//		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
-//
-//		if (sideReceived != LogicalSide.CLIENT) {
-//			ProtectIt.LOGGER.warn("ClaimLeverMessageToClient received on wrong side -> {}", ctx.getDirection().getReceptionSide());
-//			return;
-//		}
+
 		if (!message.isValid()) {
 			ProtectIt.LOGGER.warn("ClaimLeverMessageToClient was invalid -> {}", message.toString());
 			return;
 		}
 
-		// we know for sure that this handler is only used on the client side, so it is ok to assume
-		//  that the ctx handler is a client, and that Minecraft exists.
-		// Packets received on the server side must be handled differently!  See MessageHandlerOnServer
-
-//		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
-//		if (!clientWorld.isPresent()) {
-//			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
-//			return;
-//		}
-
-		// This code creates a new task which will be executed by the client during the next tick
-		//  In this case, the task is to call messageHandlerOnClient.processMessage(worldclient, message)
 		ctx.enqueueWork(() -> 
 		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage(ctx, message))
 				);
@@ -98,16 +82,16 @@ public class PropertyLeverMessageHandlerOnClient {
 		ProtectIt.LOGGER.debug("received claim lever message -> {}", message);
 
 		try {			
-			if (message.getCoords() == PropertyLeverMessageToClient.EMPTY_COORDS ||
-					message.getClaimCoords() == PropertyLeverMessageToClient.EMPTY_COORDS) {
-				ProtectIt.LOGGER.debug("coords/claimCoords are missing -> {}", message);
+			if (message.getCoords() == Coords.EMPTY || message.getPropertyCoords() == Coords.EMPTY) {
+				ProtectIt.LOGGER.debug("coords/propertyCoords are missing -> {}", message);
 				return;
 			}
-			BlockEntity tileEntity = worldClient.getBlockEntity(message.getCoords().toPos());
-			ProtectIt.LOGGER.debug("tileEntity -> {}", tileEntity.getClass().getSimpleName());
-			if (tileEntity instanceof PropertyLeverBlockEntity) {
-				((PropertyLeverBlockEntity)tileEntity).setClaimCoords(message.getClaimCoords());
-				ProtectIt.LOGGER.debug("set the TE claim coords -> {}", message.getClaimCoords());
+			BlockEntity blockEntity = worldClient.getBlockEntity(message.getCoords().toPos());
+			ProtectIt.LOGGER.debug("blockEntity -> {}", blockEntity.getClass().getSimpleName());
+			if (blockEntity instanceof PropertyLeverBlockEntity) {
+				((PropertyLeverBlockEntity)blockEntity).setPropertyUuid(message.getPropertyUuid());
+				((PropertyLeverBlockEntity)blockEntity).setPropertyCoords(message.getPropertyCoords());
+				ProtectIt.LOGGER.debug("set the BE claim coords -> {}", message.getPropertyCoords());
 			}
 		}			
 		catch(Exception e) {

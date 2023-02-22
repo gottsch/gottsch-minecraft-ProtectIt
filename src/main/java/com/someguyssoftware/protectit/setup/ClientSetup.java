@@ -22,9 +22,9 @@ package com.someguyssoftware.protectit.setup;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
-import com.someguyssoftware.protectit.client.render.tileentity.ClaimTileEntityRenderer;
-import com.someguyssoftware.protectit.client.render.tileentity.PropertyLeverTileEntityRenderer;
-import com.someguyssoftware.protectit.client.render.tileentity.RemoveClaimTileEntityRenderer;
+import com.someguyssoftware.protectit.client.render.blockentity.ClaimBlockEntityRenderer;
+import com.someguyssoftware.protectit.client.render.blockentity.PropertyLeverBlockEntityRenderer;
+import com.someguyssoftware.protectit.client.render.blockentity.RemoveClaimBlockEntityRenderer;
 
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -58,8 +58,8 @@ public class ClientSetup {
 	 */
 	@SubscribeEvent
     public static void onRegisterRenderer(EntityRenderersEvent.RegisterRenderers event) {
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_TYPE.get(), ClaimTileEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), RemoveClaimTileEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.PROPERTY_LEVER_TYPE.get(), PropertyLeverTileEntityRenderer::new);
+		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_TYPE.get(), ClaimBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), RemoveClaimBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ProtectItBlockEntities.PROPERTY_LEVER_TYPE.get(), PropertyLeverBlockEntityRenderer::new);
 	}
 }

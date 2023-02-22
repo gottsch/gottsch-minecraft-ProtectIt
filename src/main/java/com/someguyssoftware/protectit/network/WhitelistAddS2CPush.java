@@ -19,27 +19,21 @@
  */
 package com.someguyssoftware.protectit.network;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.command.CommandHelper;
 import com.someguyssoftware.protectit.registry.PlayerData;
-import com.someguyssoftware.protectit.registry.ProtectionRegistries;
-import com.someguyssoftware.protectit.util.LangUtil;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -116,10 +110,10 @@ public class WhitelistAddS2CPush {
 			return;
 		}
 		
-		// this creates a new task which will be executed by the server during the next tick
-		ctx.enqueueWork(() -> processMessage((ClientLevel) client.get(), message));
-		// mark as handled
-		ctx.setPacketHandled(true);
+		ctx.enqueueWork(() -> 
+		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage((ClientLevel) client.get(), message))
+				);
+		ctx.setPacketHandled(true);		
 	}
 
 	/**
@@ -131,9 +125,15 @@ public class WhitelistAddS2CPush {
 
 		try {
 			// get the property by uuid
-			Optional<Property> claim = CommandHelper.getProperty(message.owner, message.property);
-			if (claim.isPresent()) {
-				claim.get().getWhitelist().add(new PlayerData(message.playerUuid.toString(), message.playerName));
+			Optional<Property> property = CommandHelper.getProperty(message.owner, message.property);
+			if (property.isPresent()) {
+//				ProtectIt.LOGGER.debug("found property -> {} for owner -> {}", property.get().getName(), property.get().getOwner().getName());
+				if (property.get().getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(message.playerName))) {
+					property.get().getWhitelist().add(new PlayerData(message.playerUuid.toString(), message.playerName));
+//					ProtectIt.LOGGER.debug("added player -> {} to property whitelist -> {}", message.playerName, property.get().getName());
+				}
+				
+//				ProtectIt.LOGGER.debug("property white list -> {}", property.get().getWhitelist());
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to update whitelist on client: ", e);

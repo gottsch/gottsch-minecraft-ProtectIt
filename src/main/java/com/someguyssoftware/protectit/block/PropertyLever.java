@@ -21,9 +21,9 @@ package com.someguyssoftware.protectit.block;
 
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
 import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.network.PropertyLeverMessageToClient;
@@ -155,21 +155,22 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 	 * 
 	 */
 	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-		BlockEntity tileEntity = world.getBlockEntity(pos);
+		BlockEntity blockEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
-		if (tileEntity instanceof PropertyLeverBlockEntity) {
-			Property claim = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)tileEntity).getClaimCoords());
-			if (claim != null && !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
-					claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
+		if (blockEntity instanceof PropertyLeverBlockEntity) {
+			Property property = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
+			if (property != null && !player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid()) &&
+					property.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return InteractionResult.FAIL;
 			}
 			
 			if (world.isClientSide) {
 				BlockState blockstate1 = state.cycle(POWERED);
 				if (blockstate1.getValue(POWERED)) {
-					if (((PropertyLeverBlockEntity)tileEntity).getClaimCoords() == null) {
-						if (claim != null) {
-							((PropertyLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+					if (((PropertyLeverBlockEntity)blockEntity).getPropertyCoords() == null) {
+						if (property != null) {
+							((PropertyLeverBlockEntity)blockEntity).setPropertyCoords(property.getBox().getMinCoords());
+							((PropertyLeverBlockEntity)blockEntity).setPropertyUuid(property.getUuid());
 						}
 					}
 					makeParticle(blockstate1, world, pos, 1.0F);
@@ -180,8 +181,8 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 				float f = blockstate.getValue(POWERED) ? 0.6F : 0.5F;
 				world.playSound((Player)null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, f);
 				// send message to clients
-				if (claim != null) {
-					sendToClient(world, new Coords(pos), claim.getBox().getMinCoords());
+				if (property != null) {
+					sendToClient(world, new Coords(pos), property.getBox().getMinCoords(), property.getUuid());
 				}
 				return InteractionResult.CONSUME;
 			}
@@ -195,17 +196,17 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 	 */
 	@Override
 	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
-		if (tileEntity instanceof PropertyLeverBlockEntity) {
+		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
+		if (blockEntity instanceof PropertyLeverBlockEntity) {
 			// get the claim for this position
 //			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 //			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
-//			ProtectIt.LOGGER.debug("found protections -> {}", list);
+			ProtectIt.LOGGER.debug("found properties -> {}", list);
 			if (!list.isEmpty()) {				
-				Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+				Property property = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 //				ProtectIt.LOGGER.debug("found claim -> {}", claim);
-				((PropertyLeverBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+				((PropertyLeverBlockEntity)blockEntity).setPropertyCoords(property.getBox().getMinCoords());
 			}
 		}
 		worldIn.markAndNotifyBlock(pos, null, state, state, 0, 0);
@@ -215,14 +216,14 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 	 * 
 	 * @param world
 	 * @param coords
-	 * @param claimCoords
+	 * @param propertyCoords
 	 */
-	protected void sendToClient(Level world, ICoords coords, ICoords claimCoords) {
+	protected void sendToClient(Level world, ICoords coords, ICoords propertyCoords, UUID propertyUuid) {
 		if (!world.isClientSide()) {
 			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				// send message to add protection on all clients
-				PropertyLeverMessageToClient message = new PropertyLeverMessageToClient(coords, claimCoords);
-				ProtectIt.LOGGER.debug("sending claim lever message to sync client side -> {}", message);
+				PropertyLeverMessageToClient message = new PropertyLeverMessageToClient(coords, propertyCoords, propertyUuid);
+				ProtectIt.LOGGER.debug("sending property lever message to sync client side -> {}", message);
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		}

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.client.render.tileentity;
+package com.someguyssoftware.protectit.client.render.blockentity;
 
 import java.awt.Color;
 
@@ -48,37 +48,37 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class PropertyLeverTileEntityRenderer implements BlockEntityRenderer<PropertyLeverBlockEntity>, IClaimRenderer {
+public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<PropertyLeverBlockEntity>, IPropertyRenderer {
 
-	public PropertyLeverTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+	public PropertyLeverBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
 //		super(context);
 	}
 
 	@Override
-	public void render(PropertyLeverBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+	public void render(PropertyLeverBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		
-		if (tileEntity == null) {
+		if (blockEntity == null) {
 			return;
 		}
 		
-		BlockPos pos = tileEntity.getBlockPos();
-		BlockState state =  tileEntity.getLevel().getBlockState(pos);
-		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
+		BlockPos pos = blockEntity.getBlockPos();
+		BlockState state =  blockEntity.getLevel().getBlockState(pos);
+		Property property = ProtectionRegistries.block().getClaimByCoords(blockEntity.getPropertyCoords());
 
-		if (!state.is(ProtectItBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || claim == null) {
+		if (!state.is(ProtectItBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || property == null) {
 			return;
 		}
 		
 		// only render for the owner and whitelist
 //		ProtectIt.LOGGER.debug("claim -> {}", claim);
-		if (!StringUtils.isBlank(claim.getOwner().getUuid())) {
+		if (!StringUtils.isBlank(property.getOwner().getUuid())) {
 //			ProtectIt.LOGGER.debug("player -> {}", Minecraft.getInstance().player.getStringUUID());
 //			ProtectIt.LOGGER.debug("whitelist -> {}", claim.getWhitelist());
 		}
-		if (StringUtils.isBlank(claim.getOwner().getUuid()) ||
-				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid()) &&
-				claim.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {	
+		if (StringUtils.isBlank(property.getOwner().getUuid()) ||
+				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid()) &&
+				property.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {	
 //			ProtectIt.LOGGER.debug("not owner nor whitelist -> {}, {}", Minecraft.getInstance().player.getDisplayName().getString(), Minecraft.getInstance().player.getStringUUID());
 			return;
 		}
@@ -93,21 +93,21 @@ public class PropertyLeverTileEntityRenderer implements BlockEntityRenderer<Prop
 		// TODO merge the Color strategies between the render methods
 		
 		// render the claim
-		ICoords size = claim.getBox().getMaxCoords().delta(claim.getBox().getMinCoords());
-		renderClaim(tileEntity, matrixStack, builder, size, 0, green, 0, 1.0f);	
-		renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
+		ICoords size = property.getBox().getMaxCoords().delta(property.getBox().getMinCoords());
+		renderProperty(blockEntity, matrixStack, builder, size, 0, green, 0, 1.0f);	
+		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}
 
 
 	@Override
-	public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getClaimCoords()).negate();
+	public void updatePropertyTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
+		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords()).negate();
 		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
 	}
 	
 	@Override
 	public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		Property claim = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)tileEntity).getClaimCoords());
+		Property claim = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords());
 
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);
@@ -120,7 +120,7 @@ public class PropertyLeverTileEntityRenderer implements BlockEntityRenderer<Prop
 		highlightFloor = leverCoords.delta(highlightFloor).negate();
 		
 		ICoords delta = 
-				new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getClaimCoords())
+				new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords())
 				.negate()
 				.withY(highlightFloor.getY());
 

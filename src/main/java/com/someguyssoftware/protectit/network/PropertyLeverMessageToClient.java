@@ -19,6 +19,8 @@
  */
 package com.someguyssoftware.protectit.network;
 
+import java.util.UUID;
+
 import com.someguyssoftware.protectit.ProtectIt;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -32,19 +34,20 @@ import net.minecraft.network.FriendlyByteBuf;
  *
  */
 public class PropertyLeverMessageToClient implements ICoordsHandler {
-	public static final ICoords EMPTY_COORDS = new Coords(0, -255, 0);
 
 	private boolean valid;
 	public ICoords coords;
-	public ICoords claimCoords;
+	public ICoords propertyCoords;
+	public UUID propertyUuid;
 
 	/**
 	 * 
 	 * @param builder
 	 */
-	public PropertyLeverMessageToClient(ICoords coords, ICoords claimCoords) {
+	public PropertyLeverMessageToClient(ICoords coords, ICoords propertyCoords, UUID propertyUuid) {
 		setCoords(coords);
-		setClaimCoords(claimCoords);
+		setPropertyCoords(propertyCoords);
+		setPropertyUuid(propertyUuid);
 		setValid(true);
 	}
 
@@ -65,17 +68,23 @@ public class PropertyLeverMessageToClient implements ICoordsHandler {
 		}
 
 		if (getCoords() == null) {
-			writeCoords(EMPTY_COORDS, buf);
+			writeCoords(Coords.EMPTY, buf);
 		}
 		else {
 			writeCoords(getCoords(), buf);
 		}
 		
-		if (getClaimCoords() == null) {
-			writeCoords(EMPTY_COORDS, buf);
+		if (getPropertyCoords() == null) {
+			writeCoords(Coords.EMPTY, buf);
 		}
 		else {
-			writeCoords(getClaimCoords(), buf);
+			writeCoords(getPropertyCoords(), buf);
+		}
+		
+		if (getPropertyUuid() == null) {
+			buf.writeUtf("NULL");
+		} else {
+			buf.writeUtf(getPropertyUuid().toString());
 		}
 
 	}
@@ -90,8 +99,14 @@ public class PropertyLeverMessageToClient implements ICoordsHandler {
 		
 		try {
 			ICoords coords = ICoordsHandler.readCoords(buf);
-			ICoords claimCoords = ICoordsHandler.readCoords(buf);
-			message = new PropertyLeverMessageToClient(coords, claimCoords);
+			ICoords propertyCoords = ICoordsHandler.readCoords(buf);
+			String uuidStr = buf.readUtf();
+			UUID uuid = null;
+//			new UUID(0L, 0L);
+			if (!uuidStr.equalsIgnoreCase("NULL")) {
+				uuid = UUID.fromString(uuidStr);
+			}
+			message = new PropertyLeverMessageToClient(coords, propertyCoords, uuid);
 			message.setValid(true);
 		}
 		catch(Exception e) {
@@ -111,8 +126,8 @@ public class PropertyLeverMessageToClient implements ICoordsHandler {
 
 	@Override
 	public String toString() {
-		return "ClaimLeverMessageToClient [valid=" + valid + ", coords=" + coords + ", claimCoords=" + claimCoords
-				+ "]";
+		return "PropertyLeverMessageToClient [valid=" + valid + ", coords=" + coords + ", propertyCoords="
+				+ propertyCoords + ", propertyUuid=" + propertyUuid + "]";
 	}
 
 	public boolean isValid() {
@@ -123,11 +138,19 @@ public class PropertyLeverMessageToClient implements ICoordsHandler {
 		this.valid = valid;
 	}
 
-	public ICoords getClaimCoords() {
-		return claimCoords;
+	public ICoords getPropertyCoords() {
+		return propertyCoords;
 	}
 
-	public void setClaimCoords(ICoords claimCoords) {
-		this.claimCoords = claimCoords;
+	public void setPropertyCoords(ICoords claimCoords) {
+		this.propertyCoords = claimCoords;
+	}
+
+	public UUID getPropertyUuid() {
+		return propertyUuid;
+	}
+
+	public void setPropertyUuid(UUID propertyUuid) {
+		this.propertyUuid = propertyUuid;
 	}
 }

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.client.render.tileentity;
+package com.someguyssoftware.protectit.client.render.blockentity;
 
 import java.awt.Color;
 
@@ -48,13 +48,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ClaimTileEntityRenderer implements BlockEntityRenderer<ClaimBlockEntity>, IClaimRenderer {
+public class ClaimBlockEntityRenderer implements BlockEntityRenderer<ClaimBlockEntity>, IPropertyRenderer {
 	private final BookModel bookModel;
 	/**
 	 * 
 	 * @param dispatcher
 	 */
-	public ClaimTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+	public ClaimBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
 	      this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
 	}
 
@@ -92,7 +92,7 @@ public class ClaimTileEntityRenderer implements BlockEntityRenderer<ClaimBlockEn
 		}
 
 		// render claim outlines
-		renderClaim(tileEntity, matrixStack, builder, ((ClaimBlock)block).getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
+		renderProperty(tileEntity, matrixStack, builder, ((ClaimBlock)block).getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
 
 		// render all overlaps
 		((ClaimBlockEntity)tileEntity).getOverlaps().forEach(b -> {
@@ -116,7 +116,7 @@ public class ClaimTileEntityRenderer implements BlockEntityRenderer<ClaimBlockEn
 	}
 
 	@Override
-	public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
+	public void updatePropertyTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		BlockPos pos = tileEntity.getBlockPos();
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
 		final Box box = ((ClaimBlock)block).getBox(pos	);

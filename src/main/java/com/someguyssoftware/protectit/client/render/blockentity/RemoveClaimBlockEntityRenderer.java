@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.client.render.tileentity;
+package com.someguyssoftware.protectit.client.render.blockentity;
 
 import java.awt.Color;
 
@@ -40,13 +40,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * @author Mark Gottschling on Dec 2, 2021
  *
  */
-public class RemoveClaimTileEntityRenderer extends PropertyLeverTileEntityRenderer {
+public class RemoveClaimBlockEntityRenderer extends PropertyLeverBlockEntityRenderer {
 	
 	/**
 	 * 
 	 * @param dispatcher
 	 */
-	public RemoveClaimTileEntityRenderer(BlockEntityRendererProvider.Context context) {
+	public RemoveClaimBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
 		super(context);
 	}
 
@@ -56,7 +56,7 @@ public class RemoveClaimTileEntityRenderer extends PropertyLeverTileEntityRender
 
 		BlockPos pos = tileEntity.getBlockPos();	
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
-		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getClaimCoords());
+		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getPropertyCoords());
 		
 		if (claim == null) {
 //			ProtectIt.LOGGER.debug("or claim is null", block);
@@ -67,7 +67,7 @@ public class RemoveClaimTileEntityRenderer extends PropertyLeverTileEntityRender
 
 		// render the claim
 		ICoords size = claim.getBox().getMaxCoords().delta(claim.getBox().getMinCoords());
-		renderClaim(tileEntity, matrixStack, builder, size, 0, 0, 0, 1.0f);	
+		renderProperty(tileEntity, matrixStack, builder, size, 0, 0, 0, 1.0f);	
 		renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}
 	

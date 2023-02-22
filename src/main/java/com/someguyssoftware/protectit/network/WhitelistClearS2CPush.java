@@ -31,7 +31,9 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -99,9 +101,9 @@ public class WhitelistClearS2CPush {
 			return;
 		}
 		
-		// this creates a new task which will be executed by the server during the next tick
-		ctx.enqueueWork(() -> processMessage((ClientLevel) client.get(), message));
-		// mark as handled
+		ctx.enqueueWork(() -> 
+		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage((ClientLevel) client.get(), message))
+				);
 		ctx.setPacketHandled(true);
 	}
 

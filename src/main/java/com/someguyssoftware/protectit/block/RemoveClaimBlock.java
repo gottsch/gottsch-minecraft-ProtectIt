@@ -94,7 +94,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 				ProtectIt.LOGGER.debug("found protection -> {}", claim);
 				if (claim != null) {
 					ProtectIt.LOGGER.debug("found claim -> {}", claim);
-					((RemoveClaimBlockEntity)tileEntity).setClaimCoords(claim.getBox().getMinCoords());
+					((RemoveClaimBlockEntity)tileEntity).setPropertyCoords(claim.getBox().getMinCoords());
 				}
 			}
 		}
@@ -119,7 +119,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 		if (tileEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
-			Property claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getClaimCoords());
+			Property claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getPropertyCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
 				player.sendMessage(new TranslatableComponent(LangUtil.message("block_region.not_protected_or_owner")), player.getUUID());
 				return InteractionResult.SUCCESS;

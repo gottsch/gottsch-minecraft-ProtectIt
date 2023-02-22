@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.client.render.tileentity;
+package com.someguyssoftware.protectit.client.render.blockentity;
 
 import java.awt.Color;
 
@@ -46,7 +46,7 @@ import net.minecraft.world.phys.Vec3;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public interface IClaimRenderer {
+public interface IPropertyRenderer {
 	public static final ResourceLocation TEXTURE = new ResourceLocation("protectit:textures/entity/highlight.png");
 
 	/**
@@ -69,13 +69,13 @@ public interface IClaimRenderer {
 	 * @param blue
 	 * @param alpha
 	 */
-	default public void renderClaim(BlockEntity tileEntity, PoseStack matrixStack, VertexConsumer builder,
+	default public void renderProperty(BlockEntity tileEntity, PoseStack matrixStack, VertexConsumer builder,
 			ICoords claimSize, float red, float green, float blue, float alpha) {
 
 		// push the current transformation matrix + normals matrix
 		matrixStack.pushPose(); 
 
-		updateClaimTranslation(tileEntity, matrixStack);
+		updatePropertyTranslation(tileEntity, matrixStack);
 		// render
 		LevelRenderer.renderLineBox(matrixStack, builder, 
 				0, 0, 0,
@@ -90,7 +90,7 @@ public interface IClaimRenderer {
 	 * @param tileEntity
 	 * @param matrixStack
 	 */
-	default public void updateClaimTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
+	default public void updatePropertyTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
 		// do nothing
 	}
 	

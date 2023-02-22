@@ -33,6 +33,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.util.LangUtil;
@@ -118,7 +119,6 @@ public class CommandHelper {
 			return 1;
 		}
 		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		// TODO steam and find claim with oldName
 		List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(oldName)).collect(Collectors.toList());
 		if (namedClaims.isEmpty()) {
 			source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
@@ -211,17 +211,11 @@ public class CommandHelper {
 		try {
 			Item givableItem = null;
 			switch (name.toLowerCase()) {
-			case "claim access lectern":
-//				givableItem = Item.byBlock(ProtectItBlocks.CLAIM_LECTERN.get());
-				break;
-			case "claim vizualizer lever":
-				givableItem = Item.byBlock(ProtectItBlocks.PROPERTY_LEVER.get());
-				break;
-			case "claim access manifest":
-//				givableItem = ProtectItItems.CLAIM_BOOK.get();
+			case "property lever":
+				givableItem = ProtectItItems.PROPERTY_LEVER.get();
 				break;
 			case "remove claim stake":
-				givableItem = Item.byBlock(ProtectItBlocks.REMOVE_CLAIM.get());
+				givableItem = ProtectItItems.REMOVE_CLAIM.get();
 				break;
 			}
 			if (givableItem == null) {

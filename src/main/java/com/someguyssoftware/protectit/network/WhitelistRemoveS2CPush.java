@@ -31,7 +31,9 @@ import com.someguyssoftware.protectit.registry.PlayerData;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -41,6 +43,8 @@ import net.minecraftforge.network.NetworkEvent;
  *
  */
 public class WhitelistRemoveS2CPush {
+	private static UUID EMPTY_UUID = new UUID(0L, 0L);
+	
 	private UUID owner;
 	private UUID property;
 	private String playerName;
@@ -65,7 +69,11 @@ public class WhitelistRemoveS2CPush {
 		buf.writeUUID(owner);
 		buf.writeUUID(property);
 		buf.writeUtf(playerName);
-		buf.writeUUID(playerUuid);
+		if (playerUuid == null) {
+			buf.writeUUID(EMPTY_UUID);
+		} else {
+			buf.writeUUID(playerUuid);
+		}
 	}
 	
 	/**
@@ -108,9 +116,9 @@ public class WhitelistRemoveS2CPush {
 			return;
 		}
 		
-		// this creates a new task which will be executed by the server during the next tick
-		ctx.enqueueWork(() -> processMessage((ClientLevel) client.get(), message));
-		// mark as handled
+		ctx.enqueueWork(() -> 
+		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage((ClientLevel) client.get(), message))
+				);
 		ctx.setPacketHandled(true);
 	}
 
@@ -123,17 +131,21 @@ public class WhitelistRemoveS2CPush {
 
 		try {
 			// get the property by uuid
-			Optional<Property> claim = CommandHelper.getProperty(message.owner, message.property);
-			if (claim.isPresent()) {
-				if (message.playerName != null && message.playerUuid != null) {
-					claim.get().getWhitelist().remove(new PlayerData(message.playerUuid.toString(), message.playerName));
+			Optional<Property> property = CommandHelper.getProperty(message.owner, message.property);
+			if (property.isPresent()) {
+//				ProtectIt.LOGGER.debug("found property -> {} for owner -> {}", property.get().getName(), property.get().getOwner().getName());
+				if (message.playerName != null && message.playerUuid != null & !message.playerUuid.equals(EMPTY_UUID)) {
+					property.get().getWhitelist().remove(new PlayerData(message.playerUuid.toString(), message.playerName));
+//					ProtectIt.LOGGER.debug("removed player -> {} by name/uuid from property whitelist -> {}", message.playerName, property.get().getName());
 				}
 				else {
-					claim.get().getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(message.playerName));
+					property.get().getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(message.playerName));
+//					ProtectIt.LOGGER.debug("removed player -> {} by name from property whitelist -> {}", message.playerName, property.get().getName());
 				}
+//				ProtectIt.LOGGER.debug("property white list -> {}", property.get().getWhitelist());
 			}
 		} catch (Exception e) {
-			ProtectIt.LOGGER.error("Unable to update whitelist on client: ", e);
+			ProtectIt.LOGGER.error("unable to update whitelist on client: ", e);
 		}
 	}
 }
