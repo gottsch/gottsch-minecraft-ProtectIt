@@ -23,15 +23,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.UUID;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -43,12 +42,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -96,7 +92,7 @@ public class CommandHelper {
 	 * @return
 	 */
 	static int unavailable(CommandSourceStack source) {
-		source.sendSuccess(new TranslatableComponent("message.protectit.option_unavailable"), false);
+		source.sendSuccess(Component.translatable(LangUtil.message("option_unavailable")), false);
 		return 1;
 	}
 	
@@ -115,20 +111,20 @@ public class CommandHelper {
 			player = source.getPlayerOrException();
 		}
 		catch(CommandSyntaxException 	e) {
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unable_locate_player")));
+			source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
 			return 1;
 		}
 		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
 		List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(oldName)).collect(Collectors.toList());
 		if (namedClaims.isEmpty()) {
-			source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
-					.append(new TranslatableComponent(oldName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+			source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 			return 1;
 		}
 		namedClaims.get(0).setName(newName.toUpperCase());
 		
-		source.sendSuccess(new TranslatableComponent(LangUtil.message("property.rename.success"))
-				.append(new TranslatableComponent(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), false);
+		source.sendSuccess(Component.translatable(LangUtil.message("property.rename.success"))
+				.append(Component.translatable(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), false);
 
 		saveData(source.getLevel());
 		// NOTE it is not necessary to send message to client as rename() method is called from server
@@ -149,7 +145,7 @@ public class CommandHelper {
 			return list(source, player);
 		}
 		catch(CommandSyntaxException 	e) {
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unable_locate_player")));
+			source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
 		}
 		return 1;
 	}
@@ -162,9 +158,9 @@ public class CommandHelper {
 	 */
 	public static int list(CommandSourceStack source, ServerPlayer player) {
 		List<Component> messages = new ArrayList<>();
-		messages.add(new TextComponent(""));
-		messages.add(new TranslatableComponent(LangUtil.message("property.list"), player.getName().getString()).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE));
-		messages.add(new TextComponent(""));
+		messages.add(Component.literal(""));
+		messages.add(Component.translatable(LangUtil.message("property.list"), player.getName().getString()).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE));
+		messages.add(Component.literal(""));
 		
 		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
 		components.forEach(component -> {
@@ -182,16 +178,16 @@ public class CommandHelper {
 	static List<Component> formatList(List<Component> messages, List<Property> list) {
 		
 		if (list.isEmpty()) {
-			messages.add(new TranslatableComponent(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
+			messages.add(Component.translatable(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
 		}
 		else {			
 			list.forEach(claim -> {
-				messages.add(new TranslatableComponent(claim.getName().toUpperCase() + ": ").withStyle(ChatFormatting.AQUA)
-						.append(new TranslatableComponent(String.format("(%s) to (%s)", 
+				messages.add(Component.translatable(claim.getName().toUpperCase() + ": ").withStyle(ChatFormatting.AQUA)
+						.append(Component.translatable(String.format("(%s) to (%s)", 
 								formatCoords(claim.getBox().getMinCoords()), 
 								formatCoords(claim.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
 						)
-						.append(new TranslatableComponent(", size: (" + formatCoords(claim.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
+						.append(Component.translatable(", size: (" + formatCoords(claim.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
 				);
 
 //				[STYLE].withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + blockpos.getX() + " " + s1 + " " + blockpos.getZ())).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))
@@ -219,7 +215,7 @@ public class CommandHelper {
 				break;
 			}
 			if (givableItem == null) {
-				source.sendSuccess(new TranslatableComponent(LangUtil.message("non_givable_item")), false);
+				source.sendSuccess(Component.translatable(LangUtil.message("non_givable_item")), false);
 				return 1;
 			}
 			source.getPlayerOrException().getInventory().add(new ItemStack(givableItem));

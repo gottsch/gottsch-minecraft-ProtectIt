@@ -24,11 +24,11 @@ import java.util.List;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
+import com.someguyssoftware.protectit.util.LangUtil;
 
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -63,17 +63,16 @@ public class ClaimBlockItem extends BlockItem {
 		
 		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			if (WorldInfo.isServerSide(context.getLevel())) {
-				context.getPlayer().sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), context.getPlayer().getUUID());
+				context.getPlayer().sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			}
 			return false;
 		}
 		return context.getLevel().setBlock(context.getClickedPos(), state, 26);
 	}
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
-		tooltip.add(new TranslatableComponent("tooltip.protectit.claim.howto").withStyle(ChatFormatting.GREEN));		
+		tooltip.add(Component.translatable(LangUtil.tooltip("claim.howto")).withStyle(ChatFormatting.GREEN));		
 	}
 }

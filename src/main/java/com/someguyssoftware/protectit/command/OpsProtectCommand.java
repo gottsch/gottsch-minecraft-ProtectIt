@@ -28,7 +28,6 @@ import javax.annotation.Nullable;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.claim.Property;
 import com.someguyssoftware.protectit.config.Config;
@@ -49,7 +48,6 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
@@ -207,7 +205,7 @@ public class OpsProtectCommand {
 		// first, check that pos2 > pos1
 		Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 		if (!validCoords.isPresent()) {
-			source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
+			source.sendSuccess(Component.translatable("message.protectit.invalid_coords_format"), true);
 			return 1;
 		}
 
@@ -240,7 +238,7 @@ public class OpsProtectCommand {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslatableComponent("message.protectit.invalid_coords_format"), true);
+				source.sendSuccess(Component.translatable("message.protectit.invalid_coords_format"), true);
 				return 1;
 			}
 
@@ -330,7 +328,7 @@ public class OpsProtectCommand {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslatableComponent(LangUtil.message("invalid_coords_format")), true);
+				source.sendSuccess(Component.translatable(LangUtil.message("invalid_coords_format")), true);
 				return 1;
 			}
 
@@ -399,7 +397,7 @@ public class OpsProtectCommand {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
 			if (!validCoords.isPresent()) {
-				source.sendSuccess(new TranslatableComponent(LangUtil.message("invalid_coords_format"))
+				source.sendSuccess(Component.translatable(LangUtil.message("invalid_coords_format"))
 						.withStyle(ChatFormatting.RED), true);
 				return 1;
 			}
@@ -407,7 +405,7 @@ public class OpsProtectCommand {
 			// second, check if any block in the area is already protected.
 			if (ProtectionRegistries.block().isProtected(validCoords.get().getA(), validCoords.get().getB())) {
 				// send message
-				source.sendSuccess(new TranslatableComponent(LangUtil.message("block_region.protected"))
+				source.sendSuccess(Component.translatable(LangUtil.message("block_region.protected"))
 						.withStyle(ChatFormatting.RED), true);
 				return 1;
 			}
@@ -430,8 +428,8 @@ public class OpsProtectCommand {
 
 			// check if the max # of claims has been reached (via config value)
 			if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get() && !overrideLimit) {
-				source.sendFailure(new TranslatableComponent(LangUtil.message("player_properties_max_limit"))
-						.append(new TranslatableComponent(String.valueOf(claims.size())).withStyle(ChatFormatting.AQUA)));
+				source.sendFailure(Component.translatable(LangUtil.message("player_properties_max_limit"))
+						.append(Component.translatable(String.valueOf(claims.size())).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 
@@ -463,7 +461,7 @@ public class OpsProtectCommand {
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unexcepted_error"))
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
 		

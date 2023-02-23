@@ -35,7 +35,7 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -121,7 +121,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			// prevent use if not the owner
 			Property claim = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getPropertyCoords());
 			if (claim == null || !player.getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				player.sendMessage(new TranslatableComponent(LangUtil.message("block_region.not_protected_or_owner")), player.getUUID());
+				player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")));
 				return InteractionResult.SUCCESS;
 			}
 
@@ -160,7 +160,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			}
 
 			// send message to player
-			player.sendMessage(new TranslatableComponent(LangUtil.message("claim_successfully_removed")), player.getUUID());
+			player.sendSystemMessage(Component.translatable(LangUtil.message("claim_successfully_removed")));
 
 		}
 

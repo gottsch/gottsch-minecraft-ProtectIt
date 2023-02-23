@@ -29,7 +29,6 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -66,7 +65,7 @@ public class RemoveClaimBlockItem extends BlockItem {
 		if (!list.isEmpty()) {				
 			Property claim = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
 			if (claim != null && !context.getPlayer().getStringUUID().equalsIgnoreCase(claim.getOwner().getUuid())) {
-				context.getPlayer().sendMessage(new TranslatableComponent(LangUtil.message("block_region.not_owner")), context.getPlayer().getUUID());
+				context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_owner")));
 				return false;
 			}
 		}
@@ -77,7 +76,7 @@ public class RemoveClaimBlockItem extends BlockItem {
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
 
-		tooltip.add(new TranslatableComponent(LangUtil.tooltip("remove_claim.howto")).withStyle(ChatFormatting.RED));
+		tooltip.add(Component.translatable(LangUtil.tooltip("remove_claim.howto")).withStyle(ChatFormatting.RED));
 
 	}
 }

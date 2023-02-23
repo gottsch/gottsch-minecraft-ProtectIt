@@ -1,4 +1,22 @@
-
+/*
+ * This file is part of  Protect It.
+ * Copyright (c) 2023 Mark Gottschling (gottsch)
+ * 
+ * All rights reserved.
+ *
+ * Protect It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Protect It is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
+ */
 package com.someguyssoftware.protectit.util;
 
 import java.util.List;
@@ -11,8 +29,6 @@ import com.someguyssoftware.protectit.ProtectIt;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 
 /**
  * 
@@ -31,10 +47,10 @@ public class LangUtil {
 	 */
 	public static void appendAdvancedHoverText(String modid, List<Component> tooltip, Consumer<List<Component>> consumer) {
 		if (!Screen.hasShiftDown()) {
-			tooltip.add(new TextComponent(NEWLINE));
+			tooltip.add(Component.literal(NEWLINE));
 			// TODO how do make this call to tooltip generic for any mod because it would require the modid
-			tooltip.add(new TranslatableComponent(tooltip(modid, "hold_shift")).withStyle(ChatFormatting.GRAY));
-			tooltip.add(new TextComponent(LangUtil.NEWLINE));
+			tooltip.add(Component.translatable(tooltip(modid, "hold_shift")).withStyle(ChatFormatting.GRAY));
+			tooltip.add(Component.literal(LangUtil.NEWLINE));
 		}
 		else {
 			consumer.accept(tooltip);

@@ -87,15 +87,6 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		super(properties);
 	}
 
-	/**
-	 * 
-	 * @param modID
-	 * @param name
-	 */
-	public void setBlockName(String modID, String name) {
-		setRegistryName(modID, name);
-	}
-
 	@Override
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
 		PropertyLeverBlockEntity blockEntity = null;

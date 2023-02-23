@@ -44,7 +44,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -196,8 +196,8 @@ public class ProtectCommand {
 			// get the named property
 			List<Property> namedProperties = properties.stream().filter(prop -> prop.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (namedProperties.isEmpty()) {
-				source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
-						.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 			Property property = namedProperties.get(0);
@@ -217,12 +217,12 @@ public class ProtectCommand {
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
-			source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.add.success"))
-					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
+			source.sendSuccess(Component.translatable(LangUtil.message("whitelist.add.success"))
+					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistAddPlayer command:", e);
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unexcepted_error"))
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
 
@@ -247,8 +247,8 @@ public class ProtectCommand {
 			// get the named property
 			List<Property> names = properties.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (names.isEmpty()) {
-				source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
-						.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 			Property property = names.get(0);
@@ -268,12 +268,12 @@ public class ProtectCommand {
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 			
-			source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.remove.success"))
-					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
+			source.sendSuccess(Component.translatable(LangUtil.message("whitelist.remove.success"))
+					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistRemovePlayer command:", e);
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unexcepted_error"))
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
 
@@ -299,8 +299,8 @@ public class ProtectCommand {
 			// get the named property
 			List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (namedClaims.isEmpty()) {
-				source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
-						.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 			Property claim = namedClaims.get(0);
@@ -316,12 +316,12 @@ public class ProtectCommand {
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
-			source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.clear.success"))
-					.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
+			source.sendSuccess(Component.translatable(LangUtil.message("whitelist.clear.success"))
+					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute whitelistClear command:", e);
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unexcepted_error"))
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
 
@@ -340,7 +340,7 @@ public class ProtectCommand {
 			player = source.getPlayerOrException();
 		}
 		catch(CommandSyntaxException 	e) {
-			source.sendFailure(new TranslatableComponent(LangUtil.message("unable_locate_player")));
+			source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
 			return 1;
 		}
 
@@ -348,17 +348,17 @@ public class ProtectCommand {
 		// TODO steam and find claim with oldName
 		List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 		if (namedClaims.isEmpty()) {
-			source.sendFailure(new TranslatableComponent(LangUtil.message("property.name.unknown"))
-					.append(new TranslatableComponent(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+			source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+					.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 			return 1;
 		}
-		source.sendSuccess(new TranslatableComponent(LangUtil.NEWLINE), false);
-		source.sendSuccess(new TranslatableComponent(LangUtil.message("whitelist.property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD)
-				.append(new TranslatableComponent(propertyName).withStyle(ChatFormatting.AQUA)), false);
-		source.sendSuccess(new TranslatableComponent(LangUtil.NEWLINE), false);
+		source.sendSuccess(Component.translatable(LangUtil.NEWLINE), false);
+		source.sendSuccess(Component.translatable(LangUtil.message("whitelist.property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD)
+				.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
+		source.sendSuccess(Component.translatable(LangUtil.NEWLINE), false);
 
 		namedClaims.get(0).getWhitelist().forEach(data -> {
-			source.sendSuccess(new TranslatableComponent(data.getName()).withStyle(ChatFormatting.GREEN), false);
+			source.sendSuccess(Component.translatable(data.getName()).withStyle(ChatFormatting.GREEN), false);
 		});
 
 		return 1;

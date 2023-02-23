@@ -37,7 +37,7 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -136,7 +136,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		// gather the number of claims the player has
 		List<Property> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
 		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
-			placer.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), placer.getUUID());
+			placer.sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			return;
 		}
 		
@@ -172,7 +172,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		
 		// prevent the use of claim if max claims is met
 		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
-			player.sendMessage(new TranslatableComponent("message.protectit.max_claims_met"), player.getUUID());
+			player.sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			return InteractionResult.SUCCESS;
 		}
 		
@@ -229,11 +229,11 @@ public class ClaimBlock extends Block implements EntityBlock {
 				}
 				
 				// send message to player
-				player.sendMessage(new TranslatableComponent("message.protectit.block_region.successfully_protected", box.getMinCoords(), box.getMaxCoords()), player.getUUID());
+				player.sendSystemMessage(Component.translatable("message.protectit.block_region.successfully_protected", box.getMinCoords(), box.getMaxCoords()));
 			}
 			else {
 				// message player that the area is already protected
-				player.sendMessage(new TranslatableComponent("message.protectit.block_region.protected"), player.getUUID());
+				player.sendSystemMessage(Component.translatable("message.protectit.block_region.protected"));
 			}
 		}
 		return InteractionResult.SUCCESS;

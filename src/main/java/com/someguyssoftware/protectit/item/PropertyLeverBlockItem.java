@@ -25,7 +25,6 @@ import com.someguyssoftware.protectit.util.LangUtil;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -53,6 +52,6 @@ public class PropertyLeverBlockItem extends BlockItem {
 	public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, world, tooltip, flag);
 
-		tooltip.add(new TranslatableComponent(LangUtil.tooltip("property_lever.howto")).withStyle(ChatFormatting.GREEN));
+		tooltip.add(Component.translatable(LangUtil.tooltip("property_lever.howto")).withStyle(ChatFormatting.GREEN));
 	}
 }
