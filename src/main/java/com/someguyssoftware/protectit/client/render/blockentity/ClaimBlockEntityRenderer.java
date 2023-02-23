@@ -26,8 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.ClaimBlock;
 import com.someguyssoftware.protectit.block.entity.ClaimBlockEntity;
+import com.someguyssoftware.protectit.core.block.ClaimBlock;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;

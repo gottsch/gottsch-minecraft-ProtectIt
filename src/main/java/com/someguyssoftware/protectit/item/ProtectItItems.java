@@ -22,7 +22,7 @@ package com.someguyssoftware.protectit.item;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.core.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.setup.Registration;
 
 import net.minecraft.world.item.CreativeModeTab;
@@ -57,29 +57,7 @@ public class ProtectItItems {
 		// cycle through all block and create items
 		Registration.registerItems();
 	}
-	
-	/**
-	 * The actual event handler that registers the custom items.
-	 *
-	 * @param event The event this event handler handles
-	 */
-//	@SubscribeEvent
-//	public static void registerItems(RegistryEvent.Register<Item> event) {
-//
-//		/*
-//		 *  initialize items
-//		 */
-//		
-//		// ITEMS
-//		CLAIM_BOOK = new ClaimBook(ProtectIt.MODID, "claim_book", new Item.Properties().stacksTo(1).tab(CreativeModeTab.TAB_MISC));
-//		// TODO may remove from tabs
-//		
-//		/*
-//		 * register items (make sure you have set the registry name).
-//		 */
-//		event.getRegistry().register(CLAIM_BOOK);
-//	}
-	
+		
 	// convenience method: take a RegistryObject<Block> and make a corresponding RegistryObject<Item> from it
 	public static <B extends Block> RegistryObject<Item> fromClaimBlock(RegistryObject<B> block, Supplier<Item.Properties> itemProperties) {
 		return Registration.ITEMS.register(block.getId().getPath(), () -> new ClaimBlockItem(block.get(), itemProperties.get()));

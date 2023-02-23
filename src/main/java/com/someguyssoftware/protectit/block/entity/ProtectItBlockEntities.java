@@ -19,7 +19,7 @@
  */
 package com.someguyssoftware.protectit.block.entity;
 
-import com.someguyssoftware.protectit.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.core.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.setup.Registration;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;

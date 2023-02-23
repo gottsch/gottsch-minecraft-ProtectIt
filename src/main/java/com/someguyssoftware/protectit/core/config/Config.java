@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.config;
+package com.someguyssoftware.protectit.core.config;
 
 import com.someguyssoftware.protectit.ProtectIt;
 

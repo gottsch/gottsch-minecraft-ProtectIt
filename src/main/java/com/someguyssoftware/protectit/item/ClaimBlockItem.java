@@ -21,8 +21,8 @@ package com.someguyssoftware.protectit.item;
 
 import java.util.List;
 
-import com.someguyssoftware.protectit.claim.Property;
-import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.core.config.Config;
+import com.someguyssoftware.protectit.core.property.Property;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 import com.someguyssoftware.protectit.util.LangUtil;
 

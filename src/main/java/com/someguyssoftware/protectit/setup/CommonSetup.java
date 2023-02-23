@@ -20,7 +20,7 @@
 package com.someguyssoftware.protectit.setup;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.core.config.Config;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;

@@ -24,8 +24,8 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
-import com.someguyssoftware.protectit.command.CommandHelper;
+import com.someguyssoftware.protectit.core.command.CommandHelper;
+import com.someguyssoftware.protectit.core.property.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.client.multiplayer.ClientLevel;

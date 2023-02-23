@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.claim;
+package com.someguyssoftware.protectit.core.property;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +41,16 @@ import net.minecraft.nbt.ListTag;
 public class Property {
 	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
 
-	public static final String NO_NAME = "";
-	public static final String NAME_KEY = "name";
-	public static final String UUID_KEY = "uuid";
-	public static final String OWNER_KEY = "owner";
-	public static final String COORDS_KEY = "coords";
-	public static final String BOX_KEY = "box";
-	public static final String WHITELIST_KEY = "whitelist";
+	private static final String NO_NAME = "";
+	private static final String NAME_KEY = "name";
+	private static final String UUID_KEY = "uuid";
+	private static final String OWNER_KEY = "owner";
+	private static final String COORDS_KEY = "coords";
+	private static final String BOX_KEY = "box";
+	private static final String WHITELIST_KEY = "whitelist";
+	private static final String PERMISSION_KEY = "permissions";
+	private static final String HOTEL_KEY = "hotel";
+	private static final String ROOM_KEY = "room";
 	
 	private String name;
 	private UUID uuid;
@@ -55,7 +58,10 @@ public class Property {
 	private List<PlayerData> whitelist;
 	private ICoords coords;
 	private Box box;
-	
+	private byte permissions;
+	private boolean hotel;
+	private boolean room;
+		
 	// TODO probably a good candidate for a Builder
 	// TODO add equals, hashCode()
 
@@ -77,6 +83,9 @@ public class Property {
 		setOwner(new PlayerData());
 		setName(NO_NAME);
 		setUuid(UUID.randomUUID());
+		setPermissions((byte)0); // ie no permission granted
+		setHotel(false);
+		setRoom(false);
 	}
 
 	public Property(ICoords coords, Box box, PlayerData data) {
@@ -99,7 +108,7 @@ public class Property {
 	 * @param nbt
 	 */
 	public void save(CompoundTag nbt) {
-		ProtectIt.LOGGER.debug("saving claim -> {}", this);
+		ProtectIt.LOGGER.debug("saving property -> {}", this);
 
 		CompoundTag ownerNbt = new CompoundTag();
 		getOwner().save(ownerNbt);
@@ -123,6 +132,10 @@ public class Property {
 			list.add(playerNbt);
 		});
 		nbt.put(WHITELIST_KEY, list);
+		
+		nbt.putByte(PERMISSION_KEY, getPermissions());
+		nbt.putBoolean(HOTEL_KEY, hotel);
+		nbt.putBoolean(ROOM_KEY, room);
 	}
 
 	/**
@@ -131,7 +144,7 @@ public class Property {
 	 * @return
 	 */
 	public Property load(CompoundTag nbt) {
-//		ProtectIt.LOGGER.debug("loading claim...");
+//		ProtectIt.LOGGER.debug("loading property...");
 
 		if (nbt.contains(OWNER_KEY)) {
 			getOwner().load(nbt.getCompound(OWNER_KEY));
@@ -159,9 +172,70 @@ public class Property {
 				getWhitelist().add(playerData);
 			});
 		}
+		
+		if (nbt.contains(PERMISSION_KEY)) {
+			setPermissions(nbt.getByte(PERMISSION_KEY));
+		}
+		
+		if (nbt.contains(HOTEL_KEY)) {
+			setHotel(nbt.getBoolean(HOTEL_KEY));
+		}
+		if (nbt.contains(ROOM_KEY)) {
+			setRoom(nbt.getBoolean(ROOM_KEY));
+		}
 		return this;
 	}
 
+	/**
+	 * Specific interact permission query
+	 * @return
+	 */
+	public boolean hasInteractPermission() {
+		return getPermission(Permission.INTERACT_PERMISSION.value) == 1;
+	}
+	
+	/**
+	 * General permission query.
+	 * @param permission
+	 * @return
+	 */
+	public boolean hasPermission(int permission) {
+		return getPermission(permission) == 1;
+	}
+	
+	/**
+	 * 
+	 * @param position
+	 * @return
+	 */
+	public byte getPermission(int position) {
+		return (byte) ((getPermissions() >> position) & 1);
+	}
+	
+	/**
+	 * 
+	 * @param position
+	 * @param value
+	 */
+	public void setPermission(int position, boolean value) {
+		byte data = getPermissions();
+		if (value) {
+			data |= 1 << position;
+		}
+		else {
+			data &= ~(1 << position);
+		}
+		setPermissions(data);
+	}
+	
+	public byte getPermissions() {
+		return permissions;
+	}
+
+	public void setPermissions(byte permissions) {
+		this.permissions = permissions;
+	}
+	
 	public PlayerData getOwner() {
 		return owner;
 	}
@@ -266,5 +340,21 @@ public class Property {
 
 	public void setUuid(UUID uuid) {
 		this.uuid = uuid;
+	}
+
+	public boolean isHotel() {
+		return hotel;
+	}
+
+	public void setHotel(boolean hotel) {
+		this.hotel = hotel;
+	}
+
+	public boolean isRoom() {
+		return room;
+	}
+
+	public void setRoom(boolean room) {
+		this.room = room;
 	}
 }

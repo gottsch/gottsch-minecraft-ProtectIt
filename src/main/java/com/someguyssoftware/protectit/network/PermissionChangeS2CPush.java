@@ -26,14 +26,11 @@ import java.util.function.Supplier;
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.core.command.CommandHelper;
 import com.someguyssoftware.protectit.core.property.Property;
-import com.someguyssoftware.protectit.registry.PlayerData;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -42,21 +39,21 @@ import net.minecraftforge.network.NetworkEvent;
  * @author Mark Gottschling Feb 20, 2023
  *
  */
-public class WhitelistAddS2CPush {
+public class PermissionChangeS2CPush {
 	private UUID owner;
 	private UUID property;
-	private String playerName;
-	private UUID playerUuid;
+	private int permission;
+	private boolean value;
 	
-	protected WhitelistAddS2CPush() {}
+	protected PermissionChangeS2CPush() {}
 	
-	public WhitelistAddS2CPush(UUID owner, UUID property, 
-			String playerName, UUID playerUuid) {
+	public PermissionChangeS2CPush(UUID owner, UUID property, 
+			int permission, boolean value) {
 	
 		this.owner = owner;
 		this.property = property;
-		this.playerName = playerName;
-		this.playerUuid = playerUuid;
+		this.permission = permission;
+		this.value = value;
 	}
 	
 	/**
@@ -66,8 +63,8 @@ public class WhitelistAddS2CPush {
 	public void encode(FriendlyByteBuf buf) {
 		buf.writeUUID(owner);
 		buf.writeUUID(property);
-		buf.writeUtf(playerName);
-		buf.writeUUID(playerUuid);
+		buf.writeInt(permission);
+		buf.writeBoolean(value);
 	}
 	
 	/**
@@ -75,14 +72,14 @@ public class WhitelistAddS2CPush {
 	 * @param buf
 	 * @return
 	 */
-	public static WhitelistAddS2CPush decode(FriendlyByteBuf buf) {
-		WhitelistAddS2CPush message = new WhitelistAddS2CPush();
+	public static PermissionChangeS2CPush decode(FriendlyByteBuf buf) {
+		PermissionChangeS2CPush message = new PermissionChangeS2CPush();
 		
 		try {
 			message.owner = buf.readUUID();
 			message.property = buf.readUUID();
-			message.playerName = buf.readUtf();
-			message.playerUuid = buf.readUUID();
+			message.permission = buf.readInt();
+			message.value = buf.readBoolean();
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("an error occurred attempting to read message: ", e);
@@ -96,7 +93,7 @@ public class WhitelistAddS2CPush {
 	 * @param message
 	 * @param ctxSupplier
 	 */
-	public static void handle(final WhitelistAddS2CPush message, Supplier<NetworkEvent.Context> ctxSupplier) {
+	public static void handle(final PermissionChangeS2CPush message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		
 		if (ctx.getDirection().getReceptionSide() != LogicalSide.CLIENT) {
@@ -110,10 +107,10 @@ public class WhitelistAddS2CPush {
 			return;
 		}
 		
-		ctx.enqueueWork(() -> 
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage((ClientLevel) client.get(), message))
-				);
-		ctx.setPacketHandled(true);		
+		// this creates a new task which will be executed by the server during the next tick
+		ctx.enqueueWork(() -> processMessage((ClientLevel) client.get(), message));
+		// mark as handled
+		ctx.setPacketHandled(true);
 	}
 
 	/**
@@ -121,19 +118,13 @@ public class WhitelistAddS2CPush {
 	 * @param message
 	 * @param sendingPlayer
 	 */
-	static void processMessage(ClientLevel level, WhitelistAddS2CPush message) {
+	static void processMessage(ClientLevel level, PermissionChangeS2CPush message) {
 
 		try {
 			// get the property by uuid
 			Optional<Property> property = CommandHelper.getProperty(message.owner, message.property);
 			if (property.isPresent()) {
-//				ProtectIt.LOGGER.debug("found property -> {} for owner -> {}", property.get().getName(), property.get().getOwner().getName());
-				if (property.get().getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(message.playerName))) {
-					property.get().getWhitelist().add(new PlayerData(message.playerUuid.toString(), message.playerName));
-//					ProtectIt.LOGGER.debug("added player -> {} to property whitelist -> {}", message.playerName, property.get().getName());
-				}
-				
-//				ProtectIt.LOGGER.debug("property white list -> {}", property.get().getWhitelist());
+				property.get().setPermission(message.permission, message.value);
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to update whitelist on client: ", e);

@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.block;
+package com.someguyssoftware.protectit.core.block;
 
-import com.someguyssoftware.protectit.claim.PropertySizes;
+import com.someguyssoftware.protectit.core.property.PropertySizes;
 import com.someguyssoftware.protectit.setup.Registration;
 
 import net.minecraft.world.level.block.Block;

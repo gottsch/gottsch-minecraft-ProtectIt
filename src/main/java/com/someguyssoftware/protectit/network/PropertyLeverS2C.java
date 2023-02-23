@@ -20,12 +20,15 @@
 package com.someguyssoftware.protectit.network;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
@@ -41,13 +44,90 @@ import net.minecraftforge.network.NetworkEvent.Context;
  * @author Mark Gottschling on Dec 9, 2021
  *
  */
-public class PropertyLeverMessageHandlerOnClient {
+public class PropertyLeverS2C implements ICoordsHandler {
 
-	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
+	private boolean valid;
+	public ICoords coords;
+	public ICoords propertyCoords;
+	public UUID propertyUuid;
+
+	/**
+	 * 
+	 * @param builder
+	 */
+	public PropertyLeverS2C(ICoords coords, ICoords propertyCoords, UUID propertyUuid) {
+		setCoords(coords);
+		setPropertyCoords(propertyCoords);
+		setPropertyUuid(propertyUuid);
+		setValid(true);
 	}
 
-	public static void onMessageReceived(final PropertyLeverMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
+	/**
+	 * 
+	 */
+	public PropertyLeverS2C() {
+		setValid(false);
+	}
+
+	/**
+	 * 
+	 * @param buf
+	 */
+	public void encode(FriendlyByteBuf buf) {
+		if (!isValid()) {
+			return;
+		}
+
+		if (getCoords() == null) {
+			writeCoords(Coords.EMPTY, buf);
+		}
+		else {
+			writeCoords(getCoords(), buf);
+		}
+		
+		if (getPropertyCoords() == null) {
+			writeCoords(Coords.EMPTY, buf);
+		}
+		else {
+			writeCoords(getPropertyCoords(), buf);
+		}
+		
+		if (getPropertyUuid() == null) {
+			buf.writeUtf("NULL");
+		} else {
+			buf.writeUtf(getPropertyUuid().toString());
+		}
+
+	}
+
+	/**
+	 * 
+	 * @param buf
+	 * @return
+	 */
+	public static PropertyLeverS2C decode(FriendlyByteBuf buf) {
+		PropertyLeverS2C message;
+		
+		try {
+			ICoords coords = ICoordsHandler.readCoords(buf);
+			ICoords propertyCoords = ICoordsHandler.readCoords(buf);
+			String uuidStr = buf.readUtf();
+			UUID uuid = null;
+//			new UUID(0L, 0L);
+			if (!uuidStr.equalsIgnoreCase("NULL")) {
+				uuid = UUID.fromString(uuidStr);
+			}
+			message = new PropertyLeverS2C(coords, propertyCoords, uuid);
+			message.setValid(true);
+		}
+		catch(Exception e) {
+			ProtectIt.LOGGER.error("An error occurred attempting to read message: ", e);
+			message = new PropertyLeverS2C();
+		}
+		return message;
+	}
+
+	public static void handle(final PropertyLeverS2C message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 
 		if (!message.isValid()) {
@@ -61,7 +141,7 @@ public class PropertyLeverMessageHandlerOnClient {
 		ctx.setPacketHandled(true);
 	}
 
-	private static void processMessage(Context ctx, PropertyLeverMessageToClient message) {
+	private static void processMessage(Context ctx, PropertyLeverS2C message) {
 		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 		Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
 		ProtectIt.LOGGER.debug("world -> {}", clientWorld.get());
@@ -78,7 +158,7 @@ public class PropertyLeverMessageHandlerOnClient {
 	 * @param worldClient
 	 * @param message
 	 */
-	private static void processMessage(Level worldClient, PropertyLeverMessageToClient message) {
+	private static void processMessage(Level worldClient, PropertyLeverS2C message) {
 		ProtectIt.LOGGER.debug("received claim lever message -> {}", message);
 
 		try {			
@@ -97,5 +177,43 @@ public class PropertyLeverMessageHandlerOnClient {
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("Unexpected error ->", e);
 		}
+	}
+	
+	public ICoords getCoords() {
+		return coords;
+	}
+
+	public void setCoords(ICoords coords) {
+		this.coords = coords;
+	}
+
+	@Override
+	public String toString() {
+		return "PropertyLeverMessageToClient [valid=" + valid + ", coords=" + coords + ", propertyCoords="
+				+ propertyCoords + ", propertyUuid=" + propertyUuid + "]";
+	}
+
+	public boolean isValid() {
+		return valid;
+	}
+
+	public void setValid(boolean valid) {
+		this.valid = valid;
+	}
+
+	public ICoords getPropertyCoords() {
+		return propertyCoords;
+	}
+
+	public void setPropertyCoords(ICoords claimCoords) {
+		this.propertyCoords = claimCoords;
+	}
+
+	public UUID getPropertyUuid() {
+		return propertyUuid;
+	}
+
+	public void setPropertyUuid(UUID propertyUuid) {
+		this.propertyUuid = propertyUuid;
 	}
 }

@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.someguyssoftware.protectit.block.ClaimBlock;
+import com.someguyssoftware.protectit.core.block.ClaimBlock;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;

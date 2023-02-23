@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.command;
+package com.someguyssoftware.protectit.core.command;
 
 import java.util.Collection;
 import java.util.List;
@@ -29,8 +29,8 @@ import javax.annotation.Nullable;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
-import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.core.config.Config;
+import com.someguyssoftware.protectit.core.property.Property;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
@@ -75,7 +75,7 @@ public class OpsProtectCommand {
 			return source.hasPermission(Config.GENERAL.opsPermissionLevel.get()); // everyone can use base command
 		}).then(Commands.literal(CommandHelper.BLOCK)
 				///// ADD OPTION /////
-				.then(Commands.literal("add").requires(source -> {
+				.then(Commands.literal(CommandHelper.ADD).requires(source -> {
 					return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 				}).then(Commands.argument(CommandHelper.POS, BlockPosArgument.blockPos())
 						.then(Commands.argument(CommandHelper.POS2, BlockPosArgument.blockPos()).then(
@@ -424,24 +424,23 @@ public class OpsProtectCommand {
 			AtomicReference<String> name = new AtomicReference<>(player.getName().getString());			
 			
 			// check if player already owns protections
-			List<Property> claims = ProtectionRegistries.block().getProtections(uuid);
+			List<Property> properties = ProtectionRegistries.block().getProtections(uuid);
 
-			// check if the max # of claims has been reached (via config value)
-			if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get() && !overrideLimit) {
+			// check if the max # of properties has been reached (via config value)
+			if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get() && !overrideLimit) {
 				source.sendFailure(Component.translatable(LangUtil.message("player_properties_max_limit"))
-						.append(Component.translatable(String.valueOf(claims.size())).withStyle(ChatFormatting.AQUA)));
+						.append(Component.translatable(String.valueOf(properties.size())).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 
-			// create a claim
-			Property claim = new Property(
+			Property property = new Property(
 					validCoords.get().getA(), 
 					new Box(validCoords.get().getA(), validCoords.get().getB()),
 					new PlayerData(uuid, name.get()),
-					String.valueOf(claims.size() + 1));
+					String.valueOf(properties.size() + 1));
 
 			// add protection on server
-			ProtectionRegistries.block().addProtection(claim);
+			ProtectionRegistries.block().addProtection(property);
 
 			// save world data
 			CommandHelper.saveData(source.getLevel());

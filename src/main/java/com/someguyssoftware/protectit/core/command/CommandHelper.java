@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.command;
+package com.someguyssoftware.protectit.core.command;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.core.property.Property;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
@@ -84,6 +84,12 @@ public class CommandHelper {
 				"Remove Claim Stake"
 				);
 		return SharedSuggestionProvider.suggest(items, builder);
+	};
+	
+	static final SuggestionProvider<CommandSourceStack> PROPERTY_NAMES = (source, builder) -> {
+		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> names = properties.stream().map(p -> p.getName().toUpperCase()).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
 	/**
@@ -269,13 +275,30 @@ public class CommandHelper {
 	 */
 	public static Optional<Property> getProperty(UUID owner, UUID property) {
 		// get the owner's properties
-		List<Property> claims = ProtectionRegistries.block().getProtections(owner.toString());
+		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
 		// get the named property
-		List<Property> namedClaims = claims.stream().filter(claim -> claim.getUuid().equals(property)).collect(Collectors.toList());
-		if (namedClaims.isEmpty()) {
+		List<Property> namedProperties = properties.stream().filter(p -> p.getUuid().equals(property)).collect(Collectors.toList());
+		if (namedProperties.isEmpty()) {
 			return Optional.empty();
 		}
-		return Optional.ofNullable(namedClaims.get(0));
+		return Optional.ofNullable(namedProperties.get(0));
+	}
+	
+	/**
+	 * 
+	 * @param owner
+	 * @param propertyName
+	 * @return
+	 */
+	public static Optional<Property> getPropertyByName(UUID owner, String propertyName) {
+		// get the owner's properties
+		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
+		// get the named property
+		List<Property> namedProperties = properties.stream().filter(p -> p.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+		if (namedProperties.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(namedProperties.get(0));
 	}
 	
 	/**

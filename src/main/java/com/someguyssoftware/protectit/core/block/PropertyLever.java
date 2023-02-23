@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.block;
+package com.someguyssoftware.protectit.core.block;
 
 import java.util.List;
 import java.util.Random;
@@ -25,8 +25,8 @@ import java.util.UUID;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.PropertyLeverBlockEntity;
-import com.someguyssoftware.protectit.claim.Property;
-import com.someguyssoftware.protectit.network.PropertyLeverMessageToClient;
+import com.someguyssoftware.protectit.core.property.Property;
+import com.someguyssoftware.protectit.network.PropertyLeverS2C;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.registry.ProtectionRegistries;
 
@@ -213,7 +213,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		if (!world.isClientSide()) {
 			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				// send message to add protection on all clients
-				PropertyLeverMessageToClient message = new PropertyLeverMessageToClient(coords, propertyCoords, propertyUuid);
+				PropertyLeverS2C message = new PropertyLeverS2C(coords, propertyCoords, propertyUuid);
 				ProtectIt.LOGGER.debug("sending property lever message to sync client side -> {}", message);
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}

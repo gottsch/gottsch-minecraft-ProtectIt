@@ -17,13 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.block;
+package com.someguyssoftware.protectit.core.block;
 
 import java.util.List;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.entity.RemoveClaimBlockEntity;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.core.property.Property;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryMutatorMessageToClient;
 import com.someguyssoftware.protectit.persistence.ProtectItSavedData;

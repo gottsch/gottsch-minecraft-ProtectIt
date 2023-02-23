@@ -17,9 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Protect It.  If not, see <http://www.gnu.org/licenses/lgpl>.
  */
-package com.someguyssoftware.protectit.command;
+package com.someguyssoftware.protectit.core.command;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -29,8 +31,10 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
-import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.core.config.Config;
+import com.someguyssoftware.protectit.core.property.Permission;
+import com.someguyssoftware.protectit.core.property.Property;
+import com.someguyssoftware.protectit.network.PermissionChangeS2CPush;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.WhitelistAddS2CPush;
 import com.someguyssoftware.protectit.network.WhitelistClearS2CPush;
@@ -45,6 +49,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -59,12 +64,6 @@ public class ProtectCommand {
 	private static final String CURRENT_NAME = "current_name";
 	private static final String NEW_NAME = "new_name";
 	private static final String PROPERTY_NAME = "property_name";
-
-	private static final SuggestionProvider<CommandSourceStack> PROPERTY_NAMES = (source, builder) -> {
-		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> namedClaims = properties.stream().map(claim -> claim.getName().toUpperCase()).collect(Collectors.toList());
-		return SharedSuggestionProvider.suggest(namedClaims, builder);
-	};
 	
 	private static final SuggestionProvider<CommandSourceStack> WHITELIST_NAMES = (source, builder) -> {
 		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
@@ -72,6 +71,11 @@ public class ProtectCommand {
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
+	private static final SuggestionProvider<CommandSourceStack> PERMISSIONS = (source, builder) -> {
+		return SharedSuggestionProvider.suggest(Permission.getNames(), builder);
+	};
+
+	
 	/*
 	 * protect [block | pvp] [give | list | rename | whitelist [add | remove | clear | list]]
 	 */
@@ -88,11 +92,46 @@ public class ProtectCommand {
 								})
 								)
 						// TODO add option for page #
-						// TODO add option for player - OPS only
+						// TODO add option for player - OPS only						///// PERMISSION
+						.then(Commands.literal("permission")
+								///// PERMISSION CHANGE
+								.then(Commands.literal("change")
+										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.PROPERTY_NAMES)
+												.then(Commands.argument("permission", StringArgumentType.string())
+														.suggests(PERMISSIONS)
+														.then(Commands.literal("on")
+																.executes(source -> {
+																	return propertyChangePermission(source.getSource(), 
+																			StringArgumentType.getString(source, PROPERTY_NAME), 
+																			StringArgumentType.getString(source, "permission"), true);
+																})
+																)
+														.then(Commands.literal("off")
+																.executes(source -> {
+																	return propertyChangePermission(source.getSource(), 
+																			StringArgumentType.getString(source, PROPERTY_NAME), 
+																			StringArgumentType.getString(source, "permission"), false);
+																})
+																)
+														)
+												)
+										)
+								///// PERMISSION LIST
+								.then(Commands.literal("list")
+										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.PROPERTY_NAMES)
+												.executes(source -> {
+													return propertyListPermissions(source.getSource(), StringArgumentType.getString(source, PROPERTY_NAME));
+												})
+												)
+										)
+								)
+						
 						///// RENAME OPTION
 						.then(Commands.literal(RENAME)
 								.then(Commands.argument(CURRENT_NAME, StringArgumentType.string())
-										.suggests(PROPERTY_NAMES)
+										.suggests(CommandHelper.PROPERTY_NAMES)
 										.then(Commands.argument(NEW_NAME, StringArgumentType.string())
 												.executes(source -> {
 													return CommandHelper.rename(source.getSource(), 
@@ -123,7 +162,7 @@ public class ProtectCommand {
 								///// WHITELIST ADD /////
 								.then(Commands.literal(CommandHelper.ADD)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.then(Commands.argument(CommandHelper.TARGET,EntityArgument.player())
 														.executes(source -> {
 															return whitelistAddPlayer(source.getSource(), 
@@ -135,7 +174,7 @@ public class ProtectCommand {
 								///// WHITELIST REMOVE /////
 								.then(Commands.literal(CommandHelper.REMOVE)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
 														.suggests(WHITELIST_NAMES)
 														.executes(source -> {
@@ -151,7 +190,7 @@ public class ProtectCommand {
 											return source.hasPermission(0);
 										})
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.executes(source -> {
 													return whitelistListForProperty(source.getSource(), StringArgumentType.getString(source, PROPERTY_NAME));
 												})
@@ -160,7 +199,7 @@ public class ProtectCommand {
 								///// WHTIELIST CLEAR /////
 								.then(Commands.literal(CommandHelper.CLEAR)
 										.then(Commands.argument(PROPERTY_NAME, StringArgumentType.string())
-												.suggests(PROPERTY_NAMES)
+												.suggests(CommandHelper.PROPERTY_NAMES)
 												.executes(source -> {
 													return whitelistClear(source.getSource(), StringArgumentType.getString(source, PROPERTY_NAME));
 												})
@@ -182,6 +221,107 @@ public class ProtectCommand {
 	 * 
 	 * @param source
 	 * @param propertyName
+	 * @return
+	 */
+	private static int propertyListPermissions(CommandSourceStack source, String propertyName) {
+		try {
+			// get the owner
+			ServerPlayer owner = source.getPlayerOrException();
+			// get the owner's properties
+			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			// get the named property
+			List<Property> namedProperties = properties.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+			if (namedProperties.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+			Property property = namedProperties.get(0);
+
+			List<Component> messages = new ArrayList<>();
+			messages.add(Component.literal(""));
+			messages.add(Component.translatable(LangUtil.message("property.permission.list"), propertyName.toUpperCase()).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE));
+			messages.add(Component.literal(""));
+
+			for (int i = 0; i < Permission.values().length; i++) {
+				property.hasPermission(i);
+				Permission permission = Permission.getByValue(i);
+				MutableComponent component = Component.translatable(permission.name()).withStyle(ChatFormatting.AQUA)
+						.append(Component.literal(" = "));
+				if (property.hasPermission(i)) {
+					component.append(Component.translatable(LangUtil.message("permission.state.on")).withStyle(ChatFormatting.GREEN));
+				}
+				else {
+					component.append(Component.translatable(LangUtil.message("permission.state.off")).withStyle(ChatFormatting.RED));
+				}
+				messages.add(component);
+			}
+
+			messages.forEach(component -> {
+				source.sendSuccess(component, false);
+			});
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute whitelistAddPlayer command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		// TODO print out all the permissions that are on.
+		return 1;
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param propertyName
+	 * @param permissionName
+	 * @param value
+	 * @return
+	 */
+	private static int propertyChangePermission(CommandSourceStack source, String propertyName, String permissionName, boolean value) {
+		try {
+			// get the owner
+			ServerPlayer owner = source.getPlayerOrException();
+			// get the owner's properties
+			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			// get the named property
+			List<Property> namedProperties = properties.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+			if (namedProperties.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+			Property property = namedProperties.get(0);
+
+			// update permission on property
+			property.setPermission(Permission.valueOf(permissionName).value, value);
+
+			//send update to client
+			if(source.getLevel().getServer().isDedicatedServer()) {
+				PermissionChangeS2CPush message = new PermissionChangeS2CPush(
+						owner.getUUID(),
+						property.getUuid(),
+						Permission.valueOf(permissionName).value,
+						value
+						);
+				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+			}
+
+			source.sendSuccess(Component.translatable(LangUtil.message("permission.change.success"))
+					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
+
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute whitelistAddPlayer command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+
+		return 1;
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param propertyName
 	 * @param player
 	 * @return
 	 */
@@ -191,6 +331,7 @@ public class ProtectCommand {
 		try {
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
+			// TODO replace with CommmandHelper call
 			// get the owner's properties
 			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
 			// get the named property
@@ -242,10 +383,11 @@ public class ProtectCommand {
 		try {
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
+			// TODO replace with CommandHelper call
 			// get the owner's properties
 			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
 			// get the named property
-			List<Property> names = properties.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+			List<Property> names = properties.stream().filter(p -> p.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (names.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
@@ -253,7 +395,6 @@ public class ProtectCommand {
 			}
 			Property property = names.get(0);
 			// update property whitelist with player
-//			claim.getWhitelist().remove(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
 			boolean result = property.getWhitelist().removeIf(p -> p.getName().equalsIgnoreCase(playerName));
 			CommandHelper.saveData(source.getLevel());
 
@@ -294,24 +435,25 @@ public class ProtectCommand {
 		try {
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
-			// get the owner's properties
-			List<Property> claims = ProtectionRegistries.block().getProtections(owner.getStringUUID());
-			// get the named property
-			List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
-			if (namedClaims.isEmpty()) {
+//			// get the owner's properties
+//			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+//			// get the named property
+//			List<Property> namedProperties = properties.stream().filter(p -> p.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
+			if (property.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-			Property claim = namedClaims.get(0);
-			claim.getWhitelist().clear();
+//			Property claim = namedProperties.get(0);
+			property.get().getWhitelist().clear();
 			CommandHelper.saveData(source.getLevel());
 
 			//send update to client
 			if(source.getLevel().getServer().isDedicatedServer()) {
 				WhitelistClearS2CPush message = new WhitelistClearS2CPush(
 						owner.getUUID(),
-						claim.getUuid()
+						property.get().getUuid()
 						);
 				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
@@ -344,10 +486,10 @@ public class ProtectCommand {
 			return 1;
 		}
 
-		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		// TODO steam and find claim with oldName
-		List<Property> namedClaims = claims.stream().filter(claim -> claim.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
-		if (namedClaims.isEmpty()) {
+		// TODO replace with CommadnHelper call
+		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+		List<Property> namedProperties = properties.stream().filter(p -> p.getName().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+		if (namedProperties.isEmpty()) {
 			source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
 					.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 			return 1;
@@ -357,7 +499,7 @@ public class ProtectCommand {
 				.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 		source.sendSuccess(Component.translatable(LangUtil.NEWLINE), false);
 
-		namedClaims.get(0).getWhitelist().forEach(data -> {
+		namedProperties.get(0).getWhitelist().forEach(data -> {
 			source.sendSuccess(Component.translatable(data.getName()).withStyle(ChatFormatting.GREEN), false);
 		});
 

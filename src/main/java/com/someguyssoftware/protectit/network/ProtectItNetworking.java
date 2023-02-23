@@ -46,6 +46,7 @@ public class ProtectItNetworking {
 	public static final int WHITELIST_ADD_ID = 20;
 	public static final int WHITELIST_REMOVE_ID = 21;
 	public static final int WHITELIST_CLEAR_ID = 22;
+	public static final int PERMISSION_CHANGE_ID = 23;
 	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
@@ -74,14 +75,14 @@ public class ProtectItNetworking {
 				RegistryLoadMessageHandlerOnClient::onMessageReceived,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 
-		channel.registerMessage(REGISTRY_LOAD_MESSAGE_TO_SERVER_ID, RegistryLoadMessageToServer.class,
-				RegistryLoadMessageToServer::encode, RegistryLoadMessageToServer::decode,
-				RegistryLoadMessageHandlerOnServer::onMessageReceived,
-				Optional.of(NetworkDirection.PLAY_TO_SERVER));
+//		channel.registerMessage(REGISTRY_LOAD_MESSAGE_TO_SERVER_ID, RegistryLoadMessageToServer.class,
+//				RegistryLoadMessageToServer::encode, RegistryLoadMessageToServer::decode,
+//				RegistryLoadMessageHandlerOnServer::onMessageReceived,
+//				Optional.of(NetworkDirection.PLAY_TO_SERVER));
 
-		channel.registerMessage(PROPERTY_LEVER_MESSAGE_ID, PropertyLeverMessageToClient.class,
-				PropertyLeverMessageToClient::encode, PropertyLeverMessageToClient::decode,
-				PropertyLeverMessageHandlerOnClient::onMessageReceived,
+		channel.registerMessage(PROPERTY_LEVER_MESSAGE_ID, PropertyLeverS2C.class,
+				PropertyLeverS2C::encode, PropertyLeverS2C::decode,
+				PropertyLeverS2C::handle,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 		
 		channel.registerMessage(WHITELIST_ADD_ID, WhitelistAddS2CPush.class,
@@ -98,6 +99,12 @@ public class ProtectItNetworking {
 				WhitelistClearS2CPush::encode, WhitelistClearS2CPush::decode,
 				WhitelistClearS2CPush::handle,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
+		channel.registerMessage(PERMISSION_CHANGE_ID, PermissionChangeS2CPush.class,
+				PermissionChangeS2CPush::encode, PermissionChangeS2CPush::decode,
+				PermissionChangeS2CPush::handle,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
 	}
 
 }

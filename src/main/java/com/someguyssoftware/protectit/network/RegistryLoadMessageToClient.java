@@ -26,7 +26,7 @@ import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.claim.Property;
+import com.someguyssoftware.protectit.core.property.Property;
 import com.someguyssoftware.protectit.registry.PlayerData;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;

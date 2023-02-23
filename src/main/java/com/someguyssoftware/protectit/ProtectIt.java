@@ -22,9 +22,9 @@ package com.someguyssoftware.protectit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
-import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.core.block.ProtectItBlocks;
+import com.someguyssoftware.protectit.core.config.Config;
 import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 import com.someguyssoftware.protectit.network.RegistryLoadMessageToClient;
@@ -139,7 +139,7 @@ public class ProtectIt {
 			// TODO will need two different message types now - block & pvp
 			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
 			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getEntity().getStringUUID(), ProtectionRegistries.block().getAll());
-			ProtectIt.LOGGER.debug("player logged in, sending all claim data -> {}", ProtectionRegistries.block().getAll());
+			ProtectIt.LOGGER.debug("player logged in, sending all property data -> {}", ProtectionRegistries.block().getAll());
 			ProtectItNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
@@ -243,7 +243,6 @@ public class ProtectIt {
 					}
 				}
 			}
-			// TODO check if Claim Lectern and if one already exists in claim?
 		}
 		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
@@ -269,7 +268,8 @@ public class ProtectIt {
 			return;
 		}
 		// TODO this needs to change to be, just continue, so that the movement of blocks 
-		// can be checked against an adjacent claim.
+		// can be checked against an adjacent property.
+		
 		// check if piston itself is inside protected area - if so, exit ie. allow movement
 		if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
 			return;

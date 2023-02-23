@@ -20,11 +20,11 @@
 package com.someguyssoftware.protectit.setup;
 
 import com.someguyssoftware.protectit.ProtectIt;
-import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.block.entity.ProtectItBlockEntities;
 import com.someguyssoftware.protectit.client.render.blockentity.ClaimBlockEntityRenderer;
 import com.someguyssoftware.protectit.client.render.blockentity.PropertyLeverBlockEntityRenderer;
 import com.someguyssoftware.protectit.client.render.blockentity.RemoveClaimBlockEntityRenderer;
+import com.someguyssoftware.protectit.core.block.ProtectItBlocks;
 
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
