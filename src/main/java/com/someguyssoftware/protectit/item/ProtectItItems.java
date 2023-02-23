@@ -25,7 +25,6 @@ import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.block.ProtectItBlocks;
 import com.someguyssoftware.protectit.setup.Registration;
 
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fml.common.Mod;
@@ -40,7 +39,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class ProtectItItems {
 	
 	// item properties
-	public static final Supplier<Item.Properties> ITEM_PROPS_SUPPLIER = () -> new Item.Properties().tab(CreativeModeTab.TAB_MISC);
+	public static final Supplier<Item.Properties> ITEM_PROPS_SUPPLIER = () -> new Item.Properties();
 
 	// items
 	public static RegistryObject<Item> SMALL_CLAIM = fromClaimBlock(ProtectItBlocks.SMALL_CLAIM, ITEM_PROPS_SUPPLIER);
@@ -57,29 +56,7 @@ public class ProtectItItems {
 		// cycle through all block and create items
 		Registration.registerItems();
 	}
-	
-	/**
-	 * The actual event handler that registers the custom items.
-	 *
-	 * @param event The event this event handler handles
-	 */
-//	@SubscribeEvent
-//	public static void registerItems(RegistryEvent.Register<Item> event) {
-//
-//		/*
-//		 *  initialize items
-//		 */
-//		
-//		// ITEMS
-//		CLAIM_BOOK = new ClaimBook(ProtectIt.MODID, "claim_book", new Item.Properties().stacksTo(1).tab(CreativeModeTab.TAB_MISC));
-//		// TODO may remove from tabs
-//		
-//		/*
-//		 * register items (make sure you have set the registry name).
-//		 */
-//		event.getRegistry().register(CLAIM_BOOK);
-//	}
-	
+		
 	// convenience method: take a RegistryObject<Block> and make a corresponding RegistryObject<Item> from it
 	public static <B extends Block> RegistryObject<Item> fromClaimBlock(RegistryObject<B> block, Supplier<Item.Properties> itemProperties) {
 		return Registration.ITEMS.register(block.getId().getPath(), () -> new ClaimBlockItem(block.get(), itemProperties.get()));

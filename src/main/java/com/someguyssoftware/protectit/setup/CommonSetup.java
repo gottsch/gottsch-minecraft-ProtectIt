@@ -21,8 +21,14 @@ package com.someguyssoftware.protectit.setup;
 
 import com.someguyssoftware.protectit.ProtectIt;
 import com.someguyssoftware.protectit.config.Config;
+import com.someguyssoftware.protectit.item.ProtectItItems;
 import com.someguyssoftware.protectit.network.ProtectItNetworking;
 
+import net.minecraft.world.item.CreativeModeTab.TabVisibility;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraftforge.event.CreativeModeTabEvent.BuildContents;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 /**
@@ -30,6 +36,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
  * @author Mark Gottschling on Nov 3, 2021
  *
  */
+@Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class CommonSetup {
 	/**
 	 * 
@@ -39,5 +46,16 @@ public class CommonSetup {
 		// add mod specific logging
 		Config.instance.addRollingFileAppender(ProtectIt.MODID);
 		ProtectItNetworking.register();
+	}
+	
+	@SubscribeEvent
+	public static void registemItemsToTab(BuildContents event) {
+		if (event.getTab() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+			event.accept(ProtectItItems.SMALL_CLAIM.get(), TabVisibility.PARENT_AND_SEARCH_TABS);
+			event.accept(ProtectItItems.MEDIUM_CLAIM.get(), TabVisibility.PARENT_AND_SEARCH_TABS);
+			event.accept(ProtectItItems.LARGE_CLAIM.get(), TabVisibility.PARENT_AND_SEARCH_TABS);
+			event.accept(ProtectItItems.REMOVE_CLAIM.get(), TabVisibility.PARENT_AND_SEARCH_TABS);
+			event.accept(ProtectItItems.PROPERTY_LEVER.get(), TabVisibility.PARENT_AND_SEARCH_TABS);
+		}
 	}
 }

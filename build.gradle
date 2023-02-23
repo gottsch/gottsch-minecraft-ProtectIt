@@ -37,7 +37,7 @@ minecraft {
     //
     // Use non-default mappings at your own risk. They may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: 'official', version: '1.19.2'
+    mappings channel: 'official', version: '1.19.3'
 
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg') // Currently, this location cannot be changed from the default.
 
@@ -152,8 +152,8 @@ repositories {
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.19.2-43.2.0'
-  	compileOnly fg.deobf("someguyssoftware.gottschcore:GottschCore:mc1.19.2-f43.2.0-v2.0.0")
+    minecraft 'net.minecraftforge:forge:1.19.3-44.1.0'
+  	compileOnly fg.deobf("someguyssoftware.gottschcore:GottschCore:mc1.19.3-f44.1.0-v2.0.0")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

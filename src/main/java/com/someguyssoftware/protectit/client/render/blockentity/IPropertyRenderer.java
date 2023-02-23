@@ -21,11 +21,12 @@ package com.someguyssoftware.protectit.client.render.blockentity;
 
 import java.awt.Color;
 
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Matrix3f;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Vector3f;
 import com.someguyssoftware.protectit.block.entity.AbstractClaimBlockEntity;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
@@ -261,10 +262,10 @@ public interface IPropertyRenderer {
 		xOffset.mul(width);  // multiply by width
 		zOffset.mul(height);  // multiply by height
 
-		Vector3f bottomLeftPos = new Vector3f(originPos);
-		Vector3f topLeftPos = new Vector3f(originPos);
-		Vector3f bottomRightPos = new Vector3f(originPos);
-		Vector3f topRightPos = new Vector3f(originPos);
+		Vector3f bottomLeftPos = new Vector3f((float)originPos.x, (float)originPos.y, (float)originPos.z);
+		Vector3f topLeftPos = new Vector3f(bottomLeftPos);
+		Vector3f bottomRightPos = new Vector3f(bottomLeftPos);
+		Vector3f topRightPos = new Vector3f(bottomLeftPos);
 
 		switch (whichFace) {
 		default:
