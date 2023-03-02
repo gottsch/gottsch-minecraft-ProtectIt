@@ -18,20 +18,34 @@
 	"message.protectit.max_claims_met": "You have already reached your max. number of claims.",
 	"message.protectit.claim_successfully_removed": "The claim has been removed.",
 	"message.protectit.unable_locate_player": "Unable to locate the player.",
-	"message.protectit.property.list": "%s's Protected Properties",
+	"message.protectit.property.list": "Protected Properties for ",
 	"message.protectit.property.list.empty": "[Empty]",
 	"message.protectit.property.rename.success": "The property was successfully renamed to ",
 	"message.protectit.property.name.unknown": "Player does not own a property named ",
+	"message.protectit.property.not_hotel": "Subdivisions are not allowed for this property.",
+	"message.protectit.property.subdivide.enable.success": "The subdivisibility was successfully set for property ",
+	
 	"message.protectit.whitelist.property.list": "Whitelist for property ",
 	"message.protectit.whitelist.add.success": "The player was successfully added to ",
 	"message.protectit.whitelist.remove.success": "The player was successfully removed from ",
 	"message.protectit.whitelist.clear.success": "The whitelist was successfully cleared from ",
 	
-	"message.protectit.property.permission.list":"Permissions of Property %s",
+	"message.protectit.property.permission.list":"Permissions of Property ",
 	"message.protectit.permission.state.on": "ON",
 	"message.protectit.permission.state.off": "OFF",
 	"message.protectit.permission.change.success": "The permission was successfully changed for property ",
 	
+	"message.protectit.subdivide.intersects_property": "The subdivision region intersects with multiple properties.",
+	"message.protectit.subdivide.success": "Successfully subdivided property  ",
+	
+	
+	"message.protectit.hotel.spans_multiple_properties": "The hotel's region spans across multiple properties.",
+	"message.protectit.hotel.outside_property_boundary": "The hotel region extends beyond the property boundaries.",
+	"message.protectit.hotel.unable_to_add": "Unable to add hotel to the property.",
+	"message.protectit.hotel.list": "Hotels for property ",
+	"message.protectit.hotel.list.empty": "[Empty]",
+	"message.protectit.hotel.set.success": "The hotel was successfully set.",
+		
 	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
 	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land."
 }

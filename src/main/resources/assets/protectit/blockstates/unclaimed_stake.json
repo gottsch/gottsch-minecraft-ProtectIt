@@ -1,0 +1,19 @@
+{
+  "variants" : {
+    "facing=east" : {
+      "model" : "protectit:block/unclaimed_stake",
+      "y" : 270
+    },
+    "facing=north" : {
+      "model" : "protectit:block/unclaimed_stake",
+          "y" : 180
+    },
+    "facing=south" : {
+      "model" : "protectit:block/unclaimed_stake"
+    },
+    "facing=west" : {
+      "model" : "protectit:block/unclaimed_stake",
+      "y" : 90
+    }
+  }
+}

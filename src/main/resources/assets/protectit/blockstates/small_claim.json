@@ -1,5 +1,19 @@
 {
-    "variants": {
-        "": { "model": "protectit:block/small_claim" }
+  "variants" : {
+    "facing=east" : {
+      "model" : "protectit:block/small_claim",
+      "y" : 270
+    },
+    "facing=north" : {
+      "model" : "protectit:block/small_claim",
+          "y" : 180
+    },
+    "facing=south" : {
+      "model" : "protectit:block/small_claim"
+    },
+    "facing=west" : {
+      "model" : "protectit:block/small_claim",
+      "y" : 90
     }
+  }
 }
