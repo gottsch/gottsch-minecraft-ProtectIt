@@ -33,6 +33,6 @@ public class RemoveClaimBlockEntity extends PropertyLeverBlockEntity {
 	 * 
 	 */
 	public RemoveClaimBlockEntity(BlockPos pos, BlockState state) {
-		super(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), pos, state);
+		super(ModBlockEntities.REMOVE_CLAIM_TYPE.get(), pos, state);
 	}
 }

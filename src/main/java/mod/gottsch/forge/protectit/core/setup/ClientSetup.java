@@ -20,9 +20,10 @@
 package mod.gottsch.forge.protectit.core.setup;
 
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
-import mod.gottsch.forge.protectit.core.block.entity.ProtectItBlockEntities;
+import mod.gottsch.forge.protectit.core.block.ModBlocks;
+import mod.gottsch.forge.protectit.core.block.entity.ModBlockEntities;
 import mod.gottsch.forge.protectit.core.client.render.blockentity.ClaimBlockEntityRenderer;
+import mod.gottsch.forge.protectit.core.client.render.blockentity.CustomClaimBlockEntityRenderer;
 import mod.gottsch.forge.protectit.core.client.render.blockentity.PropertyLeverBlockEntityRenderer;
 import mod.gottsch.forge.protectit.core.client.render.blockentity.RemoveClaimBlockEntityRenderer;
 import mod.gottsch.forge.protectit.core.client.render.blockentity.UnclaimedStakeBlockEntityRenderer;
@@ -44,12 +45,13 @@ public class ClientSetup {
 
 	public static void init(final FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.SMALL_CLAIM.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.MEDIUM_CLAIM.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.LARGE_CLAIM.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.REMOVE_CLAIM.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.PROPERTY_LEVER.get(), RenderType.cutoutMipped());
-            ItemBlockRenderTypes.setRenderLayer(ProtectItBlocks.UNCLAIMED_STAKE.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.SMALL_CLAIM.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.MEDIUM_CLAIM.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LARGE_CLAIM.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.CUSTOM_CLAIM.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.REMOVE_CLAIM.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROPERTY_LEVER.get(), RenderType.cutoutMipped());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.UNCLAIMED_STAKE.get(), RenderType.cutoutMipped());
 		});
 	}
 
@@ -60,10 +62,11 @@ public class ClientSetup {
 	@SubscribeEvent
     public static void onRegisterRenderer(EntityRenderersEvent.RegisterRenderers event) {
 		try {
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.CLAIM_TYPE.get(), ClaimBlockEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.REMOVE_CLAIM_TYPE.get(), RemoveClaimBlockEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.PROPERTY_LEVER_TYPE.get(), PropertyLeverBlockEntityRenderer::new);
-		event.registerBlockEntityRenderer(ProtectItBlockEntities.UNCLAIMED_TYPE.get(), UnclaimedStakeBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ModBlockEntities.CLAIM_TYPE.get(), ClaimBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ModBlockEntities.CUSTOM_CLAIM_TYPE.get(), CustomClaimBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ModBlockEntities.REMOVE_CLAIM_TYPE.get(), RemoveClaimBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ModBlockEntities.PROPERTY_LEVER_TYPE.get(), PropertyLeverBlockEntityRenderer::new);
+		event.registerBlockEntityRenderer(ModBlockEntities.UNCLAIMED_TYPE.get(), UnclaimedStakeBlockEntityRenderer::new);
 		}
 		catch(Exception e) {
 			ProtectIt.LOGGER.error("error", e);

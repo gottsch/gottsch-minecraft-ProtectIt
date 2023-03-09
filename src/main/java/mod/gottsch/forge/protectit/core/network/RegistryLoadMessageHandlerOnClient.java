@@ -42,7 +42,7 @@ import net.minecraftforge.network.NetworkEvent;
 public class RegistryLoadMessageHandlerOnClient {
 	
 	public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-		return ProtectItNetworking.PROTOCOL_VERSION.equals(protocolVersion);
+		return ModNetworking.PROTOCOL_VERSION.equals(protocolVersion);
 	}
 
 	public static void onMessageReceived(final RegistryLoadMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {

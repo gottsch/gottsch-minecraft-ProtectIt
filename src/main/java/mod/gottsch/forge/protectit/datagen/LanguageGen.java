@@ -1,7 +1,7 @@
 package mod.gottsch.forge.protectit.datagen;
 
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.item.ProtectItItems;
+import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.data.DataGenerator;
 import net.minecraftforge.common.data.LanguageProvider;
@@ -20,7 +20,7 @@ public class LanguageGen extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // items
-        add(ProtectItItems.SUBDIVIDE_LICENSE.get(), "Subdivide License");
+        add(ModItems.SUBDIVIDE_LICENSE.get(), "Subdivide License");
    
         /*
          *  Util.tooltips

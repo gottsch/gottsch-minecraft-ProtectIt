@@ -46,7 +46,8 @@ public class Property {
 	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
 
 	private static final String NO_NAME = "";
-	private static final String NAME_KEY = "name";
+//	private static final String NAME_KEY = "name";
+	private static final String NAMES_KEY = "names";
 	private static final String UUID_KEY = "uuid";
 	private static final String OWNER_KEY = "owner";
 	private static final String COORDS_KEY = "coords";
@@ -74,6 +75,7 @@ public class Property {
 	// subdivisible permission
 	private boolean subdivisible;
 
+	private UUID parent;
 	private List<Property> children;
 
 	private long createTime;
@@ -141,9 +143,8 @@ public class Property {
 				nameTag.putString("value", value);
 				listTag.add(nameTag);
 			});
-			tag.put("names", listTag);
+			tag.put(NAMES_KEY, listTag);
 		}
-//		tag.putString(NAME_KEY, getName());
 		
 		if (getLandlord() != null) {
 			CompoundTag landlordTag = new CompoundTag();
@@ -176,6 +177,10 @@ public class Property {
 		tag.putByte(PERMISSION_KEY, getPermissions());
 		tag.putBoolean(SUBDIVIDE_KEY, isSubdivisible());
 
+		if (getParent() != null) {
+			tag.putUUID(PARENT_KEY, getParent());
+		}
+		
 		if (!getChildren().isEmpty()) {
 			ListTag childrenTag = new ListTag();
 			getChildren().forEach(child -> {
@@ -201,15 +206,15 @@ public class Property {
 			setUuid(UUID.randomUUID());
 		}
 
-		if (tag.contains("names")) {
-			ListTag namesTag = tag.getList("names", Tag.TAG_COMPOUND);
+		if (tag.contains(NAMES_KEY)) {
+			ListTag namesTag = tag.getList(NAMES_KEY, Tag.TAG_COMPOUND);
 			namesTag.forEach(nameTag -> {
 				getNames().put(((CompoundTag)nameTag).getUUID("key"), ((CompoundTag)nameTag).getString("value"));
 			});
 		}
 		if (tag.contains(LANDLORD_KEY)) {
 			PlayerData data = new PlayerData();
-			data.load(tag.getCompound(PARENT_KEY));
+			data.load(tag.getCompound(LANDLORD_KEY));
 			setLandlord(data);
 		}
 		if (tag.contains(OWNER_KEY)) {
@@ -237,6 +242,10 @@ public class Property {
 		
 		if (tag.contains(SUBDIVIDE_KEY)) {
 			setSubdivisible(tag.getBoolean(SUBDIVIDE_KEY));
+		}
+		
+		if (tag.contains(PARENT_KEY)) {
+			setParent(tag.getUUID(PARENT_KEY));
 		}
 		
 		if (tag.contains(CHILDREN_KEY)) {
@@ -513,5 +522,13 @@ public class Property {
 
 	public void setCreateTime(long createTime) {
 		this.createTime = createTime;
+	}
+
+	public UUID getParent() {
+		return parent;
+	}
+
+	public void setParent(UUID parent) {
+		this.parent = parent;
 	}
 }

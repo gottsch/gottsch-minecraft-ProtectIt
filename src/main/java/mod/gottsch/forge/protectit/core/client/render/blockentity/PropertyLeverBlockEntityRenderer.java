@@ -28,8 +28,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
+import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
+import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.client.Minecraft;
@@ -61,21 +62,22 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 		if (blockEntity == null) {
 			return;
 		}
-		
-		BlockPos pos = blockEntity.getBlockPos();
-		BlockState state =  blockEntity.getLevel().getBlockState(pos);
-		Property property = ProtectionRegistries.block().getClaimByCoords(blockEntity.getPropertyCoords());
-
-		if (!state.is(ProtectItBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || property == null) {
+		if (blockEntity.getPropertyUuid() == null || blockEntity.getPropertyUuid().equals(Deed.EMPTY_UUID)) {
 			return;
 		}
 		
-		// only render for the owner and whitelist
-//		ProtectIt.LOGGER.debug("claim -> {}", claim);
-		if (!StringUtils.isBlank(property.getOwner().getUuid())) {
-//			ProtectIt.LOGGER.debug("player -> {}", Minecraft.getInstance().player.getStringUUID());
-//			ProtectIt.LOGGER.debug("whitelist -> {}", claim.getWhitelist());
+		BlockPos pos = blockEntity.getBlockPos();
+		BlockState state =  blockEntity.getLevel().getBlockState(pos);
+		Property property = ProtectionRegistries.block().getPropertyByCoords(blockEntity.getPropertyCoords());
+
+		if (property == null) {
+			return;
 		}
+		
+		if (!state.is(ModBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || property == null) {
+			return;
+		}
+		
 		if (StringUtils.isBlank(property.getOwner().getUuid()) ||
 				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid()) &&
 				property.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {	
@@ -107,7 +109,7 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 	
 	@Override
 	public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		Property claim = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords());
+		Property claim = ProtectionRegistries.block().getPropertyByCoords(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords());
 
 		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);

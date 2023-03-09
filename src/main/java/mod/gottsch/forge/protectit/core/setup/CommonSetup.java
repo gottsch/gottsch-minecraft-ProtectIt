@@ -21,7 +21,7 @@ package mod.gottsch.forge.protectit.core.setup;
 
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.config.Config;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 /**
@@ -37,6 +37,6 @@ public class CommonSetup {
 	public static void common(final FMLCommonSetupEvent event) {
 		// add mod specific logging
 		Config.instance.addRollingFileAppender(ProtectIt.MODID);
-		ProtectItNetworking.register();
+		ModNetworking.register();
 	}
 }

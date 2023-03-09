@@ -32,5 +32,6 @@ public class PropertySizes {
 	public static final ICoords SMALL_CLAIM_SIZE = new Coords(8, 16, 8);
 	public static final ICoords MEDIUM_CLAIM_SIZE = new Coords(16, 32, 16);
 	public static final ICoords LARGE_CLAIM_SIZE = new Coords(32, 64, 32);
+	public static final ICoords CUSTOM_CLAIM_SIZE = Coords.EMPTY;
 
 }

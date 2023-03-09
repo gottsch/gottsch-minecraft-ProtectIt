@@ -6,7 +6,7 @@
     },
     "facing=north" : {
       "model" : "protectit:block/small_claim",
-          "y" : 180
+      "y" : 180
     },
     "facing=south" : {
       "model" : "protectit:block/small_claim"
@@ -14,6 +14,12 @@
     "facing=west" : {
       "model" : "protectit:block/small_claim",
       "y" : 90
+    },
+    "facing=up" : {
+      "model" : "protectit:block/small_claim"
+    },
+    "facing=down" : {
+      "model" : "protectit:block/small_claim"
     }
   }
 }

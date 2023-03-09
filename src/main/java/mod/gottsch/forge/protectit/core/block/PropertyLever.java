@@ -23,13 +23,16 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
+import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
 import mod.gottsch.forge.protectit.core.network.PropertyLeverS2C;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.core.BlockPos;
@@ -50,6 +53,8 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.phys.BlockHitResult;
@@ -141,6 +146,39 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		}
 	}
 
+	@Nullable
+	@Override
+	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+		if (!level.isClientSide()) {
+			return (lvl, pos, blockState, t) -> {
+				if (t instanceof PropertyLeverBlockEntity entity) { // test and cast
+					entity.tickServer();
+				}
+			};
+		}
+		return null;
+	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
+		if (blockEntity instanceof PropertyLeverBlockEntity) {
+			// get the claim for this position
+			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+			ProtectIt.LOGGER.debug("found properties -> {}", list);
+			if (!list.isEmpty()) {				
+				Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
+				((PropertyLeverBlockEntity)blockEntity).setPropertyCoords(property.getBox().getMinCoords());
+				((PropertyLeverBlockEntity)blockEntity).setPropertyUuid(property.getUuid());
+
+			}
+		}
+		worldIn.markAndNotifyBlock(pos, null, state, state, 0, 0);
+	}
+	
 	/**
 	 * 
 	 */
@@ -148,7 +186,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
 		if (blockEntity instanceof PropertyLeverBlockEntity) {
-			Property property = ProtectionRegistries.block().getClaimByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
+			Property property = ProtectionRegistries.block().getPropertyByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
 			if (property != null && !player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid()) &&
 					property.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getStringUUID()))) {
 				return InteractionResult.FAIL;
@@ -181,27 +219,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		return InteractionResult.PASS;
 	}
 
-	/**
-	 * 
-	 */
-	@Override
-	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
-		if (blockEntity instanceof PropertyLeverBlockEntity) {
-			// get the claim for this position
-//			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
-//			ProtectIt.LOGGER.debug("search for claim @ -> {}", new Coords(pos).toShortString());
-			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
-			ProtectIt.LOGGER.debug("found properties -> {}", list);
-			if (!list.isEmpty()) {				
-				Property property = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
-//				ProtectIt.LOGGER.debug("found claim -> {}", claim);
-				((PropertyLeverBlockEntity)blockEntity).setPropertyCoords(property.getBox().getMinCoords());
-			}
-		}
-		worldIn.markAndNotifyBlock(pos, null, state, state, 0, 0);
-	}
-
+	// TODO don't need this is sync BE properly
 	/**
 	 * 
 	 * @param world
@@ -214,11 +232,12 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 				// send message to add protection on all clients
 				PropertyLeverS2C message = new PropertyLeverS2C(coords, propertyCoords, propertyUuid);
 				ProtectIt.LOGGER.debug("sending property lever message to sync client side -> {}", message);
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		}
 	}
 
+	
 	@OnlyIn(Dist.CLIENT)
 	public void animateTick(BlockState state, Level world, BlockPos pos, Random random) {
 		if (state.getValue(POWERED) && random.nextFloat() < 0.25F) {

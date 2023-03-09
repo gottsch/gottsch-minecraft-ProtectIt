@@ -22,7 +22,7 @@ package mod.gottsch.forge.protectit.core.item;
 import java.util.function.Supplier;
 
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
+import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.setup.Registration;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -36,21 +36,25 @@ import net.minecraftforge.registries.RegistryObject;
  *
  */
 @Mod.EventBusSubscriber(modid = ProtectIt.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class ProtectItItems {
+public class ModItems {
 	
 	// item properties
 	public static final Supplier<Item.Properties> ITEM_PROPS_SUPPLIER = () -> new Item.Properties().tab(CreativeModeTab.TAB_MISC);
 
 	// items
-	public static RegistryObject<Item> SMALL_CLAIM = fromClaimBlock(ProtectItBlocks.SMALL_CLAIM, ITEM_PROPS_SUPPLIER);
-	public static RegistryObject<Item> MEDIUM_CLAIM = fromClaimBlock(ProtectItBlocks.MEDIUM_CLAIM, ITEM_PROPS_SUPPLIER);
-	public static RegistryObject<Item> LARGE_CLAIM = fromClaimBlock(ProtectItBlocks.LARGE_CLAIM, ITEM_PROPS_SUPPLIER);
-	public static RegistryObject<Item> REMOVE_CLAIM = Registration.ITEMS.register("remove_claim", () -> new RemoveClaimBlockItem(ProtectItBlocks.REMOVE_CLAIM.get(), ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> SMALL_CLAIM = fromClaimBlock(ModBlocks.SMALL_CLAIM, ITEM_PROPS_SUPPLIER);
+	public static RegistryObject<Item> MEDIUM_CLAIM = fromClaimBlock(ModBlocks.MEDIUM_CLAIM, ITEM_PROPS_SUPPLIER);
+	public static RegistryObject<Item> LARGE_CLAIM = fromClaimBlock(ModBlocks.LARGE_CLAIM, ITEM_PROPS_SUPPLIER);
+	public static RegistryObject<Item> CUSTOM_CLAIM = fromCustomClaimBlock(ModBlocks.CUSTOM_CLAIM, ITEM_PROPS_SUPPLIER);
+	
+	public static RegistryObject<Item> REMOVE_CLAIM = Registration.ITEMS.register("remove_claim", () -> new RemoveClaimBlockItem(ModBlocks.REMOVE_CLAIM.get(), ITEM_PROPS_SUPPLIER.get()));
 
-	public static RegistryObject<Item> PROPERTY_LEVER = Registration.ITEMS.register("property_lever", () -> new PropertyLeverBlockItem(ProtectItBlocks.PROPERTY_LEVER.get(), ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> PROPERTY_LEVER = Registration.ITEMS.register("property_lever", () -> new PropertyLeverBlockItem(ModBlocks.PROPERTY_LEVER.get(), ITEM_PROPS_SUPPLIER.get()));
 
 	public static RegistryObject<Item> SUBDIVIDE_LICENSE = Registration.ITEMS.register("subdivide_license", () -> new SubdivideLicense(ITEM_PROPS_SUPPLIER.get()));
-	public static RegistryObject<Item> UNCLAIMED_STAKE = Registration.ITEMS.register("unclaimed_stake", () -> new UnclaimedStakeBlockItem(ProtectItBlocks.UNCLAIMED_STAKE.get(), ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> UNCLAIMED_STAKE = Registration.ITEMS.register("unclaimed_stake", () -> new UnclaimedStakeBlockItem(ModBlocks.UNCLAIMED_STAKE.get(), ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> PROPERTY_DEED = Registration.ITEMS.register("property_deed", () -> new Deed(ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> PROPERTY_LEASE = Registration.ITEMS.register("property_lease", () -> new PropertyLease(ITEM_PROPS_SUPPLIER.get()));
 
 	/**
 	 * 
@@ -63,5 +67,9 @@ public class ProtectItItems {
 	// convenience method: take a RegistryObject<Block> and make a corresponding RegistryObject<Item> from it
 	public static <B extends Block> RegistryObject<Item> fromClaimBlock(RegistryObject<B> block, Supplier<Item.Properties> itemProperties) {
 		return Registration.ITEMS.register(block.getId().getPath(), () -> new ClaimBlockItem(block.get(), itemProperties.get()));
+	}
+	
+	public static <B extends Block> RegistryObject<Item> fromCustomClaimBlock(RegistryObject<B> block, Supplier<Item.Properties> itemProperties) {
+		return Registration.ITEMS.register(block.getId().getPath(), () -> new CustomClaimBlockItem(block.get(), itemProperties.get()));
 	}
 }

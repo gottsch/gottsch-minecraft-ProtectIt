@@ -1,0 +1,25 @@
+{
+  "variants" : {
+    "facing=east" : {
+      "model" : "protectit:block/custom_claim",
+      "y" : 270
+    },
+    "facing=north" : {
+      "model" : "protectit:block/custom_claim",
+      "y" : 180
+    },
+    "facing=south" : {
+      "model" : "protectit:block/custom_claim"
+    },
+    "facing=west" : {
+      "model" : "protectit:block/custom_claim",
+      "y" : 90
+    },
+    "facing=up" : {
+      "model" : "protectit:block/custom_claim"
+    },
+    "facing=down" : {
+      "model" : "protectit:block/custom_claim"
+    }
+  }
+}

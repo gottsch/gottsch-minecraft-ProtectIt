@@ -26,19 +26,23 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.ProtectIt;
+import mod.gottsch.forge.protectit.core.block.entity.CustomClaimBlockEntity;
 import mod.gottsch.forge.protectit.core.block.entity.RemoveClaimBlockEntity;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertySizes;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -89,7 +93,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			ProtectIt.LOGGER.debug("search for property @ -> {}", new Coords(pos).toShortString());
 			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			if (!list.isEmpty()) {				
-				Property properties = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+				Property properties = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
 				if (properties != null) {
 					ProtectIt.LOGGER.debug("found claim -> {}", properties);
 					((RemoveClaimBlockEntity)tileEntity).setPropertyCoords(properties.getBox().getMinCoords());
@@ -100,8 +104,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 
 	/**
 	 * 
-	 */
-	
+	 */	
 	@Override
 	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player,
 			InteractionHand handIn, BlockHitResult hit) {
@@ -113,11 +116,11 @@ public class RemoveClaimBlock extends ClaimBlock {
 		ProtectIt.LOGGER.debug("in property block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
 		// get the tile entity
-		BlockEntity tileEntity = world.getBlockEntity(pos);
-		if (tileEntity instanceof RemoveClaimBlockEntity) {
+		BlockEntity blockEntity = world.getBlockEntity(pos);
+		if (blockEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
-			Property property = ProtectionRegistries.block().getClaimByCoords(((RemoveClaimBlockEntity)tileEntity).getPropertyCoords());
+			Property property = ProtectionRegistries.block().getPropertyByCoords(((RemoveClaimBlockEntity)blockEntity).getPropertyCoords());
 			if (property == null || !player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid())) {
 				player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")));
 				return InteractionResult.SUCCESS;
@@ -146,21 +149,41 @@ public class RemoveClaimBlock extends ClaimBlock {
 							$.playerName = player.getName().getString();
 						}).build();
 				ProtectIt.LOGGER.debug("sending message to sync client side ");
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
 			// remove Remove Claim block
 			world.removeBlock(pos, false);
 
-			// TODO give player Claim Block - need the size?
-			ItemStack claimStack = new ItemStack(ProtectItBlocks.SMALL_CLAIM.get());
+			// calculate the size
+			ICoords propertySize = property.getBox().getMaxCoords().delta(property.getBox().getMinCoords());
+			ItemStack claimStack;
+			if (propertySize.equals(PropertySizes.SMALL_CLAIM_SIZE)) {
+				claimStack = new ItemStack(ModBlocks.SMALL_CLAIM.get());
+			}
+			else if (propertySize.equals(PropertySizes.MEDIUM_CLAIM_SIZE)) {
+				claimStack = new ItemStack(ModBlocks.MEDIUM_CLAIM.get());
+			}
+			else if (propertySize.equals(PropertySizes.LARGE_CLAIM_SIZE)) {
+				claimStack = new ItemStack(ModBlocks.LARGE_CLAIM.get());
+			}
+			else {
+				claimStack = new ItemStack(ModBlocks.CUSTOM_CLAIM.get());
+				CompoundTag tag = claimStack.getOrCreateTag();
+				tag.put(CustomClaimBlockEntity.CLAIM_SIZE_KEY, propertySize.save(new CompoundTag()));
+			}
+			
 			if (!player.getInventory().add(claimStack)) {
-				player.drop(claimStack, false);
+//				player.drop(claimStack, false);
+				ItemEntity itemEntity = player.drop(claimStack, false);
+				if (itemEntity != null) {
+					itemEntity.setNoPickUpDelay();
+					itemEntity.setOwner(player.getUUID());
+				}
 			}
 
 			// send message to player
 			player.sendSystemMessage(Component.translatable(LangUtil.message("claim_successfully_removed")));
-
 		}
 
 		return InteractionResult.SUCCESS;

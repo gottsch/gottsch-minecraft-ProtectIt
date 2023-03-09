@@ -56,7 +56,7 @@ public class RemoveClaimBlockEntityRenderer extends PropertyLeverBlockEntityRend
 
 		BlockPos pos = tileEntity.getBlockPos();	
 		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
-		Property claim = ProtectionRegistries.block().getClaimByCoords(tileEntity.getPropertyCoords());
+		Property claim = ProtectionRegistries.block().getPropertyByCoords(tileEntity.getPropertyCoords());
 		
 		if (claim == null) {
 //			ProtectIt.LOGGER.debug("or claim is null", block);

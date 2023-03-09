@@ -27,11 +27,15 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.protectit.core.block.entity.AbstractPropertyOutlinerBlockEntity;
 import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
+import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
+import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -40,22 +44,23 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * @author Mark Gottschling Mar 1, 2023
  *
  */
-public class UnclaimedStakeBlockEntityRenderer extends PropertyLeverBlockEntityRenderer {
+public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<UnclaimedStakeBlockEntity>, IPropertyRenderer {//extends PropertyLeverBlockEntityRenderer {
 	
 	/**
 	 * 
 	 * @param dispatcher
 	 */
 	public UnclaimedStakeBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-		super(context);
 	}
 
 	@Override
-	public void render(PropertyLeverBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
+	public void render(UnclaimedStakeBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 		
-//		BlockPos pos = blockEntity.getBlockPos();	
-//		Block block = blockEntity.getLevel().getBlockState(pos).getBlock();
+		if (blockEntity.getPropertyUuid() == null || blockEntity.getPropertyUuid().equals(Deed.EMPTY_UUID)) {
+			return;
+		}
+
 		Optional<Property> property = ProtectionRegistries.block().getPropertyByUuid(blockEntity.getPropertyUuid());
 		
 		if (property.isEmpty()) {
@@ -64,9 +69,12 @@ public class UnclaimedStakeBlockEntityRenderer extends PropertyLeverBlockEntityR
 		
 		VertexConsumer builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
+		// get blue and transform it to 0.0 - 1.0
+		float blue = Color.WHITE.getBlue() / 255.0f;
+		
 		// render the claim
 		ICoords size = property.get().getBox().getMaxCoords().delta(property.get().getBox().getMinCoords());
-		renderProperty(blockEntity, matrixStack, builder, size, 0, 0, 0, 1.0f);	
+		renderProperty(blockEntity, matrixStack, builder, size, 0, 0, blue, 1.0f);	
 		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}
 	
@@ -76,9 +84,15 @@ public class UnclaimedStakeBlockEntityRenderer extends PropertyLeverBlockEntityR
 	}
 	
 	@Override
+	public void updatePropertyTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
+		ICoords delta = new Coords(tileEntity.getBlockPos()).delta(((UnclaimedStakeBlockEntity)tileEntity).getPropertyCoords()).negate();
+		matrixStack.translate(delta.getX(), delta.getY(), delta.getZ());		
+	}
+	
+	@Override
 	public void updateHighlightTranslation(BlockEntity blockEntity, PoseStack matrixStack) {
 		// TODO use template method and extract, this calc to a method
-		Optional<Property> property = ProtectionRegistries.block().getPropertyByUuid(((PropertyLeverBlockEntity)blockEntity).getPropertyUuid());
+		Optional<Property> property = ProtectionRegistries.block().getPropertyByUuid(((AbstractPropertyOutlinerBlockEntity)blockEntity).getPropertyUuid());
 		if (property.isEmpty()) {
 			return;
 		}
@@ -93,7 +107,7 @@ public class UnclaimedStakeBlockEntityRenderer extends PropertyLeverBlockEntityR
 		highlightFloor = coords.delta(highlightFloor).negate();
 		
 		ICoords delta = 
-				new Coords(blockEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords())
+				new Coords(blockEntity.getBlockPos()).delta(((AbstractPropertyOutlinerBlockEntity)blockEntity).getPropertyCoords())
 				.negate()
 				.withY(highlightFloor.getY());
 

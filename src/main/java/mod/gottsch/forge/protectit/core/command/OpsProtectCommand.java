@@ -37,8 +37,8 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.config.Config;
-import mod.gottsch.forge.protectit.core.item.ProtectItItems;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
+import mod.gottsch.forge.protectit.core.item.ModItems;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
@@ -259,6 +259,7 @@ public class OpsProtectCommand {
 			// get the property by name
 			if (StringUtils.isEmpty(propertyName)) {
 				propertyUuid = new UUID(0L, 0L);
+				propertyName = "";
 			} else {
 				Optional<Property> property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
 				if (property.isPresent()) {
@@ -270,12 +271,14 @@ public class OpsProtectCommand {
 			}
 			
 			// create item stack
-			ItemStack itemStack = new ItemStack(ProtectItItems.SUBDIVIDE_LICENSE.get());
+			ItemStack itemStack = new ItemStack(ModItems.SUBDIVIDE_LICENSE.get());
 			
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
 			tag.putUUID("owner", player.getUUID());
+			tag.putString("ownerName", player.getName().getString());
 			tag.putUUID("property", propertyUuid);
+			tag.putString("propertyName", propertyName);
 	
 			// give to ops	
 			ServerPlayer giver = source.getPlayerOrException();
@@ -507,7 +510,7 @@ public class OpsProtectCommand {
 					$.coords2 = coords2;
 					$.playerName = "";
 				}).build();
-		ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+		ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 	}
 	
 	/**
@@ -583,7 +586,7 @@ public class OpsProtectCommand {
 							$.coords2 = validCoords.get().getB();
 							$.playerName = name.get();
 						}).build();
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		}
 		catch(Exception e) {
@@ -616,7 +619,7 @@ public class OpsProtectCommand {
 					RegistryMutatorMessageToClient.BLOCK_TYPE, 
 					RegistryMutatorMessageToClient.CLEAR_ACTION, 
 					player.getStringUUID()).build();
-			ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+			ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 		}
 		return 1;
 	}

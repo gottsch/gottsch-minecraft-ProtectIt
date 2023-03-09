@@ -20,12 +20,15 @@
 package mod.gottsch.forge.protectit.core.command;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -37,16 +40,20 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.config.Config;
+import mod.gottsch.forge.protectit.core.item.Deed;
+import mod.gottsch.forge.protectit.core.item.ModItems;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.PermissionChangeS2CPush;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
 import mod.gottsch.forge.protectit.core.network.SubdivideS2CPush2;
 import mod.gottsch.forge.protectit.core.network.WhitelistAddS2CPush;
 import mod.gottsch.forge.protectit.core.network.WhitelistClearS2CPush;
 import mod.gottsch.forge.protectit.core.network.WhitelistRemoveS2CPush;
 import mod.gottsch.forge.protectit.core.property.Permission;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtils;
 import mod.gottsch.forge.protectit.core.registry.PlayerData;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
+import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -55,10 +62,13 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 
 /**
@@ -114,13 +124,13 @@ public class ProtectCommand {
 														})
 														.then(Commands.argument("owner", EntityArgument.player())
 																.executes(source -> {
-															return subdivide(source.getSource(),
-																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
-																	BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
-																	BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
-																	EntityArgument.getPlayer(source, "owner"));
-														})
-														)))										
+																	return subdivide(source.getSource(),
+																			StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
+																			BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
+																			BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
+																			EntityArgument.getPlayer(source, "owner"));
+																})
+																)))										
 										)
 								)
 						///// COMBINE /////
@@ -134,8 +144,52 @@ public class ProtectCommand {
 										 */
 										)
 								)
-						// TODO add option for page #
-						// TODO add option for player - OPS only						///// PERMISSION
+						///// GENERATE LEASE
+						.then(Commands.literal("lease")
+								.then(Commands.literal("generate")
+												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												// TODO property names must provide all owned properties AND vacant landlord properties
+												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+												.executes(source -> {
+													return generateLease(source.getSource(),
+															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+												})
+												)
+										)
+								.then(Commands.literal("transfer")
+
+										)
+								)
+						///// GENERATE DEED
+						.then(Commands.literal("deed")
+								.then(Commands.literal("generate")
+										// TODO don't need TARGET
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
+												.executes(source -> {
+													return generateDeed(source.getSource(),
+															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+												})
+												)
+										)
+								// DEED TRANSFER
+								.then(Commands.literal("transfer")
+										.then(Commands.argument("owner", EntityArgument.player())
+												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+														.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
+														.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+																.executes(source -> {
+																	return transferDeed(source.getSource(),
+																			EntityArgument.getPlayer(source, "owner"),
+																			StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
+																			EntityArgument.getPlayer(source, CommandHelper.TARGET));
+																})																
+																)
+														)
+												)
+										)
+								)
+						///// PERMISSION
 						.then(Commands.literal("permission")
 								///// PERMISSION CHANGE
 								.then(Commands.literal("change")
@@ -261,6 +315,163 @@ public class ProtectCommand {
 	}
 
 	/**
+	 * NOTE all these generate license/lease/deed generate the items the same way. create a method for them
+	 * @param source
+	 * @param propertyName
+	 * @return
+	 */
+	private static int generateLease(CommandSourceStack source, String propertyName) {
+		ServerPlayer player = source.getPlayer();		
+		try {
+//			ICoords coords = new Coords(player.blockPosition());
+			// get all properties by coords and uuid
+//			List<Box> protections = ProtectionRegistries.block().getProtections(coords);
+			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+//			Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords());
+//			if (property == null) {
+//				source.sendFailure(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")).withStyle(ChatFormatting.RED));
+//				return 1;				
+//			}
+
+//			List<Property> properties = property.getChildren();
+//			if (!properties.isEmpty()) {
+//				properties.addAll(properties.stream().filter(p -> !p.getChildren().isEmpty()).flatMap(p -> p.getChildren().stream()).toList());
+//			}
+//			// add top level property to list
+//			properties.add(property);
+			// TODO probably can make a method like CommandHelper.getPropertyByName
+			properties = PropertyUtils.getPropertyHierarchy(properties);
+			Optional<Property> property = properties.stream()
+					.filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName) || (p.getOwner().equals(PlayerData.EMPTY) &&
+							p.getNameByLandlord().equalsIgnoreCase(propertyName)))
+					.findFirst();
+			if (!property.isPresent()) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+
+			// create item stack
+			ItemStack itemStack = new ItemStack(ModItems.PROPERTY_LEASE.get());
+
+			// set tag properties of stack
+			CompoundTag tag = itemStack.getOrCreateTag();
+			tag.putUUID("owner", player.getUUID());
+			tag.putString("ownerName", player.getName().getString());
+			tag.putUUID("property", property.get().getUuid());
+			tag.putString("propertyName", propertyName);
+
+			// give to ops	
+			ServerPlayer giver = source.getPlayerOrException();
+			if (!giver.getInventory().add(itemStack)) {
+				ItemEntity itemEntity = giver.drop(itemStack, false);
+				if (itemEntity != null) {
+					itemEntity.setNoPickUpDelay();
+					itemEntity.setOwner(giver.getUUID());
+				}
+			}
+
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute generateLease() command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		return 1;
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param owner
+	 * @param string
+	 * @param player
+	 * @return
+	 */
+	private static int transferDeed(CommandSourceStack source, ServerPlayer owner, String propertyName,
+			ServerPlayer player) {
+
+		UUID propertyUuid = null;
+		try {
+			Optional<Property> property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
+			if (property.isPresent()) {
+				propertyUuid = property.get().getUuid();
+			}
+			else {
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+
+			// transfer ownership
+			ProtectionRegistries.block().updateOwner(property.get(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		return 1;
+	}
+
+	/**
+	 * NOTE propertyName is requried for a Deed.
+	 * @param source
+	 * @param player
+	 * @param propertyName
+	 * @return
+	 */
+	private static int generateDeed(CommandSourceStack source, String propertyName) {
+		try {
+			ServerPlayer player = source.getPlayerOrException();
+
+			Optional<Property> property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
+			if (!property.isPresent()) {
+				// TODO error
+				return 1;
+			}
+
+			// test against the TransactionRegistry
+			if (TransactionRegistry.getDeedsCount(property.get().getUuid()) > 0) {
+				source.sendFailure(Component.translatable(LangUtil.message("deed.exceeded_limit"))
+						.withStyle(ChatFormatting.RED));
+				return 1;
+			}
+
+			// create item stack
+			ItemStack itemStack = new ItemStack(ModItems.PROPERTY_DEED.get());
+
+			// set tag properties of stack
+			CompoundTag tag = itemStack.getOrCreateTag();
+			tag.putUUID(Deed.OWNER_ID_KEY, player.getUUID());
+			tag.putString(Deed.OWNER_NAME_KEY, player.getName().getString());
+			tag.putUUID(Deed.PROPERTY_ID_KEY, property.get().getUuid());
+			tag.putString(Deed.PROPERTY_NAME_KEY, propertyName);
+			CompoundTag boxTag = new CompoundTag();
+			property.get().getBox().save(boxTag);
+			tag.put("propertyBox", boxTag);
+
+			// give to calling player
+			ServerPlayer giver = source.getPlayerOrException();
+			if (!giver.getInventory().add(itemStack)) {
+				ItemEntity itemEntity = giver.drop(itemStack, false);
+				if (itemEntity != null) {
+					itemEntity.setNoPickUpDelay();
+					itemEntity.setOwner(giver.getUUID());
+				}
+			}
+
+			// increment transaction registry
+			TransactionRegistry.sellDeed(property.get().getUuid());
+
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute generateDeed() command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		return 1;
+	}
+
+	/**
 	 * 
 	 * @param source
 	 * @param propertyName
@@ -272,7 +483,7 @@ public class ProtectCommand {
 	private static int subdivide(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, ServerPlayer targetOwner) {
 		return subdivide(source, propertyName, pos, pos2, new PlayerData(targetOwner.getStringUUID(), targetOwner.getName().getString()));
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -296,10 +507,10 @@ public class ProtectCommand {
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-			
+
 			ICoords coords1 = new Coords(pos);
 			ICoords coords2 = new Coords(pos2);
-			
+
 			// check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(coords1, coords2);
 			if (!validCoords.isPresent()) {
@@ -307,16 +518,16 @@ public class ProtectCommand {
 						.withStyle(ChatFormatting.RED), true);
 				return 1;
 			}
-			
+
 			Property target = parent.get();
-			
+
 			// is the property subdivisible
 			if (!target.isSubdivisible()) {
 				source.sendFailure(Component.translatable(LangUtil.message("subdivide.not_divisible"))
-					.withStyle(ChatFormatting.RED));
+						.withStyle(ChatFormatting.RED));
 				return 1;
 			}
-			
+
 			// within bounds of target property
 			if (isOutsideBoundary(coords1, target.getBox()) || isOutsideBoundary(coords2, target.getBox())) {
 				source.sendFailure(Component.translatable(LangUtil.message("subdivide.outside_property_boundary"))
@@ -326,14 +537,14 @@ public class ProtectCommand {
 
 			// create a box from the valid coords
 			Box box = new Box(validCoords.get().getA(), validCoords.get().getB());
-			
+
 			// doesn't over any sibling properties
 			for (Property c : target.getChildren()) {
-					if (c.intersects(box)) {
-						source.sendFailure(Component.translatable(LangUtil.message("subdivide.intersects_property"))
-								.withStyle(ChatFormatting.RED));
-						return 1;
-					}
+				if (c.intersects(box)) {
+					source.sendFailure(Component.translatable(LangUtil.message("subdivide.intersects_property"))
+							.withStyle(ChatFormatting.RED));
+					return 1;
+				}
 			}
 
 			// create a name for the new subdivision property
@@ -344,32 +555,34 @@ public class ProtectCommand {
 				name2 = name1;
 				ProtectIt.LOGGER.debug("property name -> {}", name1);
 			} else {
-				name2 = targetOwner.getName() + "." + (ProtectionRegistries.block().getProtections(targetOwner.getName()).size() + "." + 1);
+				name2 = (StringUtils.isEmpty(targetOwner.getName()) ? target.getNameByOwner() : targetOwner.getName())
+						+ "." + (ProtectionRegistries.block().getProtections(targetOwner.getName()).size() + 1);
 				ProtectIt.LOGGER.debug("property name -> {}", name1);
 			}
-			
+
 			// create the new property
 			Property property = new Property(
 					box.getMinCoords(),
 					box,
 					new PlayerData(targetOwner.getUuid(), targetOwner.getName()),
 					name2);
+			property.setParent(target.getUuid());
 			property.setLandlord(new PlayerData(owner.getStringUUID(), owner.getName().getString()));
 			property.setNameByLandlord(name1);
-			
+
 			Optional<Property> finalProperty = ProtectionRegistries.block().addSubdivision(target, property);
 			if (finalProperty.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 						.withStyle(ChatFormatting.RED));
 				return 1;
 			}
-						
+
 			// save world data
 			CommandHelper.saveData(source.getLevel());
 
 			source.sendSuccess(Component.translatable(LangUtil.message("subdivide.success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
-			
+
 			// send message to subdivide protection on all clients
 			if(source.getLevel().getServer().isDedicatedServer()) {
 				SubdivideS2CPush2 message = new SubdivideS2CPush2(
@@ -379,7 +592,7 @@ public class ProtectCommand {
 						property.getUuid(),
 						property.getBox()
 						);
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		} catch(Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
@@ -398,13 +611,13 @@ public class ProtectCommand {
 				&& box.getMinCoords().getZ() <  box2.getMaxCoords().getZ() && box.getMaxCoords().getZ() > box2.getMinCoords().getZ();
 	}
 
-//	@Deprecated
-//	private static void getPropertyChildren(List<Property> children, List<Property> list) {
-//		children.forEach(c -> {
-//			list.add(c);
-//			getPropertyChildren(c.getChildren(), list);
-//		});		
-//	}
+	//	@Deprecated
+	//	private static void getPropertyChildren(List<Property> children, List<Property> list) {
+	//		children.forEach(c -> {
+	//			list.add(c);
+	//			getPropertyChildren(c.getChildren(), list);
+	//		});		
+	//	}
 
 	private static boolean isOutsideBoundary(ICoords coords1, Box box) {
 		return coords1.getX() < box.getMinCoords().getX() || coords1.getZ() < box.getMinCoords().getZ() || coords1.getY() < box.getMinCoords().getY() ||
@@ -500,7 +713,7 @@ public class ProtectCommand {
 						Permission.valueOf(permissionName).value,
 						value
 						);
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
 			source.sendSuccess(Component.translatable(LangUtil.message("permission.change.success"))
@@ -552,7 +765,7 @@ public class ProtectCommand {
 						player.getName().getString(),
 						player.getUUID()
 						);
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
 			source.sendSuccess(Component.translatable(LangUtil.message("whitelist.add.success"))
@@ -603,7 +816,7 @@ public class ProtectCommand {
 						playerName.toUpperCase(),
 						null
 						);
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
 			source.sendSuccess(Component.translatable(LangUtil.message("whitelist.remove.success"))
@@ -653,7 +866,7 @@ public class ProtectCommand {
 						owner.getUUID(),
 						property.get().getUuid()
 						);
-				ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
 			source.sendSuccess(Component.translatable(LangUtil.message("whitelist.clear.success"))

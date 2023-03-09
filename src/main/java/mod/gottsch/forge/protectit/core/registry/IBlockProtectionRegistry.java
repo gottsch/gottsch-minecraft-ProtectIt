@@ -49,7 +49,7 @@ public interface IBlockProtectionRegistry extends IProtectionRegistry {
 	public List<Property> getAll();
 	public List<Property> getProtections(String uuid);
 	public List<Property> findPropertiesBy(Predicate<Property> predicate);
-	public Property getClaimByCoords(ICoords coords);
+	public Property getPropertyByCoords(ICoords coords);
 	
 //	public Optional<Property> addRoom(Property hotel, Box box, PlayerData playerData);
 //	Optional<Property> addHotel(Property parentProperty, Box box, PlayerData owner);
@@ -61,6 +61,8 @@ public interface IBlockProtectionRegistry extends IProtectionRegistry {
 //	public List<Property> getHotels(Property property);
 	public Optional<Property> addSubdivision(Property target, Property property);
 	Optional<Property> getPropertyByUuid(UUID uuid);
+	List<Property> getPropertiesByOwner(UUID owner);
+	public void updateOwner(Property property, PlayerData owner);
 	
 
 }

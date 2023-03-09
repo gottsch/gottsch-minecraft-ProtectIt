@@ -33,7 +33,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
  * @author Mark Gottschling on Oct 13, 2021
  *
  */
-public class ProtectItNetworking {
+public class ModNetworking {
 	public static final String PROTOCOL_VERSION = "1.0";
 	public static final int REGISTRY_MUTATOR_MESSAGE_ID = 14;
 	public static final int REGISTRY_LOAD_MESSAGE_ID = 15;

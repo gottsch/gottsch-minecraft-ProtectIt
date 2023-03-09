@@ -33,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.bst.IdentifierData;
 import mod.gottsch.forge.protectit.core.registry.bst.Interval;
@@ -54,13 +53,16 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	private static final String PROPERTIES_KEY = "properties";
 
 	/*
+	 * a map of properties by property coords.
+	 * this is the main backing map for the data held in the BST.
+	 * this and the BST are meant for the top-level properties.
+	 * the min. coords of the property is used as the key.
+	 */
+	private final Map<ICoords, Property> PROPERTY_BY_COORDS = new HashMap<>();
+	/*
 	 * a map of property lists by owner (uuid)
 	 */
 	private final Map<String, List<Property>> PROPERTY_BY_OWNER = new HashMap<>(); 
-	/*
-	 * a map of properties by property coords
-	 */
-	private final Map<ICoords, Property> PROPERTY_BY_COORDS = new HashMap<>();
 	/*
 	 * a map of properties by property uuid
 	 */
@@ -71,33 +73,12 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	private final Map<UUID, List<Property>> PROPERTY_BY_LANDLORD = new HashMap<>();
 
-	//	@Deprecated
-	//	private final Map<UUID, IBlockProtectionRegistry> HOTEL_MAP = new HashMap<>();
-
-	//	private final Map<UUID, List<Property>> HOTEL_BY_PROPERTY = new HashMap<>();
-	//	private final Map<String, List<Property>> HOTEL_BY_OWNER = new HashMap<>(); 
-	//	private final Map<ICoords, Property> HOTEL_BY_COORDS = new HashMap<>();
-
-	//	private final Map<UUID, List<Property>> ROOM_BY_PROPERTY = new HashMap<>();
-	//	private final Map<String, List<Property>> ROOM_BY_OWNER = new HashMap<>(); 
-	//	private final Map<ICoords, Property> ROOM_BY_COORDS = new HashMap<>();
 
 	/*
-	 * an interval binary search tree (interval-bst) for fast lookups for property access/mutation actions
+	 * an interval binary search tree (interval-bst) for fast lookups for property access/mutation actions.
+	 * this is the used when only the location (coords/blockPos) is known.
 	 */
 	private final ProtectedIntervalTree tree = new ProtectedIntervalTree();
-
-	/*
-	 * an interval-bst for hotel properties.
-	 * a hotel property is any property that is a sub-property and is hotel-able ie. can contain sub-properties
-	 */
-	//	private final ProtectedIntervalTree hotelTree = new ProtectedIntervalTree();
-
-	/*
-	 * an interval-bst for room properties
-	 * a room property is any property that is a sub-property and is NOT hotel-able. ie the end of the hotel-able chain.
-	 */
-	//	private final ProtectedIntervalTree roomTree = new ProtectedIntervalTree();
 
 	// NOTE the interval-bst's are not saved/loaded to nbt data, but rather are re-built on load from the data in the maps.
 
@@ -152,6 +133,50 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		ProtectIt.LOGGER.debug("size of tree -> {}", getProtections(property.getBox().getMinCoords(), property.getBox().getMaxCoords()).size());
 	}
 
+	/**
+	 * 
+	 */
+	public void updateOwner(Property property, PlayerData newOwner) {
+		List<Property>	properties = new ArrayList<>();
+		properties.addAll(property.getChildren());
+		properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
+		properties.add(property);
+		
+		// update all properties in hierarchy
+		properties.forEach(p -> {
+			// remove old owner
+			if (PROPERTY_BY_OWNER.containsKey(p.getOwner().getUuid())) {
+				PROPERTY_BY_OWNER.get(property.getOwner().getUuid()).remove(p);
+			}
+
+			// update owner
+			if (p.getOwner().equals(property.getOwner())) {
+				p.setOwner(newOwner);
+			}
+			// update landlord
+			if (p.getLandlord() != null && p.getLandlord().equals(property.getOwner())) {
+				p.setLandlord(newOwner);
+			}
+			// update whitelist
+			if (p.getWhitelist() != null) {
+				p.getWhitelist().clear();
+			}
+			
+			// update property
+//			property.setOwner(newOwner);
+			if (!PROPERTY_BY_OWNER.containsKey(newOwner.getUuid())) {
+				PROPERTY_BY_OWNER.put(newOwner.getUuid(), new ArrayList<>());
+			}
+			PROPERTY_BY_OWNER.get(newOwner.getUuid()).add(p);
+			
+			UUID ownerUuid = UUID.fromString(newOwner.getUuid());
+			if (!PROPERTY_BY_LANDLORD.containsKey(ownerUuid)) {
+				PROPERTY_BY_LANDLORD.put(ownerUuid, new ArrayList<>());
+			}
+			PROPERTY_BY_LANDLORD.get(ownerUuid).add(p);
+		});
+	}
+	
 	/**
 	 * 
 	 * @param property
@@ -305,13 +330,11 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		// get all props by owner, then delete from coords, uuid
 		List<Property> properties = PROPERTY_BY_OWNER.get(uuid);
 		// this list will contain non-top level properites. filter them out
-//		properties = properties.stream().filter(p -> p.getLandlord() == null || p.getLandlord().equals(PlayerData.EMPTY))
-//				.toList();
+		// NOTE could contain a null entry after this action
 		properties = properties.stream().map(p -> PROPERTY_BY_COORDS.get(p.getCoords())).collect(Collectors.toList());
-
-
-		// add all children
-		properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
+		// ensure to filter nulls out
+		properties.addAll(properties.stream().filter(p -> p != null).flatMap(p -> p.getChildren().stream()).toList());
+		// remove all the properties
 		removeProperties(properties);
 	}
 
@@ -508,7 +531,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 
 	// TODO change to return Claim.EMPTY is not found or Optional<Claim> (Optional is better)
 	@Override
-	public Property getClaimByCoords(ICoords coords) {
+	public Property getPropertyByCoords(ICoords coords) {
 		return PROPERTY_BY_COORDS.get(coords);
 	}
 
@@ -517,6 +540,14 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return Optional.ofNullable(PROPERTY_BY_UUID.get(uuid));
 	}
 
+	@Override
+	public List<Property> getPropertiesByOwner(UUID owner) {
+		if (PROPERTY_BY_OWNER.containsKey(owner.toString())) {
+			return PROPERTY_BY_OWNER.get(owner.toString());
+		}
+		return new ArrayList<>();
+	}
+	
 	@Override
 	public List<Property> findPropertiesBy(Predicate<Property> predicate) {
 		List<Property> properties = new ArrayList<>();

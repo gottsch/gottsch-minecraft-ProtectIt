@@ -47,7 +47,7 @@ public class ClaimBlockEntity extends AbstractClaimBlockEntity {
 	 * 
 	 */
 	public ClaimBlockEntity(BlockPos pos, BlockState state) {
-		super(ProtectItBlockEntities.CLAIM_TYPE.get(), pos, state);
+		super(ModBlockEntities.CLAIM_TYPE.get(), pos, state);
 		setOverlaps(new ArrayList<>());
 	}
 
@@ -61,7 +61,7 @@ public class ClaimBlockEntity extends AbstractClaimBlockEntity {
 		// fetch overlaps from protection registry every 5 seconds
 		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
 			ClaimBlock block = (ClaimBlock)getLevel().getBlockState(getBlockPos()).getBlock();
-			Box box = block.getBox(getBlockPos());
+			Box box = block.getBox(getLevel(), getBlockPos());
 			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			getOverlaps().clear();
 			if (!overlaps.isEmpty()) {

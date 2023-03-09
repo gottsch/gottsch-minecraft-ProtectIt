@@ -32,7 +32,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -43,7 +42,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling Feb 28, 2023
  *
  */
-public class UnclaimedStake extends ClaimBlock implements EntityBlock {
+public class UnclaimedStake extends ClaimBlock {
 
 	/**
 	 * 
@@ -80,16 +79,16 @@ public class UnclaimedStake extends ClaimBlock implements EntityBlock {
 	}
 	
 	@Override
-	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
+	public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		BlockEntity blockEntity = level.getBlockEntity(pos);
 
 		if (blockEntity instanceof UnclaimedStakeBlockEntity) {
 //			((UnclaimedStakeBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
-			Box box = getBox(blockEntity.getBlockPos());
+			Box box = getBox(level, blockEntity.getBlockPos());
 			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			if (!protections.isEmpty()) {
 				// get the property
-				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getClaimByCoords(b.getMinCoords())).collect(Collectors.toList());
+				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getPropertyByCoords(b.getMinCoords())).collect(Collectors.toList());
 				// get all the children
 				properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
 				Property property = null;

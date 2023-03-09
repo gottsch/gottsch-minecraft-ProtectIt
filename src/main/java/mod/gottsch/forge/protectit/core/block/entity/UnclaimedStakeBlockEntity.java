@@ -18,34 +18,26 @@
 package mod.gottsch.forge.protectit.core.block.entity;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
-import mod.gottsch.forge.gottschcore.spatial.Coords;
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.protectit.core.block.ClaimBlock;
-import mod.gottsch.forge.protectit.core.block.UnclaimedStake;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.PlayerData;
-import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 
 /**
  * 
  * @author Mark Gottschling Mar 1, 2023
  *
  */
-public class UnclaimedStakeBlockEntity extends PropertyLeverBlockEntity {
+public class UnclaimedStakeBlockEntity extends AbstractPropertyOutlinerBlockEntity {
 
 	public UnclaimedStakeBlockEntity(BlockPos pos, BlockState state) {
-		this(ProtectItBlockEntities.UNCLAIMED_TYPE.get(), pos, state);
+		this(ModBlockEntities.UNCLAIMED_TYPE.get(), pos, state);
 	}
-	
+
 	/**
 	 * 
 	 * @param pos
@@ -54,51 +46,17 @@ public class UnclaimedStakeBlockEntity extends PropertyLeverBlockEntity {
 	public UnclaimedStakeBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 	}
-
 	
-	public void tickServer() {
-		// fetch overlaps from protection registry every 5 seconds
-		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
-			UnclaimedStake block = (UnclaimedStake)getLevel().getBlockState(getBlockPos()).getBlock();
-			Box box = block.getBox(getBlockPos());
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
-			if (!protections.isEmpty()) {
-				// get the property
-				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getClaimByCoords(b.getMinCoords())).collect(Collectors.toList());
-				// get all the children
-				properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
-				Property property = null;
-				for (Property p : properties	) {
-					if ((p.getOwner() == null || p.getOwner().equals(PlayerData.EMPTY)) && p.intersects(box)) {
-						property = p;
-					}
-				}
-
-				if (property != null) {
-					setPropertyCoords(property.getCoords());
-					setPropertyUuid(property.getUuid());
-				}
+	@Override
+	protected Optional<Property> selectProperty(List<Property> properties, Box box) {
+		// get all the children
+		properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
+		Property property = null;
+		for (Property p : properties	) {
+			if ((p.getOwner() == null || p.getOwner().equals(PlayerData.EMPTY)) && p.intersects(box)) {
+				property = p;
 			}
 		}
-	}
-	
-	// TODO shouldn't need these are they are already in AbstractModTileEntity
-	/**
-	 * collect data to send to client
-	 */
-	@Override
-	public CompoundTag getUpdateTag() {
-		CompoundTag nbt = new CompoundTag(); //super.getUpdateTag();
-		saveAdditional(nbt);
-		return nbt;
-	}
-	
-	/*
-	 * handle on client
-	 */
-	@Override
-	public void handleUpdateTag(CompoundTag tag) {
-		//super.handleUpdateTag(state, tag);
-		load(tag);
+		return Optional.ofNullable(property);
 	}
 }

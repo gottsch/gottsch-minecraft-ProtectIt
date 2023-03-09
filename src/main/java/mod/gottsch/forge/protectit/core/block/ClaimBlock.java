@@ -28,7 +28,7 @@ import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.block.entity.ClaimBlockEntity;
 import mod.gottsch.forge.protectit.core.config.Config;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
@@ -129,9 +129,8 @@ public class ClaimBlock extends Block implements EntityBlock {
 	}
 
 	@Override
-	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
-//		ProtectIt.LOGGER.debug("setPlacedBy claimBlock TE -> {}", tileEntity.getClass().getSimpleName());
+	public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		BlockEntity blockEntity = level.getBlockEntity(pos);
 		// gather the number of claims the player has
 		List<Property> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
 		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
@@ -141,9 +140,8 @@ public class ClaimBlock extends Block implements EntityBlock {
 		
 		if (blockEntity instanceof ClaimBlockEntity) {
 			((ClaimBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
-//			ProtectIt.LOGGER.debug("setting ower to -> {}",( (ClaimTileEntity) tileEntity).getOwnerUuid());
 			// save any overlaps to the TileEntity
-			Box box = getBox(blockEntity.getBlockPos());
+			Box box = getBox(level, blockEntity.getBlockPos());
 			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			ProtectIt.LOGGER.debug("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
@@ -178,7 +176,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		// get the tile entity
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 		if (blockEntity instanceof ClaimBlockEntity) {
-			final Box box = getBox(pos);
+			final Box box = getBox(level, pos);
 
 			// add area to protections registry if this is a dedicated server
 			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords(), false)) {
@@ -213,7 +211,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 								$.playerName = player.getName().getString();
 							}).build();
 					ProtectIt.LOGGER.debug("sending message to sync client side ");
-					ProtectItNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+					ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 				}
 				// remove claim block
 				level.removeBlock(pos, false);
@@ -223,7 +221,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 //				if (!player.getInventory().add(lecternStack)) {
 //					player.drop(lecternStack, false);
 //				}
-				ItemStack leverStack = new ItemStack(ProtectItBlocks.PROPERTY_LEVER.get());
+				ItemStack leverStack = new ItemStack(ModBlocks.PROPERTY_LEVER.get());
 				if (!player.getInventory().add(leverStack)) {
 					player.drop(leverStack, false);
 				}
@@ -292,10 +290,10 @@ public class ClaimBlock extends Block implements EntityBlock {
 	 * @param pos
 	 * @return
 	 */
-	public Box getBox(BlockPos pos) {
+	public Box getBox(Level level, BlockPos pos) {
 		BlockPos p1 = pos.offset(0, -(claimSize.getY()/2), 0);
 		BlockPos p2 = p1.offset(claimSize.getX(), claimSize.getY(), claimSize.getZ());		
-		return getBox(new Coords(p1), new Coords(p2));
+		return getBox(new Coords(p1), new Coords(p2), claimSize);
 	}
 
 	/**
@@ -304,7 +302,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 	 * @param c2
 	 * @return
 	 */
-	public Box getBox(ICoords c1, ICoords c2) {
+	public Box getBox(ICoords c1, ICoords c2, ICoords claimSize) {
 		if (c1.getY() < WorldInfo.BOTTOM_HEIGHT) {
 			c1 = c1.withY(WorldInfo.BOTTOM_HEIGHT);
 			c2 = c1.offset(claimSize);

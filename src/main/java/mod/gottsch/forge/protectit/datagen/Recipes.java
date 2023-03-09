@@ -2,7 +2,7 @@ package mod.gottsch.forge.protectit.datagen;
 
 import java.util.function.Consumer;
 
-import mod.gottsch.forge.protectit.core.item.ProtectItItems;
+import mod.gottsch.forge.protectit.core.item.ModItems;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -24,7 +24,7 @@ public class Recipes extends RecipeProvider {
 
 		@Override
 		protected void buildCraftingRecipes(Consumer<FinishedRecipe> recipe) {
-			ShapelessRecipeBuilder.shapeless(ProtectItItems.SUBDIVIDE_LICENSE.get())
+			ShapelessRecipeBuilder.shapeless(ModItems.SUBDIVIDE_LICENSE.get())
 			.requires(Items.STONE_SHOVEL)
 			.requires(Items.PAPER)
 			.unlockedBy("has_stone", InventoryChangeTrigger.TriggerInstance.hasItems(

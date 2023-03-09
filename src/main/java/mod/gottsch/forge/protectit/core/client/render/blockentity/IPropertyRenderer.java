@@ -90,7 +90,7 @@ public interface IPropertyRenderer {
 	 * @param tileEntity
 	 * @param matrixStack
 	 */
-	default public void updatePropertyTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
+	default public void updatePropertyTranslation(BlockEntity blockEntity, PoseStack matrixStack) {
 		// do nothing
 	}
 	

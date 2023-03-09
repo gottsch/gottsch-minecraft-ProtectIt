@@ -2,9 +2,15 @@
 	"block.protectit.small_claim":"Small Claim Stake",
 	"block.protectit.medium_claim":"Medium Claim Stake",
 	"block.protectit.large_claim":"Large Claim Stake",
+	"block.protectit.custom_claim":"Custom Claim Stake",
 	"block.protectit.remove_claim":"Remove Claim Stake",
 	"block.protectit.property_lever":"Property Lever",
-			
+	"block.protectit.unclaimed_stake":"Unclaimed Stake",
+	
+	"item.protectit.subdivide_license":"Sub-divide License",
+	"item.protectit.property_lease":"Property Lease",
+	"item.protectit.property_deed":"Property Deed",
+	
 	"message.protectit.block_region.successfully_protected":"Region %s -> %s is now owned and protected.",
 	"message.protectit.block_protected": "Block is protected.",
 	"message.protectit.block_region.protected":"A block(s) in that region are already owned and protected.",
@@ -24,6 +30,9 @@
 	"message.protectit.property.name.unknown": "Player does not own a property named ",
 	"message.protectit.property.not_hotel": "Subdivisions are not allowed for this property.",
 	"message.protectit.property.subdivide.enable.success": "The subdivisibility was successfully set for property ",
+	"message.protectit.property.subdivide.enable.not_found": "???? ",
+	"message.protectit.property.subdivide.owners_not_same": "The license owner does not match the property owner.",
+	"message.protectit.property.subdivide.properties_not_same": "The license property does not match the property.",
 	
 	"message.protectit.whitelist.property.list": "Whitelist for property ",
 	"message.protectit.whitelist.add.success": "The player was successfully added to ",
@@ -37,7 +46,13 @@
 	
 	"message.protectit.subdivide.intersects_property": "The subdivision region intersects with multiple properties.",
 	"message.protectit.subdivide.success": "Successfully subdivided property  ",
+	"message.protectit.property.transfer.owners_not_same": "The deed's owner does not match the property owner.",
+	"message.protectit.property.transfer.properties_not_same": "The deed's property does not match the property.",
+	"message.protectit.property.transfer.criteria_not_met": "Property does not meet transfer criteria.",
+	"message.protectit.property.transfer.success": "Successfully transfered ownership of property  ",
 	
+	"message.protectit.deed.exceeded_limit": "The number of concurrent Deeds for this property has already been met.",
+	"message.protectit.lease.exceeded_limit": "The number of concurrent Leases for this property has already been met.",
 	
 	"message.protectit.hotel.spans_multiple_properties": "The hotel's region spans across multiple properties.",
 	"message.protectit.hotel.outside_property_boundary": "The hotel region extends beyond the property boundaries.",
@@ -45,7 +60,26 @@
 	"message.protectit.hotel.list": "Hotels for property ",
 	"message.protectit.hotel.list.empty": "[Empty]",
 	"message.protectit.hotel.set.success": "The hotel was successfully set.",
-		
+	
+	"tooltip.protectit.hold_shift": "Hold [SHIFT] to expand",
 	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
-	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land."
+	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land.",
+	"tooltip.protectit.subdivide_license.howto": "Use license when within the property region to enable subdivisibility.~The property can now be sub-divided using the command /protect block subdivide...",
+	"tooltip.protectit.subdivide_license.title": "-Licensed To-",
+	"tooltip.protectit.subdivide_license.owner_name": "Property Owner: %s",
+	"tooltip.protectit.subdivide_license.property_name": "Property Name: %s",
+	"tooltip.protectit.subdivide_license.any_property": "[Any]",
+	
+	"tooltip.protectit.deed.howto": "Use deed when within the property region to transfer ownership.",
+	"tooltip.protectit.deed.title": "Deed To Seller's Property",
+	"tooltip.protectit.deed.owner_name": "Property Owner: ",
+	"tooltip.protectit.deed.property_name": "Property Name: %s",
+	"tooltip.protectit.deed.property_location": "Property Location: %s",
+	
+	"tooltip.protectit.lease.howto": "Use lease when within the property region to transfer ownership.",
+	"tooltip.protectit.lease.title": "-Lease To Landlord's Property-",
+	"tooltip.protectit.lease.owner_name": "Landlord: %s",
+	"tooltip.protectit.lease.property_name": "Lease Name: %s",
+	"tooltip.protectit.lease.property_location": "Lease Location: %s",
+	"tooltip.protectit.lease.any_property": "[Any]"
 }

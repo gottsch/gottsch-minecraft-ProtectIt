@@ -59,11 +59,11 @@ public class ClaimBlockEntityRenderer implements BlockEntityRenderer<ClaimBlockE
 	}
 
 	@Override
-	public void render(ClaimBlockEntity tileEntity, float partialTicks, PoseStack matrixStack,
+	public void render(ClaimBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
-		BlockPos pos = tileEntity.getBlockPos();
-		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
+		BlockPos pos = blockEntity.getBlockPos();
+		Block block = blockEntity.getLevel().getBlockState(pos).getBlock();
 
 		if (!(block instanceof ClaimBlock)) {
 			ProtectIt.LOGGER.debug("not the right block -> {}", block);
@@ -71,8 +71,8 @@ public class ClaimBlockEntityRenderer implements BlockEntityRenderer<ClaimBlockE
 		}
 
 		// test if the player owns the tile entity
-		if (StringUtils.isBlank(tileEntity.getOwnerUuid()) ||
-				!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(tileEntity.getOwnerUuid())) {
+		if (StringUtils.isBlank(blockEntity.getOwnerUuid()) ||
+				!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(blockEntity.getOwnerUuid())) {
 			return;
 		}
 
@@ -87,39 +87,39 @@ public class ClaimBlockEntityRenderer implements BlockEntityRenderer<ClaimBlockE
 
 		// render the claim
 		boolean hasOverlaps = false;
-		if (!((ClaimBlockEntity)tileEntity).getOverlaps().isEmpty()) {
+		if (!((ClaimBlockEntity)blockEntity).getOverlaps().isEmpty()) {
 			hasOverlaps = true;
 		}
 
 		// render claim outlines
-		renderProperty(tileEntity, matrixStack, builder, ((ClaimBlock)block).getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
+		renderProperty(blockEntity, matrixStack, builder, ((ClaimBlock)block).getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
 
 		// render all overlaps
-		((ClaimBlockEntity)tileEntity).getOverlaps().forEach(b -> {
-			renderOverlap(tileEntity, matrixStack, builder, b, red, 0, 0, 1.0f);
+		((ClaimBlockEntity)blockEntity).getOverlaps().forEach(b -> {
+			renderOverlap(blockEntity, matrixStack, builder, b, red, 0, 0, 1.0f);
 		});
 
 		// render higlights
 		if (hasOverlaps) {
-			renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, ((ClaimBlock)block).getClaimSize(), 
+			renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, ((ClaimBlock)block).getClaimSize(), 
 					new Color(255, 255, 255, 100), combinedLight, combinedOverlay);
 		}
 		else {
-			renderHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, ((ClaimBlock)block).getClaimSize(), 
+			renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, ((ClaimBlock)block).getClaimSize(), 
 					combinedLight, combinedOverlay);
 		}
 
-		((ClaimBlockEntity)tileEntity).getOverlaps().forEach(b -> {
-			renderOverlapHighlight(tileEntity, partialTicks, matrixStack, renderTypeBuffer, b, 
+		((ClaimBlockEntity)blockEntity).getOverlaps().forEach(b -> {
+			renderOverlapHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, b, 
 					new Color(255, 0, 0, 100), combinedLight, combinedOverlay);
 		});
 	}
 
 	@Override
-	public void updatePropertyTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		BlockPos pos = tileEntity.getBlockPos();
-		Block block = tileEntity.getLevel().getBlockState(pos).getBlock();
-		final Box box = ((ClaimBlock)block).getBox(pos	);
+	public void updatePropertyTranslation(BlockEntity blockEntity, PoseStack matrixStack) {
+		BlockPos pos = blockEntity.getBlockPos();
+		Block block = blockEntity.getLevel().getBlockState(pos).getBlock();
+		final Box box = ((ClaimBlock)block).getBox(blockEntity.getLevel(), pos);
 		ICoords delta = new Coords(0, 0, 0).withY(pos.getY() - box.getMinCoords().getY());		
 		matrixStack.translate(delta.getX(), -delta.getY(), delta.getZ());
 	}

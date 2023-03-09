@@ -24,11 +24,11 @@ import org.apache.logging.log4j.Logger;
 
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
-import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
-import mod.gottsch.forge.protectit.core.block.entity.ProtectItBlockEntities;
+import mod.gottsch.forge.protectit.core.block.ModBlocks;
+import mod.gottsch.forge.protectit.core.block.entity.ModBlockEntities;
 import mod.gottsch.forge.protectit.core.config.Config;
-import mod.gottsch.forge.protectit.core.item.ProtectItItems;
-import mod.gottsch.forge.protectit.core.network.ProtectItNetworking;
+import mod.gottsch.forge.protectit.core.item.ModItems;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.RegistryLoadMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Permission;
@@ -99,9 +99,9 @@ public class ProtectIt {
 		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
 		// register the deferred registries
-		ProtectItBlocks.register();
-		ProtectItItems.register();
-		ProtectItBlockEntities.register();
+		ModBlocks.register();
+		ModItems.register();
+		ModBlockEntities.register();
 		
 		// regular register
 		eventBus.addListener(CommonSetup::common);
@@ -140,7 +140,7 @@ public class ProtectIt {
 			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
 			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getEntity().getStringUUID(), ProtectionRegistries.block().getAll());
 			ProtectIt.LOGGER.debug("player logged in, sending all property data -> {}", ProtectionRegistries.block().getAll());
-			ProtectItNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), message);
+			ModNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), message);
 		}
 	}
 

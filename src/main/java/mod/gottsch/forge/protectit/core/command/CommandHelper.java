@@ -27,17 +27,16 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.item.ProtectItItems;
+import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.property.PropertyType;
+import mod.gottsch.forge.protectit.core.property.PropertyUtils;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -97,41 +96,44 @@ public class CommandHelper {
 	};
 	
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_TARGET_PROPERTY_NAMES = (source, builder) -> {
-		ServerPlayer player = EntityArgument.getPlayer(source, TARGET);
+		ServerPlayer player = source.getSource().getPlayerOrException();
 		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
 		List<String> names = properties.stream().map(p -> p.getName(player.getUUID()).toUpperCase()).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
-	static final SuggestionProvider<CommandSourceStack> SUGGEST_PROPERTY_TYPES = (source, builder) -> {
-		List<String> types = Stream.of(PropertyType.values()).map(t -> t.name()).collect(Collectors.toList());
-		return SharedSuggestionProvider.suggest(types, builder);
-	};
+//	static final SuggestionProvider<CommandSourceStack> SUGGEST_NESTED_PROPERTY_NAMES = (source, builder) -> {
+//		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+//		List<String> names = new ArrayList<>();
+//		properties.forEach(p -> {
+//			buildName(p, "", names);
+//		});
+//		//		List<String> names = properties.stream().map(p -> p.getName().toUpperCase()).collect(Collectors.toList());
+//		return SharedSuggestionProvider.suggest(names, builder);
+//	};
 	
-	static final SuggestionProvider<CommandSourceStack> SUGGEST_NESTED_PROPERTY_NAMES = (source, builder) -> {
-		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> names = new ArrayList<>();
-		properties.forEach(p -> {
-			buildName(p, "", names);
-		});
-		//		List<String> names = properties.stream().map(p -> p.getName().toUpperCase()).collect(Collectors.toList());
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_ALL_NESTED_PROPERTY_NAMES = (source, builder) -> {
+		ServerPlayer player = source.getSource().getPlayerOrException();
+		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+		List<String> names = PropertyUtils.getPropertyHierarchyNames(properties, player);
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
-	static void buildName(Property property, String prefix, List<String> names) {
-		if (!property.getChildren().isEmpty()) {
-			property.getChildren().forEach(c -> {
-				buildName(c, property.getNameByOwner(), names);
-			});
-		}
-		else {
-			if (prefix.equals("")) {
-				names.add(property.getNameByOwner());
-			} else {
-				names.add(prefix + "." + property.getNameByOwner());
-			}
-		}
-	}
+	
+//	static void buildName(Property property, String prefix, List<String> names) {
+//		if (!property.getChildren().isEmpty()) {
+//			property.getChildren().forEach(c -> {
+//				buildName(c, property.getNameByOwner(), names);
+//			});
+//		}
+//		else {
+//			if (prefix.equals("")) {
+//				names.add(property.getNameByOwner());
+//			} else {
+//				names.add(prefix + "." + property.getNameByOwner());
+//			}
+//		}
+//	}
 	
 	/**
 	 * 
@@ -210,7 +212,8 @@ public class CommandHelper {
 				.append(Component.translatable(player.getName().getString()).withStyle(ChatFormatting.AQUA)));
 		messages.add(Component.literal(""));
 		
-		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
+//		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
+		List<Component> components = formatList(messages, ProtectionRegistries.block().getPropertiesByOwner(player.getUUID()));
 		components.forEach(component -> {
 			source.sendSuccess(component, false);
 		});
@@ -218,7 +221,7 @@ public class CommandHelper {
 	}
 
 	/**
-	 * 
+	 * TODO should move to ChatHelper / ChatUtil
 	 * @param messages
 	 * @param list
 	 * @return
@@ -256,10 +259,10 @@ public class CommandHelper {
 			Item givableItem = null;
 			switch (name.toLowerCase()) {
 			case "property lever":
-				givableItem = ProtectItItems.PROPERTY_LEVER.get();
+				givableItem = ModItems.PROPERTY_LEVER.get();
 				break;
 			case "remove claim stake":
-				givableItem = ProtectItItems.REMOVE_CLAIM.get();
+				givableItem = ModItems.REMOVE_CLAIM.get();
 				break;
 			}
 			if (givableItem == null) {
@@ -285,7 +288,7 @@ public class CommandHelper {
 		}	
 	}
 	
-	static String formatCoords(ICoords coords) {
+	public static String formatCoords(ICoords coords) {
 		return String.format("%s, %s, %s", coords.getX(), coords.getY(), coords.getZ());
 	}
 	
@@ -327,7 +330,7 @@ public class CommandHelper {
 	}
 	
 	/**
-	 * 
+	 * Executed against top-level properties
 	 * @param owner
 	 * @param propertyName
 	 * @return

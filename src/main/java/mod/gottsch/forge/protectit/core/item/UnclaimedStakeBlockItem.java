@@ -62,7 +62,7 @@ public class UnclaimedStakeBlockItem extends BlockItem {
 		Coords coords = new Coords(context.getClickedPos());
 		List<Box> list = ProtectionRegistries.block().getProtections(coords, coords.add(1, 1,1), false, false);
 		if (!list.isEmpty()) {				
-			Property property = ProtectionRegistries.block().getClaimByCoords(list.get(0).getMinCoords());
+			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
 			
 			// TODO change to only landlord or owner
 			if (property != null && !context.getPlayer().getStringUUID().equalsIgnoreCase(property.getOwner().getUuid())) {

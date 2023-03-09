@@ -19,7 +19,7 @@
  */
 package mod.gottsch.forge.protectit.core.block.entity;
 
-import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
+import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.setup.Registration;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.RegistryObject;
@@ -29,29 +29,34 @@ import net.minecraftforge.registries.RegistryObject;
  * @author Mark Gottschling on Oct 15, 2021
  *
  */
-public class ProtectItBlockEntities {
+public class ModBlockEntities {
 	public static final RegistryObject<BlockEntityType<ClaimBlockEntity>> CLAIM_TYPE;
+	public static final RegistryObject<BlockEntityType<CustomClaimBlockEntity>> CUSTOM_CLAIM_TYPE;
 	public static final RegistryObject<BlockEntityType<RemoveClaimBlockEntity>> REMOVE_CLAIM_TYPE;
 	public static final RegistryObject<BlockEntityType<PropertyLeverBlockEntity>> PROPERTY_LEVER_TYPE;
 	public static final RegistryObject<BlockEntityType<UnclaimedStakeBlockEntity>> UNCLAIMED_TYPE;
 	
 	static {
 		CLAIM_TYPE = Registration.BLOCK_ENTITIES.register("claim_te", () -> BlockEntityType.Builder.of(ClaimBlockEntity::new, 
-				ProtectItBlocks.SMALL_CLAIM.get(), 
-				ProtectItBlocks.MEDIUM_CLAIM.get(), 
-				ProtectItBlocks.LARGE_CLAIM.get()
+				ModBlocks.SMALL_CLAIM.get(), 
+				ModBlocks.MEDIUM_CLAIM.get(), 
+				ModBlocks.LARGE_CLAIM.get()
 			).build(null));
 
+		CUSTOM_CLAIM_TYPE = Registration.BLOCK_ENTITIES.register("custom_claim", () -> BlockEntityType.Builder.of(CustomClaimBlockEntity::new, 
+				ModBlocks.CUSTOM_CLAIM.get()
+			).build(null));
+		
 		REMOVE_CLAIM_TYPE = Registration.BLOCK_ENTITIES.register("remove_claim_te", () -> BlockEntityType.Builder.of(RemoveClaimBlockEntity::new, 
-				ProtectItBlocks.REMOVE_CLAIM.get()
+				ModBlocks.REMOVE_CLAIM.get()
 			).build(null));
 		
 		PROPERTY_LEVER_TYPE = Registration.BLOCK_ENTITIES.register("property_lever_te", () -> BlockEntityType.Builder.of(PropertyLeverBlockEntity::new, 
-				ProtectItBlocks.PROPERTY_LEVER.get()
+				ModBlocks.PROPERTY_LEVER.get()
 			).build(null));
 		
 		UNCLAIMED_TYPE = Registration.BLOCK_ENTITIES.register("unclaimed", () -> BlockEntityType.Builder.of(UnclaimedStakeBlockEntity::new, 
-				ProtectItBlocks.UNCLAIMED_STAKE.get()
+				ModBlocks.UNCLAIMED_STAKE.get()
 			).build(null));
 	}
 	

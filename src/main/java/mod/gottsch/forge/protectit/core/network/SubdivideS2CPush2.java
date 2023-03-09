@@ -145,6 +145,7 @@ public class SubdivideS2CPush2 implements ICoordsHandler {
 						box,
 						new PlayerData(target.get().getOwner().getUuid(), target.get().getOwner().getName()),
 						"NAME_DOESNT_MATTER_ON_CLIENT");
+				property.setParent(target.get().getUuid());
 				property.setLandlord(new PlayerData(message.owner.toString(), message.owner.toString()));
 				property.setNameByLandlord("NAME_DOESNT_MATTER_ON_CLIENT");
 				
