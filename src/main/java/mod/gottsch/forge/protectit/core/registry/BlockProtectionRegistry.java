@@ -19,6 +19,11 @@
  */
 package mod.gottsch.forge.protectit.core.registry;
 
+import java.io.FileWriter;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +34,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
@@ -51,6 +60,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	// legacy key/value
 	private static final String CLAIMS_KEY = "claims";
 	private static final String PROPERTIES_KEY = "properties";
+//	private static final String UUID_PROPERTIES_KEY = "propertiesByUuid";
 
 	/*
 	 * a map of properties by property coords.
@@ -60,11 +70,14 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 */
 	private final Map<ICoords, Property> PROPERTY_BY_COORDS = new HashMap<>();
 	/*
+	 * TODO change String key to UUID key.
 	 * a map of property lists by owner (uuid)
 	 */
 	private final Map<String, List<Property>> PROPERTY_BY_OWNER = new HashMap<>(); 
 	/*
-	 * a map of properties by property uuid
+	 * a map of properties by property uuid.
+	 * all properties whether owner or landlord should be added here.
+	 * ie. the system of record for ALL properties
 	 */
 	private final Map<UUID, Property> PROPERTY_BY_UUID = new HashMap<>();
 
@@ -447,11 +460,6 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		return true;
 	}
 
-	@Override
-	public boolean isProtectedAgainst(ICoords coords, String uuid, int permission) {
-		return isProtectedAgainst(coords, coords, uuid, permission);
-	}
-
 	/**
 	 * is protected against player uuid
 	 * @param coords1
@@ -461,32 +469,62 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	 * @return
 	 */
 	@Override
-	public boolean isProtectedAgainst(ICoords coords1, ICoords coords2, String uuid, int permission) {
-		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords2), true);
+	public boolean isProtectedAgainst(ICoords coords1, String uuid, int permission) {
+		// check for top-level protections
+		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords1), true);
 		if (protections.isEmpty()) {
-			//			ProtectIt.LOGGER.debug("empty protections - not protected");
 			return false;
 		}
 		else {
 
 			// interrogate each interval to determine if the uuid is the owner
-			for (Interval p : protections) {
+			Interval protection = protections.get(0);
+			
+			// /// TODO turn into a method
+			Box box = new Box(coords1);
+			int count = 1;
+			int THRESHOLD = 3;
+			// get the property
+			Property property = PROPERTY_BY_COORDS.get(protection.getCoords1());
+			while (!property.getChildren().isEmpty() && count < THRESHOLD) {
+				for (Property p : property.getChildren()) {
+					if (p.intersects(box)) {
+						property = p;
+						break;
+					}
+				}
+				count++;
+			}
+			// /// END of turn into method
+			
+//			for (Interval p : protections) {
 				//				ProtectIt.LOGGER.debug("isProtectedAgainst -> {}, protection -> {}", uuid, p);
 				// short circuit if owner or no owner
-				if (p.getData().getOwner().getUuid().equalsIgnoreCase(uuid)) {
-					break;
-				}
-				if (StringUtils.isBlank(p.getData().getOwner().getUuid())) {
-					return true;
-				}
+			if (property.getOwner().getUuid().equalsIgnoreCase(uuid) ||
+					(property.getOwner().equals(PlayerData.EMPTY) && property.getLandlord().getUuid().equalsIgnoreCase(uuid)) ) {
+//				break;
+				return false;
+			}
+			if (StringUtils.isBlank(property.getOwner().getUuid())) {
+				return true;
+			}
+//				if (p.getData().getOwner().getUuid().equalsIgnoreCase(uuid)) {
+//					break;
+//				}
+//				if (StringUtils.isBlank(p.getData().getOwner().getUuid())) {
+//					return true;
+//				}
 
 				// get the property
-				Property property = PROPERTY_BY_COORDS.get(p.getCoords1());
-				ProtectIt.LOGGER.debug("isProtectedAgainst.propertiesByCoords -> {}, property -> {}", p.getCoords1(), property);
+//				Property property = PROPERTY_BY_COORDS.get(p.getCoords1());
+				// TODO need to examine the property hierarchy to determime the exact property the player is in
+				// TODO being the owner of any property should short-circuit
+				ProtectIt.LOGGER.debug("isProtectedAgainst.propertiesByCoords -> {}, property -> {}", property.getCoords(), property);
 
 				// short circuit on permission
 				if (property.hasPermission(permission)) {
-					break;
+//					break;
+					return false;
 				}
 
 				// cycle through whitelist
@@ -513,8 +551,8 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 				//					return true;
 				//				}
 			}
-		}
-		return false;
+//		}
+//		return false;
 	}
 
 	@Override
@@ -544,6 +582,14 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	public List<Property> getPropertiesByOwner(UUID owner) {
 		if (PROPERTY_BY_OWNER.containsKey(owner.toString())) {
 			return PROPERTY_BY_OWNER.get(owner.toString());
+		}
+		return new ArrayList<>();
+	}
+	
+	@Override
+	public List<Property> getPropertiesByLandlord(UUID landlord) {
+		if (PROPERTY_BY_LANDLORD.containsKey(landlord)) {
+			return PROPERTY_BY_LANDLORD.get(landlord);
 		}
 		return new ArrayList<>();
 	}
@@ -582,7 +628,8 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 	}
 
 	/**
-	 * 
+	 * Only PROPERTY_BY_COORDS map is saved. These are the top-level properties and their
+	 * children will be saved with them in the hierarchy.
 	 * @param nbt
 	 * @return
 	 */
@@ -590,6 +637,7 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		ProtectIt.LOGGER.debug("saving registry...");
 
 		if (!PROPERTY_BY_COORDS.isEmpty()) {
+			// legacy
 			ListTag list = new ListTag();
 			PROPERTY_BY_COORDS.forEach((coords, property) -> {
 				ProtectIt.LOGGER.debug("registry saving property -> {}", property);
@@ -598,12 +646,23 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 				list.add(propertyNbt);
 			});
 			nbt.put(PROPERTIES_KEY, list);
+			
+			// save by uuid
+//			ListTag uuidList = new ListTag();
+//			PROPERTY_BY_UUID.forEach((uuid, property) -> {
+//				ProtectIt.LOGGER.debug("registry saving uuid properties -> {}", property);
+//				CompoundTag propertyNbt = new CompoundTag();
+//				property.save(propertyNbt);
+//				list.add(propertyNbt);				
+//			});
+//			nbt.put(UUID_PROPERTIES_KEY, uuidList);
 		}
 		return nbt;
 	}
 
 	/**
-	 * 
+	 * Properties are loaded from the top-level. All other properties will be
+	 * loaded and registered based on their hierarchy.
 	 */
 	public synchronized void load(CompoundTag tag) {
 		ProtectIt.LOGGER.debug("loading registry...");
@@ -648,6 +707,9 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 			});
 			//			ProtectIt.LOGGER.debug("0.all loaded properties_by_coords -> {}", CLAIMS_BY_COORDS);
 		}
+		
+		// TODO load by landlord
+		
 		// print the loaded property again
 		ProtectIt.LOGGER.debug("1. all loaded propertiess_by_coords -> {}", PROPERTY_BY_COORDS);
 		ProtectIt.LOGGER.debug("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
@@ -662,5 +724,46 @@ public class BlockProtectionRegistry implements IBlockProtectionRegistry {
 		PROPERTY_BY_LANDLORD.clear();
 		PROPERTY_BY_UUID.clear();
 		tree.clear();
+	}
+
+	/**
+	 * TODO, should dump every 5 minutes if the registry has changed
+	 */
+	@Override
+	public void dump() {
+		Path path = Paths.get("config", ProtectIt.MODID, "dumps").toAbsolutePath();
+		if (Files.notExists(path)) { 
+			try {
+				Files.createDirectories(path);
+			} catch (Exception e) {
+				ProtectIt.LOGGER.error("unable to create dump file: ", e);
+			}
+		}
+
+		GsonBuilder gsonBuilder = new GsonBuilder();		
+		try {
+			Type typeOfSrc = new TypeToken<Map<ICoords, Property>>(){}.getType();
+			Type landlordMapType = new TypeToken<Map<UUID, Property>>() {}.getType();
+			
+			Gson gson = gsonBuilder.setPrettyPrinting().create();
+			String byCoords = gson.toJson(PROPERTY_BY_COORDS, typeOfSrc);
+			FileWriter fw = new FileWriter(path.resolve("protection-registries-by-coords.json").toAbsolutePath().toString());
+			fw.write(byCoords);
+			fw.close();
+			
+			// save by landlord
+//			String byLandlord = gson.toJson(PROPERTY_BY_LANDLORD, landlordMapType);
+//			fw = new FileWriter(path.resolve("protection-registries-by-landlord.json").toAbsolutePath().toString());
+//			fw.write(byLandlord);
+//			fw.close();
+//			
+//			// by uuid
+//			String uuidJson = gson.toJson(PROPERTY_BY_UUID, landlordMapType);
+//			fw = new FileWriter(path.resolve("protection-registries-by-uuid.json").toAbsolutePath().toString());
+//			fw.write(uuidJson);
+//			fw.close();
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("error writing protection registry to file -> ", e);
+		}
 	}
 }

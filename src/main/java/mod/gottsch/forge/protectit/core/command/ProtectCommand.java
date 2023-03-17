@@ -20,7 +20,6 @@
 package mod.gottsch.forge.protectit.core.command;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -133,21 +132,17 @@ public class ProtectCommand {
 																)))										
 										)
 								)
-						///// COMBINE /////
-						.then(Commands.literal("subdivide")
-								.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-										.suggests(CommandHelper.SUGGEST_PROPERTY_NAMES)
-										/*
-										 *  TODO execute
-										 *  only can re-combine a child property to the landlord property.
-										 *  remove children recursively from all maps
-										 */
-										)
+						///// ANNEX /////
+						.then(Commands.literal("annex")
+								// TODO
+								// TODO should there be a time limit before annexing if it is owned
+								// TODO add annexStartTime to property, config value how long annex period is, somehow notify owner
 								)
+
 						///// GENERATE LEASE
 						.then(Commands.literal("lease")
 								.then(Commands.literal("generate")
-												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
 												// TODO property names must provide all owned properties AND vacant landlord properties
 												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
 												.executes(source -> {
@@ -157,6 +152,17 @@ public class ProtectCommand {
 												)
 										)
 								.then(Commands.literal("transfer")
+
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+												.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+														.executes(source -> {
+															return transferLease(source.getSource(),
+																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
+																	EntityArgument.getPlayer(source, CommandHelper.TARGET));
+														})																
+														)
+												)
 
 										)
 								)
@@ -174,20 +180,18 @@ public class ProtectCommand {
 										)
 								// DEED TRANSFER
 								.then(Commands.literal("transfer")
-										.then(Commands.argument("owner", EntityArgument.player())
-												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-														.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
-														.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
-																.executes(source -> {
-																	return transferDeed(source.getSource(),
-																			EntityArgument.getPlayer(source, "owner"),
-																			StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
-																			EntityArgument.getPlayer(source, CommandHelper.TARGET));
-																})																
-																)
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
+												.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+														.executes(source -> {
+															return transferDeed(source.getSource(),
+																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
+																	EntityArgument.getPlayer(source, CommandHelper.TARGET));
+														})																
 														)
 												)
 										)
+
 								)
 						///// PERMISSION
 						.then(Commands.literal("permission")
@@ -226,9 +230,9 @@ public class ProtectCommand {
 								)
 
 						///// RENAME OPTION
-						.then(Commands.literal(RENAME)
+						.then(Commands.literal(CommandHelper.RENAME)
 								.then(Commands.argument(CURRENT_NAME, StringArgumentType.string())
-										.suggests(CommandHelper.SUGGEST_PROPERTY_NAMES)
+										.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES) //SUGGEST_PROPERTY_NAMES)
 										.then(Commands.argument(NEW_NAME, StringArgumentType.string())
 												.executes(source -> {
 													return CommandHelper.rename(source.getSource(), 
@@ -315,6 +319,46 @@ public class ProtectCommand {
 	}
 
 	/**
+	 * 
+	 * @param source
+	 * @param propertyName
+	 * @param player
+	 * @return
+	 */
+	private static int transferLease(CommandSourceStack source, String propertyName, ServerPlayer player) {
+		UUID propertyUuid = null;
+		try {
+			ServerPlayer landlord = source.getPlayerOrException();
+			// get owned properties
+			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+			// get the entire hierarchy of properties
+			properties = PropertyUtils.getPropertyHierarchy(properties);
+			// filter by landowner and owner == null and propertyname
+			Optional<Property> property = properties.stream().filter(p -> p.getOwner().equals(PlayerData.EMPTY) && p.getLandlord().getUuid().equals(landlord.getUUID())
+					&& p.getName().equalsIgnoreCase(propertyName)).findFirst();
+
+			//			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
+			if (property.isPresent()) {
+				propertyUuid = property.get().getUuid();
+			}
+			else {
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+
+			// transfer ownership
+			ProtectionRegistries.block().updateOwner(property.get(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		return 1;
+	}
+
+	/**
 	 * NOTE all these generate license/lease/deed generate the items the same way. create a method for them
 	 * @param source
 	 * @param propertyName
@@ -323,22 +367,22 @@ public class ProtectCommand {
 	private static int generateLease(CommandSourceStack source, String propertyName) {
 		ServerPlayer player = source.getPlayer();		
 		try {
-//			ICoords coords = new Coords(player.blockPosition());
+			//			ICoords coords = new Coords(player.blockPosition());
 			// get all properties by coords and uuid
-//			List<Box> protections = ProtectionRegistries.block().getProtections(coords);
+			//			List<Box> protections = ProtectionRegistries.block().getProtections(coords);
 			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-//			Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords());
-//			if (property == null) {
-//				source.sendFailure(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")).withStyle(ChatFormatting.RED));
-//				return 1;				
-//			}
+			//			Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords());
+			//			if (property == null) {
+			//				source.sendFailure(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")).withStyle(ChatFormatting.RED));
+			//				return 1;				
+			//			}
 
-//			List<Property> properties = property.getChildren();
-//			if (!properties.isEmpty()) {
-//				properties.addAll(properties.stream().filter(p -> !p.getChildren().isEmpty()).flatMap(p -> p.getChildren().stream()).toList());
-//			}
-//			// add top level property to list
-//			properties.add(property);
+			//			List<Property> properties = property.getChildren();
+			//			if (!properties.isEmpty()) {
+			//				properties.addAll(properties.stream().filter(p -> !p.getChildren().isEmpty()).flatMap(p -> p.getChildren().stream()).toList());
+			//			}
+			//			// add top level property to list
+			//			properties.add(property);
 			// TODO probably can make a method like CommandHelper.getPropertyByName
 			properties = PropertyUtils.getPropertyHierarchy(properties);
 			Optional<Property> property = properties.stream()
@@ -387,12 +431,12 @@ public class ProtectCommand {
 	 * @param player
 	 * @return
 	 */
-	private static int transferDeed(CommandSourceStack source, ServerPlayer owner, String propertyName,
-			ServerPlayer player) {
+	private static int transferDeed(CommandSourceStack source, String propertyName, ServerPlayer player) {
 
 		UUID propertyUuid = null;
 		try {
-			Optional<Property> property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
+			ServerPlayer owner = source.getPlayerOrException();
+			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
 			if (property.isPresent()) {
 				propertyUuid = property.get().getUuid();
 			}
@@ -569,6 +613,7 @@ public class ProtectCommand {
 			property.setParent(target.getUuid());
 			property.setLandlord(new PlayerData(owner.getStringUUID(), owner.getName().getString()));
 			property.setNameByLandlord(name1);
+			property.setCreateTime(source.getLevel().getGameTime());
 
 			Optional<Property> finalProperty = ProtectionRegistries.block().addSubdivision(target, property);
 			if (finalProperty.isEmpty()) {

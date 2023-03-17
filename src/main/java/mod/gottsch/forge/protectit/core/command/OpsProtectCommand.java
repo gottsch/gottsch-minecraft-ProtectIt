@@ -36,6 +36,7 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
+import mod.gottsch.forge.protectit.core.block.entity.CustomClaimBlockEntity;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.network.ModNetworking;
@@ -59,6 +60,7 @@ import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -148,12 +150,28 @@ public class OpsProtectCommand {
 										)
 								)
 						)
+				///// CUSTOM STAKE /////
+				.then(Commands.literal("custom-stake")
+						.then(Commands.argument("size", BlockPosArgument.blockPos())
+								.executes(source -> {
+									return customStake(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, "size"));
+								})
+								)
+						)
 				///// SUBDIVIDE /////
 				.then(Commands.literal("subdivide")
 						///// ADD /////
-						.then(Commands.literal("add"))
-						///// REMOVE /////
-						.then(Commands.literal("remove"))
+						.then(Commands.literal("add")
+								.executes(source -> {
+									return CommandHelper.unavailable(source.getSource());
+								})								
+								)
+						///// REMOVE / ANNEX /////
+						.then(Commands.literal("remove")
+								.executes(source -> {
+									return CommandHelper.unavailable(source.getSource());
+								})
+								)
 						///// TOGGLE
 						.then(Commands.literal("toggle")
 								.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
@@ -186,7 +204,7 @@ public class OpsProtectCommand {
 															EntityArgument.getPlayer(source, CommandHelper.TARGET));
 												})
 												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-													.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
+													.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
 													.executes(source -> {
 														return generateSubdivideLicense(source.getSource(),
 																EntityArgument.getPlayer(source, CommandHelper.TARGET),
@@ -197,6 +215,9 @@ public class OpsProtectCommand {
 									)
 								///// SEARCH (EXISTING LAND OWNERS) /////
 								.then(Commands.literal("search"))
+								.executes(source -> {
+									return CommandHelper.unavailable(source.getSource());
+								})
 								)
 						)
 				
@@ -208,6 +229,8 @@ public class OpsProtectCommand {
 							})
 							)
 						)
+				
+				///// RENAME /////
 				
 				///// CLEAR OPTION /////
 				.then(Commands.literal("clear")
@@ -232,6 +255,11 @@ public class OpsProtectCommand {
 								})
 								)
 						)
+				.then(Commands.literal("dump")
+						.executes(source -> {
+							return dump();
+						})
+						)
 				// TODO move to Ops
 				///// PVP TOP-LEVEL OPTION /////
 				.then(Commands.literal("pvp")
@@ -243,6 +271,47 @@ public class OpsProtectCommand {
 				));
 	}
 	
+	/**
+	 * 
+	 * @param source
+	 * @param size
+	 * @return
+	 */
+	private static int customStake(CommandSourceStack source, BlockPos size) {
+		Item claim = ModItems.CUSTOM_CLAIM.get();
+		ItemStack stake = new ItemStack(claim);
+		ICoords propertySize = new Coords(size);
+		CompoundTag tag = stake.getOrCreateTag();
+		tag.put(CustomClaimBlockEntity.CLAIM_SIZE_KEY, propertySize.save(new CompoundTag()));
+		
+		ServerPlayer player = source.getPlayer();
+		if (!player.getInventory().add(stake)) {
+			ItemEntity itemEntity = player.drop(stake, false);
+			if (itemEntity != null) {
+				itemEntity.setNoPickUpDelay();
+				itemEntity.setOwner(player.getUUID());
+			}
+		}
+		return 1;
+	}
+
+	private static int dump() {
+//		Path path = Paths.get("config", ProtectIt.MODID, "dumps").toAbsolutePath();
+//		if (Files.notExists(path)) { 
+//			try {
+//				Files.createDirectories(path);
+//			} catch (Exception e) {
+//				ProtectIt.LOGGER.error("unable to create dump file: ", e);
+//			}
+//		}
+		try {
+			ProtectionRegistries.block().dump();
+		} catch(Exception e) {
+			ProtectIt.LOGGER.error(e);
+		}
+		return 1;
+	}
+
 	/**
 	 * 
 	 * @param source

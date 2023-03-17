@@ -167,7 +167,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
 		if (blockEntity instanceof PropertyLeverBlockEntity) {
 			// get the claim for this position
-			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), true, false);
 			ProtectIt.LOGGER.debug("found properties -> {}", list);
 			if (!list.isEmpty()) {				
 				Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());

@@ -22,9 +22,7 @@ import java.util.List;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.block.entity.ClaimBlockEntity;
 import mod.gottsch.forge.protectit.core.block.entity.CustomClaimBlockEntity;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.property.Property;
@@ -50,7 +48,7 @@ public class CustomClaimBlock extends ClaimBlock {
 
 	@Override
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-		ClaimBlockEntity blockEntity = null;
+		CustomClaimBlockEntity blockEntity = null;
 		try {
 			blockEntity = new CustomClaimBlockEntity(pos, state);
 		}
@@ -83,7 +81,7 @@ public class CustomClaimBlock extends ClaimBlock {
 			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			ProtectIt.LOGGER.debug("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
-				((ClaimBlockEntity)blockEntity).getOverlaps().addAll(overlaps);
+				((CustomClaimBlockEntity)blockEntity).getOverlaps().addAll(overlaps);
 			}
 		}
 	}
@@ -96,7 +94,7 @@ public class CustomClaimBlock extends ClaimBlock {
 	@Override
 	public Box getBox(Level level, BlockPos pos) {
 		BlockEntity blockEntity = level.getBlockEntity(pos);
-		ICoords claimSize = ((CustomClaimBlockEntity)blockEntity).getClaimSizeKey();
+		ICoords claimSize = ((CustomClaimBlockEntity)blockEntity).getClaimSize();
 		// TODO need to get the BE to get the block size - how ??
 		BlockPos p1 = pos.offset(0, -(claimSize.getY()/2), 0);
 		BlockPos p2 = p1.offset(claimSize.getX(), claimSize.getY(), claimSize.getZ());		

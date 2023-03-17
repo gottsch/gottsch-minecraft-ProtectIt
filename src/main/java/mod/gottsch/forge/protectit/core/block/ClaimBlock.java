@@ -190,7 +190,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 						new PlayerData(player.getStringUUID(), player.getName().getString()),
 						String.valueOf(claims.size() + 1));
 				property.setCreateTime(level.getGameTime());
-				
+								
 				ProtectionRegistries.block().addProtection(property);
 
 				ProtectIt.LOGGER.debug("should've added -> {} {}", box, player.getStringUUID());

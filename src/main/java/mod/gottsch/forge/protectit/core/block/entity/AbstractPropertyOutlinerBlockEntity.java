@@ -66,7 +66,7 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
 			ICoords c1 = new Coords(getBlockPos());
 			Box box = new Box(c1);
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords());
+			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), true, false);
 			if (!protections.isEmpty()) {
 				// get current properties
 				UUID previousUuid = getPropertyUuid();

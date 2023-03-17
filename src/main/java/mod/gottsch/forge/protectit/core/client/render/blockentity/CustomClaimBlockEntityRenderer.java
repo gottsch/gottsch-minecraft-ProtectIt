@@ -48,7 +48,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class CustomClaimBlockEntityRenderer  implements BlockEntityRenderer<CustomClaimBlockEntity>, IPropertyRenderer {
 
 	public CustomClaimBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-		
+
 	}
 	
 	/**
@@ -88,7 +88,7 @@ public class CustomClaimBlockEntityRenderer  implements BlockEntityRenderer<Cust
 		}
 
 		// render claim outlines
-		renderProperty(blockEntity, matrixStack, builder, blockEntity.getClaimSizeKey(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
+		renderProperty(blockEntity, matrixStack, builder, blockEntity.getClaimSize(), hasOverlaps ? red : 0, green, hasOverlaps ? blue : 0, 1.0f);
 
 		// render all overlaps
 		((ClaimBlockEntity)blockEntity).getOverlaps().forEach(b -> {
@@ -97,11 +97,11 @@ public class CustomClaimBlockEntityRenderer  implements BlockEntityRenderer<Cust
 
 		// render higlights
 		if (hasOverlaps) {
-			renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, blockEntity.getClaimSizeKey(), 
+			renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, blockEntity.getClaimSize(), 
 					new Color(255, 255, 255, 100), combinedLight, combinedOverlay);
 		}
 		else {
-			renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, blockEntity.getClaimSizeKey(), 
+			renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, blockEntity.getClaimSize(), 
 					combinedLight, combinedOverlay);
 		}
 

@@ -38,7 +38,7 @@ public class CustomClaimBlockEntity extends ClaimBlockEntity {
 	private ICoords claimSize;
 	
 	public CustomClaimBlockEntity(BlockPos pos, BlockState state) {
-		super(ModBlockEntities.CLAIM_TYPE.get(), pos, state);
+		super(ModBlockEntities.CUSTOM_CLAIM_TYPE.get(), pos, state);
 		setOverlaps(new ArrayList<>());
 	}
 	
@@ -61,7 +61,7 @@ public class CustomClaimBlockEntity extends ClaimBlockEntity {
 		}
 	}
 	
-	public ICoords getClaimSizeKey() {
+	public ICoords getClaimSize() {
 		return claimSize;
 	}
 	

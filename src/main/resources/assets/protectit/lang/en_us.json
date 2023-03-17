@@ -44,6 +44,8 @@
 	"message.protectit.permission.state.off": "OFF",
 	"message.protectit.permission.change.success": "The permission was successfully changed for property ",
 	
+	"message.protectit.subdivide.not_divisible": "The property is not enabled for subdivision.",
+	"message.protectit.subdivide.outside_property_boundary": "The subdivision region extends beyond the property boundaries.",
 	"message.protectit.subdivide.intersects_property": "The subdivision region intersects with multiple properties.",
 	"message.protectit.subdivide.success": "Successfully subdivided property  ",
 	"message.protectit.property.transfer.owners_not_same": "The deed's owner does not match the property owner.",
@@ -55,20 +57,23 @@
 	"message.protectit.lease.exceeded_limit": "The number of concurrent Leases for this property has already been met.",
 	
 	"message.protectit.hotel.spans_multiple_properties": "The hotel's region spans across multiple properties.",
-	"message.protectit.hotel.outside_property_boundary": "The hotel region extends beyond the property boundaries.",
+	
 	"message.protectit.hotel.unable_to_add": "Unable to add hotel to the property.",
 	"message.protectit.hotel.list": "Hotels for property ",
 	"message.protectit.hotel.list.empty": "[Empty]",
 	"message.protectit.hotel.set.success": "The hotel was successfully set.",
 	
 	"tooltip.protectit.hold_shift": "Hold [SHIFT] to expand",
+	"tooltip.protectit.claim.howto": "Place block to highlight the area you wish to claim. Use placed stake to claim the land.",
 	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
+	
 	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land.",
 	"tooltip.protectit.subdivide_license.howto": "Use license when within the property region to enable subdivisibility.~The property can now be sub-divided using the command /protect block subdivide...",
 	"tooltip.protectit.subdivide_license.title": "-Licensed To-",
 	"tooltip.protectit.subdivide_license.owner_name": "Property Owner: %s",
 	"tooltip.protectit.subdivide_license.property_name": "Property Name: %s",
 	"tooltip.protectit.subdivide_license.any_property": "[Any]",
+	"tooltip.protectit.unclaimed_stake.howto": "Place block within the highlighted region. Use placed stake to claim the land.",
 	
 	"tooltip.protectit.deed.howto": "Use deed when within the property region to transfer ownership.",
 	"tooltip.protectit.deed.title": "Deed To Seller's Property",

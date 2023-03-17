@@ -42,6 +42,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
@@ -76,17 +80,14 @@ public class ProtectIt {
 	// constants
 	public static final String MODID = "protectit";
 	public static final String NAME = "Protect It";
-//	protected static final String VERSION = "2.4.0";
 
 	public static ProtectIt instance;
-	private static Config config;
 
 	/**
 	 * 
 	 */
 	public ProtectIt() {
 		ProtectIt.instance = this;
-		ProtectIt.config = new Config();
 
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.CLIENT_CONFIG);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
@@ -235,9 +236,21 @@ public class ProtectIt {
 
 			// get the item in the player's hand
 			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.INTERACT_PERMISSION.value)) {
+
+				Block block = event.getLevel().getBlockState(event.getPos()).getBlock();
+				if ((block instanceof DoorBlock || block instanceof TrapDoorBlock) && 
+						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.DOOR_INTERACT_PERMISSION.value)) {
+					return;
+				}
+				if ((block instanceof ChestBlock) && 
+						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.INVENTORY_INTERACT_PERMISSION.value)) {
+					return;
+				}
+				
 				event.setCanceled(true);
 //				LOGGER.debug("denied right click -> {} @ {} w/ hand -> {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
-				if (event.getHand() == InteractionHand.MAIN_HAND) { // reduces to only 1 message per action
+				// reduces to only 1 message per action
+				if (event.getHand() == InteractionHand.MAIN_HAND) { 
 					if (!event.getLevel().isClientSide()) {
 						sendProtectedMessage(event.getLevel(), (Player) event.getEntity());
 					}

@@ -19,7 +19,6 @@
  */
 package mod.gottsch.forge.protectit.core.command;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +41,6 @@ import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,6 +58,7 @@ public class CommandHelper {
 	public static final String ADD = "add";
 	public static final String CLEAR = "clear";
 	public static final String LIST = "list";
+	public static final String RENAME = "rename";
 	public static final String WHITELIST = "whitelist";
 	public static final String REMOVE ="remove";
 	
@@ -163,8 +162,16 @@ public class CommandHelper {
 			source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
 			return 1;
 		}
-		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		List<Property> namedClaims = claims.stream().filter(claim -> claim.getNameByOwner().equalsIgnoreCase(oldName)).collect(Collectors.toList());
+		// TODO need to get the whole heirarchy and then filter from there
+		List<Property> owners = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
+		List<Property> namedClaims = owners.stream().filter(p -> p.getNameByOwner().equals(oldName)).toList();
+		if (namedClaims.isEmpty()) {
+			List<Property> landlords = ProtectionRegistries.block().getPropertiesByLandlord(player.getUUID());
+			namedClaims = landlords.stream().filter(p -> p.getNameByLandlord().equals(oldName)).toList();
+		}
+		
+//		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
+//		List<Property> namedClaims = claims.stream().filter(claim -> claim.getNameByOwner().equalsIgnoreCase(oldName)).collect(Collectors.toList());
 		if (namedClaims.isEmpty()) {
 			source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
 					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
@@ -188,9 +195,8 @@ public class CommandHelper {
 	 * @return
 	 */
 	public static int listProperties(CommandSourceStack source) {
-		ServerPlayer player;
 		try {
-			player = source.getPlayerOrException();
+			ServerPlayer 	player = source.getPlayerOrException();		
 			return listProperties(source, player);
 		}
 		catch(CommandSyntaxException 	e) {
@@ -206,46 +212,60 @@ public class CommandHelper {
 	 * @return
 	 */
 	public static int listProperties(CommandSourceStack source, ServerPlayer player) {
-		List<Component> messages = new ArrayList<>();
-		messages.add(Component.literal(""));
-		messages.add(Component.translatable(LangUtil.message("property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE)
-				.append(Component.translatable(player.getName().getString()).withStyle(ChatFormatting.AQUA)));
-		messages.add(Component.literal(""));
-		
-//		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
-		List<Component> components = formatList(messages, ProtectionRegistries.block().getPropertiesByOwner(player.getUUID()));
+		List<Component> components = PropertyUtils.listProperties(player);
 		components.forEach(component -> {
 			source.sendSuccess(component, false);
 		});
 		return 1;
 	}
-
-	/**
-	 * TODO should move to ChatHelper / ChatUtil
-	 * @param messages
-	 * @param list
-	 * @return
-	 */
-	static List<Component> formatList(List<Component> messages, List<Property> list) {
-		
-		if (list.isEmpty()) {
-			messages.add(Component.translatable(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
-		}
-		else {			
-			list.forEach(p -> {
-				messages.add(Component.translatable(p.getNameByOwner().toUpperCase() + ": ").withStyle(ChatFormatting.AQUA)
-						.append(Component.translatable(String.format("(%s) to (%s)", 
-								formatCoords(p.getBox().getMinCoords()), 
-								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
-						)
-						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
-				);
-
-//				[STYLE].withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + blockpos.getX() + " " + s1 + " " + blockpos.getZ())).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))
-			});
-		}
-		return messages;
-	}
+	
+//	/**
+//	 * 
+//	 * @param source
+//	 * @param player
+//	 * @return
+//	 */
+//	public static int listProperties(CommandSourceStack source, ServerPlayer player) {
+//		List<Component> messages = new ArrayList<>();
+//		messages.add(Component.literal(""));
+//		messages.add(Component.translatable(LangUtil.message("property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE)
+//				.append(Component.translatable(player.getName().getString()).withStyle(ChatFormatting.AQUA)));
+//		messages.add(Component.literal(""));
+//		
+////		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
+//		List<Component> components = formatList(messages, ProtectionRegistries.block().getPropertiesByOwner(player.getUUID()));
+//		components.forEach(component -> {
+//			source.sendSuccess(component, false);
+//		});
+//		return 1;
+//	}
+//
+//	/**
+//	 * TODO should move to ChatHelper / ChatUtil
+//	 * @param messages
+//	 * @param list
+//	 * @return
+//	 */
+//	static List<Component> formatList(List<Component> messages, List<Property> list) {
+//		
+//		if (list.isEmpty()) {
+//			messages.add(Component.translatable(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
+//		}
+//		else {			
+//			list.forEach(p -> {
+//				messages.add(Component.translatable(p.getNameByOwner().toUpperCase() + ": ").withStyle(ChatFormatting.AQUA)
+//						.append(Component.translatable(String.format("(%s) to (%s)", 
+//								formatCoords(p.getBox().getMinCoords()), 
+//								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
+//						)
+//						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
+//				);
+//
+////				[STYLE].withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + blockpos.getX() + " " + s1 + " " + blockpos.getZ())).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))
+//			});
+//		}
+//		return messages;
+//	}
 	
 	/**
 	 * 
@@ -288,9 +308,9 @@ public class CommandHelper {
 		}	
 	}
 	
-	public static String formatCoords(ICoords coords) {
-		return String.format("%s, %s, %s", coords.getX(), coords.getY(), coords.getZ());
-	}
+//	public static String formatCoords(ICoords coords) {
+//		return String.format("%s, %s, %s", coords.getX(), coords.getY(), coords.getZ());
+//	}
 	
 	/**
 	 * 

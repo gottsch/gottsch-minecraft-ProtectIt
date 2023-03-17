@@ -85,7 +85,7 @@ public class UnclaimedStake extends ClaimBlock {
 		if (blockEntity instanceof UnclaimedStakeBlockEntity) {
 //			((UnclaimedStakeBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
 			Box box = getBox(level, blockEntity.getBlockPos());
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), true, false);
 			if (!protections.isEmpty()) {
 				// get the property
 				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getPropertyByCoords(b.getMinCoords())).collect(Collectors.toList());

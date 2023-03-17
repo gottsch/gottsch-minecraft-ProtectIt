@@ -30,6 +30,7 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtils;
 import mod.gottsch.forge.protectit.core.registry.PlayerData;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
@@ -89,8 +90,8 @@ public class Deed extends Item {
 					Box box = Box.load(tag.getCompound("propertyBox"));
 					tooltip.add(Component.translatable(LangUtil.tooltip("deed.property_location")).withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(String.format("(%s) to (%s)", 
-									CommandHelper.formatCoords(box.getMinCoords()), 
-									CommandHelper.formatCoords(box.getMaxCoords())
+									PropertyUtils.formatCoords(box.getMinCoords()), 
+									PropertyUtils.formatCoords(box.getMaxCoords())
 									))
 							.withStyle(ChatFormatting.GREEN)));
 				}

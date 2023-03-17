@@ -49,13 +49,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  *
  */
 public class ClaimBlockEntityRenderer implements BlockEntityRenderer<ClaimBlockEntity>, IPropertyRenderer {
-	private final BookModel bookModel;
+//	private final BookModel bookModel;
 	/**
 	 * 
 	 * @param dispatcher
 	 */
 	public ClaimBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-	      this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
+//	      this.bookModel = new BookModel(context.bakeLayer(ModelLayers.BOOK));
 	}
 
 	@Override
