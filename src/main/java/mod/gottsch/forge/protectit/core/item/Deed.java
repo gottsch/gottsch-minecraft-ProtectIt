@@ -28,6 +28,7 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.property.PropertyUtils;
@@ -86,6 +87,7 @@ public class Deed extends Item {
 						.append(Component.literal(tag.getString("ownerName")).withStyle(ChatFormatting.AQUA)));
 				tooltip.add(Component.translatable(LangUtil.tooltip("deed.property_name")).withStyle(ChatFormatting.WHITE)
 						.append(Component.literal(propertyName).withStyle(ChatFormatting.AQUA)));
+				
 				if (tag.contains("propertyBox")) {
 					Box box = Box.load(tag.getCompound("propertyBox"));
 					tooltip.add(Component.translatable(LangUtil.tooltip("deed.property_location")).withStyle(ChatFormatting.WHITE)
@@ -152,6 +154,7 @@ public class Deed extends Item {
 					sendCriteriaNotMetMessage(player);
 					return InteractionResultHolder.pass(itemStack);
 				}
+				ProtectIt.LOGGER.debug("selected property -> {}", selectedProperty.get());
 
 				boolean isValid = false;
 				isValid = ownershipCheck(player, selectedProperty.get(), itemOwnerUuid, itemPropertyUuid);
@@ -166,10 +169,11 @@ public class Deed extends Item {
 							.withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(selectedProperty.get().getName()).withStyle(ChatFormatting.AQUA)));
 
+					itemStack.shrink(1);
 					return InteractionResultHolder.consume(itemStack);
 				}
 				else {
-					player.sendSystemMessage(Component.translatable(LangUtil.message("property.transfer.ownerships_not_match"))
+					player.sendSystemMessage(Component.translatable(LangUtil.message("property.transfer.owners_not_match"))
 							.withStyle(ChatFormatting.RED));
 				}
 			}

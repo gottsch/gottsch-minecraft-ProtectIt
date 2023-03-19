@@ -148,7 +148,7 @@ public class ProtectIt {
 	// permission events
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
-//		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 		// prevent protected blocks from breaking
 		if (!Config.PROTECTION.enableBlockBreakEvent.get()
 				|| event.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
@@ -158,7 +158,7 @@ public class ProtectIt {
 //		LOGGER.debug("block break is protectedagainst -> {}", ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID()));
 		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID(), Permission.BLOCK_BREAK_PERMISSION.value)) {
 			event.setCanceled(true);
-//			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			if (!event.getLevel().isClientSide()) {
 				sendProtectedMessage(event.getLevel(), event.getPlayer());
 			}

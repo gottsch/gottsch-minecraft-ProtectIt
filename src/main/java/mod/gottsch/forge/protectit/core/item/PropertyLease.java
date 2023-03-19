@@ -13,11 +13,14 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtils;
 import mod.gottsch.forge.protectit.core.registry.PlayerData;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -53,6 +56,22 @@ public class PropertyLease extends Deed {
 						.append(Component.literal(tag.getString("ownerName")).withStyle(ChatFormatting.AQUA)));
 				tooltip.add(Component.translatable(LangUtil.tooltip("lease.property_name")).withStyle(ChatFormatting.WHITE)
 						.append(Component.literal(propertyName).withStyle(ChatFormatting.AQUA)));
+				
+				if (tag.contains("propertyBox")) {
+					Box box = Box.load(tag.getCompound("propertyBox"));
+					tooltip.add(Component.translatable(LangUtil.tooltip("lease.property_location")).withStyle(ChatFormatting.WHITE)
+							.append(Component.translatable(String.format("(%s) to (%s)", 
+									PropertyUtils.formatCoords(box.getMinCoords()), 
+									PropertyUtils.formatCoords(box.getMaxCoords())
+									))
+							.withStyle(style -> {
+								return style.withColor(ChatFormatting.GREEN);
+//										.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + box.getMinCoords().getX() + " " + 
+//								box.getMinCoords().getY() + " " + box.getMinCoords().getZ()))
+//										.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip")));
+							})
+							));
+				}
 			});
 		}
 	}

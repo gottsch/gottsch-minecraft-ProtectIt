@@ -46,6 +46,7 @@ public class ModNetworking {
 	public static final int WHITELIST_REMOVE_ID = 21;
 	public static final int WHITELIST_CLEAR_ID = 22;
 	public static final int PERMISSION_CHANGE_ID = 23;
+	public static final int SUBDIVIDE_ADD_ID = 24;
 	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
@@ -104,6 +105,10 @@ public class ModNetworking {
 				PermissionChangeS2CPush::handle,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 		
+		channel.registerMessage(SUBDIVIDE_ADD_ID, SubdivideS2CPush2.class,
+				SubdivideS2CPush2::encode, SubdivideS2CPush2::decode,
+				SubdivideS2CPush2::handle,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 	}
 
 }

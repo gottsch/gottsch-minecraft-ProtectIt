@@ -74,7 +74,7 @@ public class OpsProtectCommand {
 
 	// TODO add Whitelist OPS commands
 	// it takes extra params like player
-	
+
 	/**
 	 * 
 	 * @param dispatcher
@@ -99,8 +99,8 @@ public class OpsProtectCommand {
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
 											EntityArgument.getPlayers(source, CommandHelper.TARGETS), true);
 								})
-							)))))
-			///// REMOVE OPTION /////
+										)))))
+				///// REMOVE OPTION /////
 				.then(Commands.literal("remove")
 						.requires(source -> {
 							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
@@ -204,15 +204,15 @@ public class OpsProtectCommand {
 															EntityArgument.getPlayer(source, CommandHelper.TARGET));
 												})
 												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-													.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
-													.executes(source -> {
-														return generateSubdivideLicense(source.getSource(),
-																EntityArgument.getPlayer(source, CommandHelper.TARGET),
-																StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
-													})
+														.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+														.executes(source -> {
+															return generateSubdivideLicense(source.getSource(),
+																	EntityArgument.getPlayer(source, CommandHelper.TARGET),
+																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+														})
+														)
 												)
 										)
-									)
 								///// SEARCH (EXISTING LAND OWNERS) /////
 								.then(Commands.literal("search"))
 								.executes(source -> {
@@ -220,29 +220,38 @@ public class OpsProtectCommand {
 								})
 								)
 						)
-				
+
 				///// LIST OPTION /////
 				.then(Commands.literal(CommandHelper.LIST)
-						.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
-							.executes(source -> {
-								return CommandHelper.listProperties(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
-							})
-							)
+						.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
+								.suggests(CommandHelper.SUGGEST_PLAYER_NAMES)
+								.executes(source -> {
+									return CommandHelper.listProperties(source.getSource(), StringArgumentType.getString(source, CommandHelper.TARGET));
+								})
+								)
 						)
-				
+
 				///// RENAME /////
-				
+				.then(Commands.literal(CommandHelper.RENAME)
+						.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
+								.suggests(CommandHelper.SUGGEST_PLAYER_NAMES)
+								.executes(source -> {
+									// TODO 
+									return CommandHelper.unavailable(source.getSource());
+								})						
+								)
+						)
 				///// CLEAR OPTION /////
 				.then(Commands.literal("clear")
 						.requires(source -> {
 							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 						})
 						.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
-							.executes(source -> {
-								return clear(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
-							})
+								.executes(source -> {
+									return clear(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
+								})
+								)
 						)
-					)
 				///// GIVE OPTION /////
 				.then(Commands.literal(CommandHelper.GIVE)
 						.requires(source -> {
@@ -270,7 +279,7 @@ public class OpsProtectCommand {
 						)
 				));
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -283,7 +292,7 @@ public class OpsProtectCommand {
 		ICoords propertySize = new Coords(size);
 		CompoundTag tag = stake.getOrCreateTag();
 		tag.put(CustomClaimBlockEntity.CLAIM_SIZE_KEY, propertySize.save(new CompoundTag()));
-		
+
 		ServerPlayer player = source.getPlayer();
 		if (!player.getInventory().add(stake)) {
 			ItemEntity itemEntity = player.drop(stake, false);
@@ -296,14 +305,14 @@ public class OpsProtectCommand {
 	}
 
 	private static int dump() {
-//		Path path = Paths.get("config", ProtectIt.MODID, "dumps").toAbsolutePath();
-//		if (Files.notExists(path)) { 
-//			try {
-//				Files.createDirectories(path);
-//			} catch (Exception e) {
-//				ProtectIt.LOGGER.error("unable to create dump file: ", e);
-//			}
-//		}
+		//		Path path = Paths.get("config", ProtectIt.MODID, "dumps").toAbsolutePath();
+		//		if (Files.notExists(path)) { 
+		//			try {
+		//				Files.createDirectories(path);
+		//			} catch (Exception e) {
+		//				ProtectIt.LOGGER.error("unable to create dump file: ", e);
+		//			}
+		//		}
 		try {
 			ProtectionRegistries.block().dump();
 		} catch(Exception e) {
@@ -321,16 +330,17 @@ public class OpsProtectCommand {
 	private static int generateSubdivideLicense(CommandSourceStack source, ServerPlayer player) {
 		return generateSubdivideLicense(source, player, null);
 	}
-	
+
 	private static int generateSubdivideLicense(CommandSourceStack source, ServerPlayer player, String propertyName) {
 		try {
+			Optional<Property> property = Optional.empty();
 			UUID propertyUuid = null;
 			// get the property by name
 			if (StringUtils.isEmpty(propertyName)) {
 				propertyUuid = new UUID(0L, 0L);
 				propertyName = "";
 			} else {
-				Optional<Property> property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
+				property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
 				if (property.isPresent()) {
 					propertyUuid = property.get().getUuid();
 				}
@@ -338,27 +348,32 @@ public class OpsProtectCommand {
 					propertyUuid = new UUID(0L, 0L);
 				}
 			}
-			
+
 			// create item stack
 			ItemStack itemStack = new ItemStack(ModItems.SUBDIVIDE_LICENSE.get());
-			
+
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
 			tag.putUUID("owner", player.getUUID());
 			tag.putString("ownerName", player.getName().getString());
 			tag.putUUID("property", propertyUuid);
 			tag.putString("propertyName", propertyName);
-	
+			if (property.isPresent()) {
+				CompoundTag boxTag = new CompoundTag();
+				property.get().getBox().save(boxTag);
+				tag.put("propertyBox", boxTag);
+			}
+			
 			// give to ops	
 			ServerPlayer giver = source.getPlayerOrException();
 			if (!giver.getInventory().add(itemStack)) {
-                ItemEntity itemEntity = giver.drop(itemStack, false);
-                if (itemEntity != null) {
-                   itemEntity.setNoPickUpDelay();
-                   itemEntity.setOwner(giver.getUUID());
-                }
+				ItemEntity itemEntity = giver.drop(itemStack, false);
+				if (itemEntity != null) {
+					itemEntity.setNoPickUpDelay();
+					itemEntity.setOwner(giver.getUUID());
+				}
 			}
-			
+
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute generateSubdivideLicense() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
@@ -377,7 +392,7 @@ public class OpsProtectCommand {
 			}
 			property.get().setSubdivisible(value);
 			CommandHelper.saveData(source.getLevel());
-			
+
 			source.sendSuccess(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
@@ -389,7 +404,7 @@ public class OpsProtectCommand {
 
 		return 1;
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -558,7 +573,7 @@ public class OpsProtectCommand {
 		}
 		return 1;
 	}
-	
+
 	/**
 	 * 
 	 * @param coords1
@@ -581,7 +596,7 @@ public class OpsProtectCommand {
 				}).build();
 		ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 	}
-	
+
 	/**
 	 * 
 	 * @param source
@@ -616,12 +631,12 @@ public class OpsProtectCommand {
 				// TODO message
 				return 1;
 			}
-			
+
 			ServerPlayer player = players.iterator().next();
 			ProtectIt.LOGGER.debug("player entity -> {}", player.getDisplayName().getString());
 			uuid = player.getStringUUID();
 			AtomicReference<String> name = new AtomicReference<>(player.getName().getString());			
-			
+
 			// check if player already owns protections
 			List<Property> properties = ProtectionRegistries.block().getProtections(uuid);
 
@@ -638,7 +653,7 @@ public class OpsProtectCommand {
 					new PlayerData(uuid, name.get()),
 					String.valueOf(properties.size() + 1));
 			property.setCreateTime(player.level.getGameTime());
-			
+
 			// add protection on server
 			ProtectionRegistries.block().addProtection(property);
 
@@ -663,10 +678,10 @@ public class OpsProtectCommand {
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
-		
+
 		return 1;
 	}
-	
+
 	/**
 	 * 
 	 * @param source

@@ -69,9 +69,10 @@
 	
 	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land.",
 	"tooltip.protectit.subdivide_license.howto": "Use license when within the property region to enable subdivisibility.~The property can now be sub-divided using the command /protect block subdivide...",
-	"tooltip.protectit.subdivide_license.title": "-Licensed To-",
+	"tooltip.protectit.subdivide_license.title": "Subdivision Licensed To",
 	"tooltip.protectit.subdivide_license.owner_name": "Property Owner: %s",
 	"tooltip.protectit.subdivide_license.property_name": "Property Name: %s",
+	"tooltip.protectit.subdivide_license.property_location": "Property Location: %s",
 	"tooltip.protectit.subdivide_license.any_property": "[Any]",
 	"tooltip.protectit.unclaimed_stake.howto": "Place block within the highlighted region. Use placed stake to claim the land.",
 	
@@ -82,7 +83,7 @@
 	"tooltip.protectit.deed.property_location": "Property Location: %s",
 	
 	"tooltip.protectit.lease.howto": "Use lease when within the property region to transfer ownership.",
-	"tooltip.protectit.lease.title": "-Lease To Landlord's Property-",
+	"tooltip.protectit.lease.title": "Lease To Landlord's Property",
 	"tooltip.protectit.lease.owner_name": "Landlord: %s",
 	"tooltip.protectit.lease.property_name": "Lease Name: %s",
 	"tooltip.protectit.lease.property_location": "Lease Location: %s",

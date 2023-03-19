@@ -50,9 +50,18 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 	
 	private static final String PROPERTY_COORDS_TAG = "propertyCoords";
 	private static final String PROPERTY_UUID_TAG = "propertyUuid";
+	private static final String PROPERTY_BOX_TAG = "propertyBox";
 
+	@Deprecated
 	private ICoords propertyCoords;
 	private UUID propertyUuid;
+	/*
+	 *  the size of the property.
+	 *  NOTE including the size is a better method for client-side rendering as
+	 *   it doesn't rely on the BlockRegistry on the client.
+	 *   this can replace the propertyCoords as they are contained in the box.
+	 */
+	private Box propertyBox;
 	
 	public AbstractPropertyOutlinerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -78,10 +87,12 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 				if (property.isPresent()) {
 					setPropertyCoords(property.get().getCoords());
 					setPropertyUuid(property.get().getUuid());
+					setPropertyBox(property.get().getBox());
 				}
 				else {
 					setPropertyCoords(Coords.EMPTY);
 					setPropertyUuid(Deed.EMPTY_UUID);
+					setPropertyBox(Box.EMPTY);
 				}
 				// if the value has changed then send an update.
 				if (!getPropertyUuid().equals(previousUuid)) {
@@ -97,15 +108,20 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 	 * 
 	 */
 	@Override
-	public void saveAdditional(CompoundTag nbt) {
-		super.saveAdditional(nbt);
+	public void saveAdditional(CompoundTag tag) {
+		super.saveAdditional(tag);
 		if (getPropertyCoords() != null) {
-			CompoundTag coordsNbt = new CompoundTag();
-			getPropertyCoords().save(coordsNbt);
-			nbt.put(PROPERTY_COORDS_TAG, coordsNbt);
+			CompoundTag coordsTag = new CompoundTag();
+			getPropertyCoords().save(coordsTag);
+			tag.put(PROPERTY_COORDS_TAG, coordsTag);
 		}
 		if (getPropertyUuid() != null) {
-			nbt.putUUID(PROPERTY_UUID_TAG, getPropertyUuid());
+			tag.putUUID(PROPERTY_UUID_TAG, getPropertyUuid());
+		}
+		if (getPropertyBox() != null) {
+			CompoundTag boxTag = new CompoundTag();
+			getPropertyBox().save(boxTag);
+			tag.put(PROPERTY_BOX_TAG, boxTag);
 		}
 	}
 	
@@ -113,13 +129,16 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 	 * 
 	 */
 	@Override
-	public void load(CompoundTag nbt) {
-		super.load(nbt);
-		if (nbt.contains(PROPERTY_COORDS_TAG)) {
-			setPropertyCoords(Coords.EMPTY.load(nbt.getCompound(PROPERTY_COORDS_TAG)));
+	public void load(CompoundTag tag) {
+		super.load(tag);
+		if (tag.contains(PROPERTY_COORDS_TAG)) {
+			setPropertyCoords(Coords.EMPTY.load(tag.getCompound(PROPERTY_COORDS_TAG)));
 		}
-		if (nbt.contains(PROPERTY_UUID_TAG)) {
-			setPropertyUuid(nbt.getUUID(PROPERTY_UUID_TAG));
+		if (tag.contains(PROPERTY_UUID_TAG)) {
+			setPropertyUuid(tag.getUUID(PROPERTY_UUID_TAG));
+		}
+		if (tag.contains(PROPERTY_BOX_TAG)) {
+			setPropertyBox(Box.load(tag.getCompound(PROPERTY_BOX_TAG)));
 		}
 	}
 	
@@ -170,5 +189,13 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 
 	public void setPropertyUuid(UUID propertyUuid) {
 		this.propertyUuid = propertyUuid;
+	}
+
+	public Box getPropertyBox() {
+		return propertyBox;
+	}
+
+	public void setPropertyBox(Box box) {
+		this.propertyBox = box;
 	}
 }

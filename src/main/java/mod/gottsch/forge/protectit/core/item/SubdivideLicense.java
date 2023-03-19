@@ -27,7 +27,9 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
+import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtils;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -49,7 +51,7 @@ import net.minecraft.world.level.Level;
 public class SubdivideLicense extends Item {
 	// TODO find a better home for this
 	private static final UUID EMPTY_UUID = new UUID(0, 0);
-	
+
 	public SubdivideLicense(Properties properties) {
 		super(properties.stacksTo(1));
 	}
@@ -63,103 +65,113 @@ public class SubdivideLicense extends Item {
 			tooltip.add(Component.translatable(LangUtil.INDENT2)
 					.append(Component.literal(s).withStyle(ChatFormatting.GREEN)));
 		}
-		
+
 		if (stack.hasTag()) {
 			CompoundTag tag = stack.getOrCreateTag();
 			LangUtil.appendAdvancedHoverText(tooltip, tt -> {
 				String propertyName = tag.getString("propertyName");
 				propertyName = "".equals(propertyName) ? Component.translatable(LangUtil.tooltip("subdivide_license.any_property")).getString() : propertyName;
-				
+
 				// TODO add any long text here like Owner Name, Property Name
 				tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.title")).withStyle(ChatFormatting.WHITE));
 				tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.owner_name"), tag.getString("ownerName")).withStyle(ChatFormatting.WHITE));
 				tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.property_name"), propertyName).withStyle(ChatFormatting.WHITE));
+				if (tag.contains("propertyBox")) {
+					Box box = Box.load(tag.getCompound("propertyBox"));
+					tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.property_location")).withStyle(ChatFormatting.WHITE)
+							.append(Component.translatable(String.format("(%s) to (%s)", 
+									PropertyUtils.formatCoords(box.getMinCoords()), 
+									PropertyUtils.formatCoords(box.getMaxCoords())
+									)).withStyle(ChatFormatting.GREEN)));
+				}
 			});
 		}
 	}
 
 	public  void appendHoverSpecials(ItemStack stack, Level worldIn, List<Component> tooltip, TooltipFlag flag) {
 	}
-	
+
 	@Override
-	   public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
-	      ItemStack itemStack = player.getItemInHand(hand);
+	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+		ItemStack itemStack = player.getItemInHand(hand);
 
 		// exit if on the client
 		if (WorldInfo.isClientSide(world)) {
-	         return InteractionResultHolder.pass(itemStack);
+			return InteractionResultHolder.pass(itemStack);
 		}
-		
+
 		UUID itemOwnerUuid = EMPTY_UUID;
 		UUID itemPropertyUuid = EMPTY_UUID;		
-        CompoundTag tag = itemStack.getTag();
-        
-        if (tag != null)	{
-        	if (tag.contains("owner")) {
-        		itemOwnerUuid = tag.getUUID("owner");
-        	}
-        	if (tag.contains("property")) {
-        		itemPropertyUuid = tag.getUUID("property");
-        	}
-        	
-        	// TODO locate property (by owner, property or both
-        	if (itemOwnerUuid != null) {
-        		ICoords coords = new Coords(player.blockPosition());
-        		// get all properties by coords and uuid
-        		List<Box> protections = ProtectionRegistries.block().getProtections(coords);
-        		if (protections.isEmpty()) {
-    				player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected")));
-        			return InteractionResultHolder.pass(itemStack);
-        		}
+		CompoundTag tag = itemStack.getTag();
 
-        		Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords()); 		
-        		
-        		Property selectedProperty = property;
-        		if (!property.getChildren().isEmpty()) {
-        			// determine if any of the childen intersect with the coords
-        			for (Property child : property.getChildren()) {
-        				if (child.intersects(new Box(coords))) {
-        					selectedProperty = child;
-        					break;
-        				}
-        			}
-        		}
-        		
-        		// TODO test if the owners match
-        		UUID propertyOwnerUuid;
-        		if (ObjectUtils.isEmpty(selectedProperty.getOwner()) || StringUtils.isEmpty(selectedProperty.getOwner().getUuid())) {
-        			propertyOwnerUuid = EMPTY_UUID;
-        		}
-        		else {
-        			propertyOwnerUuid = UUID.fromString(selectedProperty.getOwner().getUuid());
-        		}
-     
-        		boolean isValid = false;
-        		if (propertyOwnerUuid.equals(itemOwnerUuid)) {
-        			isValid = true;
+		if (tag != null)	{
+			if (tag.contains("owner")) {
+				itemOwnerUuid = tag.getUUID("owner");
+			}
+			if (tag.contains("property")) {
+				itemPropertyUuid = tag.getUUID("property");
+			}
 
-        			if (!itemPropertyUuid.equals(EMPTY_UUID) && !itemPropertyUuid.equals(selectedProperty.getUuid())) {
-        				isValid = false;
-               			player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.owners_not_same"))
-            					.withStyle(ChatFormatting.WHITE));
-        			}
-        		}
-        		else {
-           			player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.propertiess_not_same"))
-        					.withStyle(ChatFormatting.WHITE));
-        		}
-        		
-        		// update the property with the the flag
-        		if (isValid) {
-        			selectedProperty.setSubdivisible(true);
-        			player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
-        					.withStyle(ChatFormatting.WHITE)
-        					.append(Component.translatable(selectedProperty.getName()).withStyle(ChatFormatting.AQUA)));
-            		return InteractionResultHolder.consume(itemStack);
-        		}
-        	}
-        }
+			// TODO locate property (by owner, property or both
+			if (itemOwnerUuid != null) {
+				ICoords coords = new Coords(player.blockPosition());
+				// get all properties by coords and uuid
+				List<Box> protections = ProtectionRegistries.block().getProtections(coords);
+				if (protections.isEmpty()) {
+					player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected")));
+					return InteractionResultHolder.pass(itemStack);
+				}
 
-        return InteractionResultHolder.pass(itemStack);
+				// parent property
+				Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords()); 		
+
+				Property selectedProperty = property;
+				if (!property.getChildren().isEmpty()) {
+					// determine if any of the childen intersect with the coords
+					for (Property child : property.getChildren()) {
+						if (child.intersects(new Box(coords))) {
+							selectedProperty = child;
+							break;
+						}
+					}
+				}
+				ProtectIt.LOGGER.debug("selected property -> {}", selectedProperty);
+				
+				// TODO test if the owners match
+				UUID propertyOwnerUuid;
+				if (ObjectUtils.isEmpty(selectedProperty.getOwner()) || StringUtils.isEmpty(selectedProperty.getOwner().getUuid())) {
+					propertyOwnerUuid = EMPTY_UUID;
+				}
+				else {
+					propertyOwnerUuid = UUID.fromString(selectedProperty.getOwner().getUuid());
+				}
+
+				boolean isValid = false;
+				if (propertyOwnerUuid.equals(itemOwnerUuid)) {
+					isValid = true;
+
+					if (!itemPropertyUuid.equals(EMPTY_UUID) && !itemPropertyUuid.equals(selectedProperty.getUuid())) {
+						isValid = false;
+						player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.owners_not_same"))
+								.withStyle(ChatFormatting.WHITE));
+					}
+				}
+				else {
+					player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.propertiess_not_same"))
+							.withStyle(ChatFormatting.WHITE));
+				}
+
+				// update the property with the the flag
+				if (isValid) {
+					selectedProperty.setSubdivisible(true);
+					player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
+							.withStyle(ChatFormatting.WHITE)
+							.append(Component.translatable(selectedProperty.getName()).withStyle(ChatFormatting.AQUA)));
+					return InteractionResultHolder.consume(itemStack);
+				}
+			}
+		}
+
+		return InteractionResultHolder.pass(itemStack);
 	}
 }

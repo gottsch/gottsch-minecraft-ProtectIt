@@ -21,14 +21,17 @@ package mod.gottsch.forge.protectit.core.network;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
+import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.PlayerData;
 import net.minecraft.network.FriendlyByteBuf;
@@ -81,9 +84,15 @@ public class RegistryLoadMessageToClient {
 	 * @param property
 	 */
 	private void writeProperty(FriendlyByteBuf buf, Property property) {
-		buf.writeUtf(StringUtils.defaultString(property.getUuid().toString(), NULL_UUID));
-		buf.writeUtf(StringUtils.defaultString(property.getOwner().getUuid(), NULL_UUID));
-		buf.writeUtf(StringUtils.defaultString(property.getOwner().getName(), ""));
+		
+//		buf.writeUtf(StringUtils.defaultString(property.getUuid().toString(), NULL_UUID));
+		buf.writeUtf(Optional.ofNullable(property.getUuid()).map(UUID::toString).orElse(NULL_UUID));
+		// protect against empty owner
+		buf.writeUtf(Optional.ofNullable(property.getOwner()).map(PlayerData::getUuid).orElse(NULL_UUID));
+		buf.writeUtf(Optional.ofNullable(property.getOwner()).map(PlayerData::getName).orElse(""));
+		// protect against empty landlord
+		buf.writeUtf(Optional.ofNullable(property.getLandlord()).map(PlayerData::getUuid).orElse(NULL_UUID));
+		buf.writeUtf(Optional.ofNullable(property.getLandlord()).map(PlayerData::getName).orElse(""));
 
 		if (property.getCoords() == null) {
 				writeCoords(EMPTY_COORDS, buf);
@@ -104,7 +113,7 @@ public class RegistryLoadMessageToClient {
 		buf.writeUtf(StringUtils.defaultString(property.getNameByOwner(), ""));
 
 		if (property.getWhitelist().isEmpty()) {
-			ProtectIt.LOGGER.debug("property has no whitelist-> {}", property);
+			ProtectIt.LOGGER.debug("property has no whitelist-> {}", property.getNameByOwner());
 			buf.writeInt(0);
 		}
 		else {
@@ -115,6 +124,34 @@ public class RegistryLoadMessageToClient {
 				buf.writeUtf(StringUtils.defaultString(player.getName(), ""));
 			});
 		}
+
+		// permissions
+		buf.writeByte(property.getPermissions());
+		
+		// subdivisible - don't need it
+		
+		// parent
+		if (property.getParent() == null) {
+			buf.writeUUID(Deed.EMPTY_UUID);
+		}
+		else {
+			buf.writeUUID(property.getParent());
+		}
+		
+		// children
+		if (property.getChildren().isEmpty()) {
+			ProtectIt.LOGGER.debug("property has no children -> {}", property.getNameByOwner());
+			buf.writeInt(0);
+		}
+		else {
+			buf.writeInt(property.getChildren().size());
+			property.getChildren().forEach(p -> {
+				ProtectIt.LOGGER.debug("writing child property -> {}", p);
+				writeProperty(buf, p);
+			});
+		}
+		
+		// create time - don't need it
 	}
 
 	/**
@@ -152,22 +189,41 @@ public class RegistryLoadMessageToClient {
 	 */
 	public static Property readProperty(FriendlyByteBuf buf) {
 		List<PlayerData> whitelist = new ArrayList<>();
-
+		
 		String uuid = buf.readUtf();
 		String ownerUuid = buf.readUtf();
 		String ownerName = buf.readUtf();
+		String landlordUuid = buf.readUtf();
+		String landlordName = buf.readUtf();
+		
 		ICoords coords = readCoords(buf);
 		ICoords coords1 = readCoords(buf);
 		ICoords coords2 = readCoords(buf);
+		
 		String name = buf.readUtf();
+		
 		int size = buf.readInt();
 		for (int index = 0; index < size; index++) {
 			String playerUuid = buf.readUtf();
 			String playerName = buf.readUtf();
 			whitelist.add(new PlayerData(playerUuid, playerName));
 		}
+		
+		byte permissions = buf.readByte();
+		UUID parent = buf.readUUID();
+		
 		Property property = new Property(coords, new Box(coords1, coords2), new PlayerData(ownerUuid, ownerName), name, UUID.fromString(uuid));
+		property.setLandlord(new PlayerData(landlordUuid, landlordName));
 		property.setWhitelist(whitelist);
+		property.setPermissions(permissions);
+		property.setParent(parent);
+		
+		int childrenSize = buf.readInt();
+		for (int index = 0; index < childrenSize; index++) {
+			Property child = readProperty(buf);
+			property.getChildren().add(child);
+		}
+		
 		ProtectIt.LOGGER.debug("decoded claim -> {}", property);
 		return property;
 	}

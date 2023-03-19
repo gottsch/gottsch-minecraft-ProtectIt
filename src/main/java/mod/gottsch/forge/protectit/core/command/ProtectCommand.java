@@ -99,7 +99,9 @@ public class ProtectCommand {
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher
 		.register(Commands.literal(PROTECT)
-
+				.requires(source -> {
+					return source.hasPermission(0);
+				})
 				///// BLOCK TOP-LEVEL OPTION /////
 				.then(Commands.literal(CommandHelper.BLOCK)							
 						///// LIST OPTION /////
@@ -367,22 +369,7 @@ public class ProtectCommand {
 	private static int generateLease(CommandSourceStack source, String propertyName) {
 		ServerPlayer player = source.getPlayer();		
 		try {
-			//			ICoords coords = new Coords(player.blockPosition());
-			// get all properties by coords and uuid
-			//			List<Box> protections = ProtectionRegistries.block().getProtections(coords);
 			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-			//			Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords());
-			//			if (property == null) {
-			//				source.sendFailure(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")).withStyle(ChatFormatting.RED));
-			//				return 1;				
-			//			}
-
-			//			List<Property> properties = property.getChildren();
-			//			if (!properties.isEmpty()) {
-			//				properties.addAll(properties.stream().filter(p -> !p.getChildren().isEmpty()).flatMap(p -> p.getChildren().stream()).toList());
-			//			}
-			//			// add top level property to list
-			//			properties.add(property);
 			// TODO probably can make a method like CommandHelper.getPropertyByName
 			properties = PropertyUtils.getPropertyHierarchy(properties);
 			Optional<Property> property = properties.stream()
@@ -400,10 +387,13 @@ public class ProtectCommand {
 
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
-			tag.putUUID("owner", player.getUUID());
-			tag.putString("ownerName", player.getName().getString());
-			tag.putUUID("property", property.get().getUuid());
-			tag.putString("propertyName", propertyName);
+			tag.putUUID(Deed.OWNER_ID_KEY, player.getUUID());
+			tag.putString(Deed.OWNER_NAME_KEY, player.getName().getString());
+			tag.putUUID(Deed.PROPERTY_ID_KEY, property.get().getUuid());
+			tag.putString(Deed.PROPERTY_NAME_KEY, propertyName);
+			CompoundTag boxTag = new CompoundTag();
+			property.get().getBox().save(boxTag);
+			tag.put("propertyBox", boxTag);
 
 			// give to ops	
 			ServerPlayer giver = source.getPlayerOrException();
@@ -640,7 +630,7 @@ public class ProtectCommand {
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 		} catch(Exception e) {
-			ProtectIt.LOGGER.error("Unable to execute protect command:", e);
+			ProtectIt.LOGGER.error("Unable to execute subdivide command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}

@@ -20,6 +20,8 @@ package mod.gottsch.forge.protectit.core.property;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mojang.authlib.GameProfile;
+
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.registry.PlayerData;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
@@ -42,34 +44,38 @@ public class PropertyUtils {
 	 * @return
 	 */
 	public static List<Component> listProperties(Player player) {
+		return listProperties(player.getGameProfile());
+	}
+
+	public static List<Component> listProperties(GameProfile player) {
 		List<Component> messages = new ArrayList<>();
 		messages.add(Component.literal(""));
 		messages.add(Component.translatable(LangUtil.message("property.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE)
-				.append(Component.translatable(player.getName().getString()).withStyle(ChatFormatting.AQUA)));
+				.append(Component.translatable(player.getName()).withStyle(ChatFormatting.AQUA)));
 		messages.add(Component.literal(""));
-		
+
 		List<Property> owners = new ArrayList<>();
 		List<Property> landlords = new ArrayList<>();
 
 		// get top-level properties only by player
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID())
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getId())
 				.stream().filter(p -> p.getLandlord() == null || p.getLandlord().equals(PlayerData.EMPTY)).toList();
 		// get the entire property hierarchy and organize into the 2 lists
 		getPropertyHierarchy(properties).forEach(p -> {
-			if (p.getOwner().getUuid().equals(player.getStringUUID())) {
+			if (p.getOwner().getUuid().equals(player.getId().toString())) {
 				owners.add(p);
 			}
 			else {
 				landlords.add(p);
 			}
 		});
-		
-//		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
-//		List<Component> components = formatList(messages, ProtectionRegistries.block().getPropertiesByOwner(player.getUUID()));
+
+		//		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
+		//		List<Component> components = formatList(messages, ProtectionRegistries.block().getPropertiesByOwner(player.getUUID()));
 		List<Component> components = formatList(messages, owners, landlords);
-//		components.forEach(component -> {
-//			source.sendSuccess(component, false); // TODO just generate a list and return to caller
-//		});
+		//		components.forEach(component -> {
+		//			source.sendSuccess(component, false); // TODO just generate a list and return to caller
+		//		});
 		return components;
 	}
 
@@ -81,7 +87,7 @@ public class PropertyUtils {
 	 * @return
 	 */
 	private static List<Component> formatList(List<Component> messages, List<Property> owners, List<Property> landlords) {
-		
+
 		if (owners.isEmpty() && landlords.isEmpty()) {
 			messages.add(Component.translatable(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
 		}
@@ -92,9 +98,9 @@ public class PropertyUtils {
 						.append(Component.translatable(String.format("(%s) to (%s)", 
 								formatCoords(p.getBox().getMinCoords()), 
 								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
-						)
+								)
 						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
-				);
+						);
 			});
 			landlords.forEach(p -> {
 				messages.add(
@@ -102,9 +108,9 @@ public class PropertyUtils {
 						.append(Component.translatable(String.format("(%s) to (%s)", 
 								formatCoords(p.getBox().getMinCoords()), 
 								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
-						)
+								)
 						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
-				);
+						);
 			});
 		}
 		return messages;
@@ -117,7 +123,7 @@ public class PropertyUtils {
 	 * @return
 	 */
 	static List<Component> formatList(List<Component> messages, List<Property> list) {
-		
+
 		if (list.isEmpty()) {
 			messages.add(Component.translatable(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
 		}
@@ -127,16 +133,16 @@ public class PropertyUtils {
 						.append(Component.translatable(String.format("(%s) to (%s)", 
 								formatCoords(p.getBox().getMinCoords()), 
 								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
-						)
+								)
 						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
-				);
+						);
 
-//				[STYLE].withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + blockpos.getX() + " " + s1 + " " + blockpos.getZ())).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))
+				//				[STYLE].withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + blockpos.getX() + " " + s1 + " " + blockpos.getZ())).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))
 			});
 		}
 		return messages;
 	}
-	
+
 	public static String formatCoords(ICoords coords) {
 		return String.format("%s, %s, %s", coords.getX(), coords.getY(), coords.getZ());
 	}
@@ -155,23 +161,34 @@ public class PropertyUtils {
 		PlayerData playerData = new PlayerData(player.getStringUUID(), player.getName().getString());
 		names = result.stream().filter(p -> p.getOwner().equals(playerData) || 
 				(p.getOwner().equals(PlayerData.EMPTY) && p.getLandlord().equals(playerData))).map(p -> p.getName(player.getUUID())).toList();
-		
+
 		return names;
 	}
 
 	/**
-	 * TODO fix like above
+	 * Version that only takes in a single parent to avoid creating a list.
+	 * @param property
+	 * @return
+	 */
+	public static List<Property> getPropertyHierarchy(Property property) {
+		List<Property> result = new ArrayList<>();
+
+		property.getChildren().forEach(child -> {
+			if (!child.getChildren().isEmpty()) {
+				result.addAll(child.getChildren());
+			}
+		});
+		result.addAll(property.getChildren());
+
+		result.add(property);
+		return result;
+	}
+
+	/**
 	 * @param properties
 	 * @return
 	 */
 	public static List<Property> getPropertyHierarchy(List<Property> properties) {
-//		List<Property> names = new ArrayList<>();
-//		properties.stream()
-//		.filter(p1 -> !p1.getChildren().isEmpty())
-//		.flatMap(p1 -> p1.getChildren().stream()
-//				.filter(p2 -> !p2.getChildren().isEmpty())
-//				.flatMap(p2 -> p2.getChildren().stream())).toList();
-//		return names;
 		List<Property> result = new ArrayList<>();
 		properties.forEach(parent -> {
 			if (!parent.getChildren().isEmpty()) {

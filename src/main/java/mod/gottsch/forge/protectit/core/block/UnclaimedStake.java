@@ -100,8 +100,10 @@ public class UnclaimedStake extends ClaimBlock {
 				if (property != null) {
 					((UnclaimedStakeBlockEntity)blockEntity).setPropertyCoords(property.getCoords());
 					((UnclaimedStakeBlockEntity)blockEntity).setPropertyUuid(property.getUuid());
+					((UnclaimedStakeBlockEntity)blockEntity).setPropertyBox(property.getBox());
 				}
 			}
+			level.markAndNotifyBlock(pos, null, state, state, 0, 0);
 		}
 	}
 }
