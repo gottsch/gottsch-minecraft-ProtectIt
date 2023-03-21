@@ -20,7 +20,7 @@ public class LanguageGen extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // items
-        add(ModItems.SUBDIVIDE_LICENSE.get(), "Subdivide License");
+        add(ModItems.FIEFDOM_GRANT.get(), "Subdivide License");
    
         /*
          *  Util.tooltips

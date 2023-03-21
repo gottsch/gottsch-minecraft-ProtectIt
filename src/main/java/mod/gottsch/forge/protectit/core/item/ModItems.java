@@ -51,7 +51,7 @@ public class ModItems {
 
 	public static RegistryObject<Item> PROPERTY_LEVER = Registration.ITEMS.register("property_lever", () -> new PropertyLeverBlockItem(ModBlocks.PROPERTY_LEVER.get(), ITEM_PROPS_SUPPLIER.get()));
 
-	public static RegistryObject<Item> SUBDIVIDE_LICENSE = Registration.ITEMS.register("subdivide_license", () -> new SubdivideLicense(ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> FIEFDOM_GRANT = Registration.ITEMS.register("subdivide_license", () -> new FiefdomGrant(ITEM_PROPS_SUPPLIER.get()));
 	public static RegistryObject<Item> UNCLAIMED_STAKE = Registration.ITEMS.register("unclaimed_stake", () -> new UnclaimedStakeBlockItem(ModBlocks.UNCLAIMED_STAKE.get(), ITEM_PROPS_SUPPLIER.get()));
 	public static RegistryObject<Item> PROPERTY_DEED = Registration.ITEMS.register("property_deed", () -> new Deed(ITEM_PROPS_SUPPLIER.get()));
 	public static RegistryObject<Item> PROPERTY_LEASE = Registration.ITEMS.register("property_lease", () -> new PropertyLease(ITEM_PROPS_SUPPLIER.get()));

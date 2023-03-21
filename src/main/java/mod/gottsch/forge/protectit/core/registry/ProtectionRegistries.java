@@ -28,8 +28,8 @@ public class ProtectionRegistries {
 	/*
 	 * block protection registry - ie. land claims
 	 */
-	private static final IBlockProtectionRegistry REGISTRY = new BlockProtectionRegistry();
-	
+//	private static final IBlockProtectionRegistry REGISTRY = new _BlockProtectionRegistry();
+	private static final IBlockProtectionRegistry REGISTRY = new PropertyRegistry();
 	/*
 	 * PVP protection registry - player vs player protection areas ie. safe zones
 	 */

@@ -22,19 +22,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.property.PropertyUtils;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
-import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -92,8 +89,8 @@ public class Deed extends Item {
 					Box box = Box.load(tag.getCompound("propertyBox"));
 					tooltip.add(Component.translatable(LangUtil.tooltip("deed.property_location")).withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(String.format("(%s) to (%s)", 
-									PropertyUtils.formatCoords(box.getMinCoords()), 
-									PropertyUtils.formatCoords(box.getMaxCoords())
+									PropertyUtil.formatCoords(box.getMinCoords()), 
+									PropertyUtil.formatCoords(box.getMaxCoords())
 									))
 							.withStyle(ChatFormatting.GREEN)));
 				}
@@ -161,7 +158,7 @@ public class Deed extends Item {
 
 				// claim property
 				if (isValid) {
-					ProtectionRegistries.block().updateOwner(selectedProperty.get(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+					ProtectionRegistries.block().updateOwner(selectedProperty.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 					
 					// TODO send message to client
 					
@@ -194,11 +191,11 @@ public class Deed extends Item {
 		boolean isValid = false;
 		UUID propertyOwnerUuid;
 		
-		if (ObjectUtils.isEmpty(property.getOwner()) || StringUtils.isEmpty(property.getOwner().getUuid())) {
+		if (ObjectUtils.isEmpty(property.getOwner()) || ObjectUtils.isEmpty(property.getOwner().getUuid())) {
 			propertyOwnerUuid = EMPTY_UUID;
 		}
 		else {
-			propertyOwnerUuid = UUID.fromString(property.getOwner().getUuid());
+			propertyOwnerUuid = property.getOwner().getUuid();
 		}
 
 		if (propertyOwnerUuid.equals(itemOwnerUuid) && itemPropertyUuid.equals(property.getUuid())) {
@@ -239,6 +236,9 @@ public class Deed extends Item {
 		if (protections.isEmpty()) {
 			return Optional.empty();
 		}
-		return Optional.ofNullable(ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords()));
+//		return Optional.ofNullable(ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords()));
+		List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+		Optional<Property> property = PropertyUtil.getMostSignificant(properties);
+		return property;
 	}
 }

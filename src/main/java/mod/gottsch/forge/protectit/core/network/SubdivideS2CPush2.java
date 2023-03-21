@@ -24,12 +24,10 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
-import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
@@ -143,13 +141,13 @@ public class SubdivideS2CPush2 implements ICoordsHandler {
 				Property property = new Property(
 						box.getMinCoords(),
 						box,
-						new PlayerData(target.get().getOwner().getUuid(), target.get().getOwner().getName()),
+						new PlayerIdentity(target.get().getOwner().getUuid(), target.get().getOwner().getName()),
 						"NAME_DOESNT_MATTER_ON_CLIENT");
 				property.setParent(target.get().getUuid());
-				property.setLandlord(new PlayerData(message.owner.toString(), message.owner.toString()));
+				property.setLord(new PlayerIdentity(message.owner, message.owner.toString()));
 				property.setNameByLandlord("NAME_DOESNT_MATTER_ON_CLIENT");
 				
-				ProtectionRegistries.block().addSubdivision(target.get(), property);
+				ProtectionRegistries.block().addFief(target.get(), property);
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to update whitelist on client: ", e);

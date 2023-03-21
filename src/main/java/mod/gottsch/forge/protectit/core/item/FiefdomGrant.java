@@ -18,10 +18,8 @@
 package mod.gottsch.forge.protectit.core.item;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -29,7 +27,7 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.property.PropertyUtils;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -48,11 +46,11 @@ import net.minecraft.world.level.Level;
  * @author Mark Gottschling Feb 27, 2023
  *
  */
-public class SubdivideLicense extends Item {
+public class FiefdomGrant extends Item {
 	// TODO find a better home for this
 	private static final UUID EMPTY_UUID = new UUID(0, 0);
 
-	public SubdivideLicense(Properties properties) {
+	public FiefdomGrant(Properties properties) {
 		super(properties.stacksTo(1));
 	}
 
@@ -80,8 +78,8 @@ public class SubdivideLicense extends Item {
 					Box box = Box.load(tag.getCompound("propertyBox"));
 					tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.property_location")).withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(String.format("(%s) to (%s)", 
-									PropertyUtils.formatCoords(box.getMinCoords()), 
-									PropertyUtils.formatCoords(box.getMaxCoords())
+									PropertyUtil.formatCoords(box.getMinCoords()), 
+									PropertyUtil.formatCoords(box.getMaxCoords())
 									)).withStyle(ChatFormatting.GREEN)));
 				}
 			});
@@ -116,35 +114,38 @@ public class SubdivideLicense extends Item {
 			if (itemOwnerUuid != null) {
 				ICoords coords = new Coords(player.blockPosition());
 				// get all properties by coords and uuid
-				List<Box> protections = ProtectionRegistries.block().getProtections(coords);
+				List<Box> protections = ProtectionRegistries.block().getProtections(coords, coords, false, false);
 				if (protections.isEmpty()) {
 					player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected")));
 					return InteractionResultHolder.pass(itemStack);
 				}
 
 				// parent property
-				Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords()); 		
+//				Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords());
+				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+				Property selectedProperty = property.get();
 
-				Property selectedProperty = property;
-				if (!property.getChildren().isEmpty()) {
-					// determine if any of the childen intersect with the coords
-					for (Property child : property.getChildren()) {
-						if (child.intersects(new Box(coords))) {
-							selectedProperty = child;
-							break;
-						}
-					}
-				}
+//				Property selectedProperty = property;
+//				if (!property.getChildren().isEmpty()) {
+//					// determine if any of the childen intersect with the coords
+//					for (Property child : property.getChildren()) {
+//						if (child.intersects(new Box(coords))) {
+//							selectedProperty = child;
+//							break;
+//						}
+//					}
+//				}
 				ProtectIt.LOGGER.debug("selected property -> {}", selectedProperty);
 				
 				// TODO test if the owners match
-				UUID propertyOwnerUuid;
-				if (ObjectUtils.isEmpty(selectedProperty.getOwner()) || StringUtils.isEmpty(selectedProperty.getOwner().getUuid())) {
-					propertyOwnerUuid = EMPTY_UUID;
-				}
-				else {
-					propertyOwnerUuid = UUID.fromString(selectedProperty.getOwner().getUuid());
-				}
+				UUID propertyOwnerUuid = selectedProperty.getOwner().getUuid();
+//				if (ObjectUtils.isEmpty(selectedProperty.getOwner()) || StringUtils.isEmpty(selectedProperty.getOwner().getUuid())) {
+//					propertyOwnerUuid = EMPTY_UUID;
+//				}
+//				else {
+//					propertyOwnerUuid = UUID.fromString(selectedProperty.getOwner().getUuid());
+//				}
 
 				boolean isValid = false;
 				if (propertyOwnerUuid.equals(itemOwnerUuid)) {
@@ -163,7 +164,7 @@ public class SubdivideLicense extends Item {
 
 				// update the property with the the flag
 				if (isValid) {
-					selectedProperty.setSubdivisible(true);
+					selectedProperty.setFiefdom(true);
 					player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
 							.withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(selectedProperty.getName()).withStyle(ChatFormatting.AQUA)));

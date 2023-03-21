@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -128,7 +128,7 @@ public class WhitelistAddS2CPush {
 			if (property.isPresent()) {
 //				ProtectIt.LOGGER.debug("found property -> {} for owner -> {}", property.get().getName(), property.get().getOwner().getName());
 				if (property.get().getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(message.playerName))) {
-					property.get().getWhitelist().add(new PlayerData(message.playerUuid.toString(), message.playerName));
+					property.get().getWhitelist().add(new PlayerIdentity(message.playerUuid, message.playerName));
 //					ProtectIt.LOGGER.debug("added player -> {} to property whitelist -> {}", message.playerName, property.get().getName());
 				}
 				

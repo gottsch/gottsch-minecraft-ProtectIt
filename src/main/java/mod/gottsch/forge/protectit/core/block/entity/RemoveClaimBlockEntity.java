@@ -19,7 +19,14 @@
  */
 package mod.gottsch.forge.protectit.core.block.entity;
 
+import java.util.List;
+import java.util.Optional;
+
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -27,12 +34,22 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling on Dec 2, 2021
  *
  */
-public class RemoveClaimBlockEntity extends PropertyLeverBlockEntity {
+public class RemoveClaimBlockEntity extends AbstractPropertyOutlinerBlockEntity { //extends PropertyLeverBlockEntity {
 	
 	/**
 	 * 
 	 */
 	public RemoveClaimBlockEntity(BlockPos pos, BlockState state) {
 		super(ModBlockEntities.REMOVE_CLAIM_TYPE.get(), pos, state);
+	}
+	
+	public RemoveClaimBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
+	}
+	
+	@Override
+	protected Optional<Property> selectProperty(List<Property> properties, Box box) {
+		Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+		return property;
 	}
 }

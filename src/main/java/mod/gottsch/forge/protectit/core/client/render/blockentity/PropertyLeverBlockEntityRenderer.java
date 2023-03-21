@@ -20,20 +20,19 @@
 package mod.gottsch.forge.protectit.core.client.render.blockentity;
 
 import java.awt.Color;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.Optional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
-import mod.gottsch.forge.protectit.core.item.Deed;
+import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -62,26 +61,14 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 		if (blockEntity == null) {
 			return;
 		}
-		if (blockEntity.getPropertyUuid() == null || blockEntity.getPropertyUuid().equals(Deed.EMPTY_UUID)) {
+
+		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY)) {
 			return;
 		}
 		
 		BlockPos pos = blockEntity.getBlockPos();
 		BlockState state =  blockEntity.getLevel().getBlockState(pos);
-		Property property = ProtectionRegistries.block().getPropertyByCoords(blockEntity.getPropertyCoords());
-
-		if (property == null) {
-			return;
-		}
-		
-		if (!state.is(ModBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) || property == null) {
-			return;
-		}
-		
-		if (StringUtils.isBlank(property.getOwner().getUuid()) ||
-				(!Minecraft.getInstance().player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid()) &&
-				property.getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getStringUUID())))) {	
-//			ProtectIt.LOGGER.debug("not owner nor whitelist -> {}, {}", Minecraft.getInstance().player.getDisplayName().getString(), Minecraft.getInstance().player.getStringUUID());
+		if (!state.is(ModBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) ) {
 			return;
 		}
 
@@ -95,7 +82,7 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 		// TODO merge the Color strategies between the render methods
 		
 		// render the claim
-		ICoords size = property.getBox().getMaxCoords().delta(property.getBox().getMinCoords());
+		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords());
 		renderProperty(blockEntity, matrixStack, builder, size, 0, green, 0, 1.0f);	
 		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}
@@ -108,13 +95,15 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 	}
 	
 	@Override
-	public void updateHighlightTranslation(BlockEntity tileEntity, PoseStack matrixStack) {
-		Property claim = ProtectionRegistries.block().getPropertyByCoords(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords());
-
-		ICoords leverCoords = new Coords(tileEntity.getBlockPos());
+	public void updateHighlightTranslation(BlockEntity blockEntity, PoseStack matrixStack) {
+		Box box = ((PropertyLeverBlockEntity)blockEntity).getPropertyBox();
+		if (box == null || box.equals(Box.EMPTY)) {
+			return;
+		}
+		ICoords leverCoords = new Coords(blockEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(leverCoords);
-		while (highlightFloor.getY() > claim.getBox().getMinCoords().getY()) {
-			if (tileEntity.getLevel().getBlockState(highlightFloor.down(1).toPos()).getMaterial().isSolid()) {
+		while (highlightFloor.getY() > box.getMinCoords().getY()) {
+			if (blockEntity.getLevel().getBlockState(highlightFloor.down(1).toPos()).getMaterial().isSolid()) {
 				break;
 			}
 			highlightFloor = highlightFloor.down(1);
@@ -122,7 +111,7 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 		highlightFloor = leverCoords.delta(highlightFloor).negate();
 		
 		ICoords delta = 
-				new Coords(tileEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)tileEntity).getPropertyCoords())
+				new Coords(blockEntity.getBlockPos()).delta(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords())
 				.negate()
 				.withY(highlightFloor.getY());
 

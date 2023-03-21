@@ -25,9 +25,7 @@ import java.util.function.Supplier;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.IBlockProtectionRegistry;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
-import mod.gottsch.forge.protectit.core.registry.bst.Interval;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
@@ -98,7 +96,7 @@ public class RegistryLoadMessageHandlerOnClient {
 			// load registry from interval list
 			for(Property property : message.getProperties()) {
 				ProtectIt.LOGGER.debug("adding property to registry -> {}", property);
-				registry.addProtection(property);
+				registry.addProperty(property);
 			}
 		}
 		catch(Exception e) {

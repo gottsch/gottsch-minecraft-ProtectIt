@@ -156,7 +156,7 @@ public class ProtectIt {
 		}
 		
 //		LOGGER.debug("block break is protectedagainst -> {}", ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID()));
-		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID(), Permission.BLOCK_BREAK_PERMISSION.value)) {
+		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getUUID(), Permission.BLOCK_BREAK_PERMISSION.value)) {
 			event.setCanceled(true);
 			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			if (!event.getLevel().isClientSide()) {
@@ -174,7 +174,7 @@ public class ProtectIt {
 
 		// prevent protected blocks from placing
 		if (event.getEntity() instanceof Player) {
-			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
+			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
 				event.setCanceled(true);
 //				LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 				if (!event.getLevel().isClientSide()) {
@@ -196,7 +196,7 @@ public class ProtectIt {
 
 		// prevent protected blocks from breaking
 		if (event.getEntity() instanceof Player) {
-			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.MULTIBLOCK_PLACE_PERMISSION.value)) {
+			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.MULTIBLOCK_PLACE_PERMISSION.value)) {
 				event.setCanceled(true);
 				if (!event.getLevel().isClientSide()) {
 //					LOGGER.debug("denied multi-block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
@@ -216,7 +216,7 @@ public class ProtectIt {
 			return;
 		}
 
-		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID(), Permission.TOOL_PERMISSION.value)) {
+		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getUUID(), Permission.TOOL_PERMISSION.value)) {
 			event.setCanceled(true);
 			if (!event.getLevel().isClientSide()) {
 				sendProtectedMessage(event.getLevel(), event.getPlayer());
@@ -235,15 +235,15 @@ public class ProtectIt {
 		if (event.getEntity() instanceof Player) {
 
 			// get the item in the player's hand
-			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.INTERACT_PERMISSION.value)) {
+			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INTERACT_PERMISSION.value)) {
 
 				Block block = event.getLevel().getBlockState(event.getPos()).getBlock();
 				if ((block instanceof DoorBlock || block instanceof TrapDoorBlock) && 
-						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.DOOR_INTERACT_PERMISSION.value)) {
+						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.DOOR_INTERACT_PERMISSION.value)) {
 					return;
 				}
 				if ((block instanceof ChestBlock) && 
-						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getStringUUID(), Permission.INVENTORY_INTERACT_PERMISSION.value)) {
+						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INVENTORY_INTERACT_PERMISSION.value)) {
 					return;
 				}
 				

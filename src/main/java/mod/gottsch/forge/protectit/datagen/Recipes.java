@@ -24,7 +24,7 @@ public class Recipes extends RecipeProvider {
 
 		@Override
 		protected void buildCraftingRecipes(Consumer<FinishedRecipe> recipe) {
-			ShapelessRecipeBuilder.shapeless(ModItems.SUBDIVIDE_LICENSE.get())
+			ShapelessRecipeBuilder.shapeless(ModItems.FIEFDOM_GRANT.get())
 			.requires(Items.STONE_SHOVEL)
 			.requires(Items.PAPER)
 			.unlockedBy("has_stone", InventoryChangeTrigger.TriggerInstance.hasItems(

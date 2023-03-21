@@ -64,8 +64,9 @@ public class CustomClaimBlock extends ClaimBlock {
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 
 		// gather the number of claims the player has
-		List<Property> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
-		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(placer.getUUID());
+//				.getProtections(placer.getStringUUID());		
+		if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			placer.sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			return;
 		}

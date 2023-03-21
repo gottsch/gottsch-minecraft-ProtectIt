@@ -49,8 +49,8 @@ import mod.gottsch.forge.protectit.core.network.WhitelistClearS2CPush;
 import mod.gottsch.forge.protectit.core.network.WhitelistRemoveS2CPush;
 import mod.gottsch.forge.protectit.core.property.Permission;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.property.PropertyUtils;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
@@ -83,7 +83,7 @@ public class ProtectCommand {
 
 
 	private static final SuggestionProvider<CommandSourceStack> WHITELIST_NAMES = (source, builder) -> {
-		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 		List<String> names = properties.stream().flatMap(x -> x.getWhitelist().stream().map(y -> y.getName() )).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
@@ -110,22 +110,22 @@ public class ProtectCommand {
 									return CommandHelper.listProperties(source.getSource());
 								})
 								)
-						///// SUBDIVIDE /////
-						.then(Commands.literal("subdivide")
+						///// FIEF /////
+						.then(Commands.literal("fief")
 								.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
 										.suggests(CommandHelper.SUGGEST_PROPERTY_NAMES)
 										.then(Commands.argument(CommandHelper.POS, BlockPosArgument.blockPos())
 												.then(Commands.argument(CommandHelper.POS2, BlockPosArgument.blockPos())
 														.executes(source -> {
-															return subdivide(source.getSource(),
+															return createFief(source.getSource(),
 																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
 																	BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
 																	BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
-																	new PlayerData());
+																	new PlayerIdentity());
 														})
 														.then(Commands.argument("owner", EntityArgument.player())
 																.executes(source -> {
-																	return subdivide(source.getSource(),
+																	return createFief(source.getSource(),
 																			StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
 																			BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
 																			BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
@@ -332,11 +332,12 @@ public class ProtectCommand {
 		try {
 			ServerPlayer landlord = source.getPlayerOrException();
 			// get owned properties
-			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+//			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
 			// get the entire hierarchy of properties
-			properties = PropertyUtils.getPropertyHierarchy(properties);
+			properties = PropertyUtil.getPropertyHierarchy(properties);
 			// filter by landowner and owner == null and propertyname
-			Optional<Property> property = properties.stream().filter(p -> p.getOwner().equals(PlayerData.EMPTY) && p.getLandlord().getUuid().equals(landlord.getUUID())
+			Optional<Property> property = properties.stream().filter(p -> p.getOwner().equals(PlayerIdentity.EMPTY) && p.getLord().getUuid().equals(landlord.getUUID())
 					&& p.getName().equalsIgnoreCase(propertyName)).findFirst();
 
 			//			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
@@ -350,7 +351,7 @@ public class ProtectCommand {
 			}
 
 			// transfer ownership
-			ProtectionRegistries.block().updateOwner(property.get(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+			ProtectionRegistries.block().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
@@ -369,11 +370,12 @@ public class ProtectCommand {
 	private static int generateLease(CommandSourceStack source, String propertyName) {
 		ServerPlayer player = source.getPlayer();		
 		try {
-			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+//			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
 			// TODO probably can make a method like CommandHelper.getPropertyByName
-			properties = PropertyUtils.getPropertyHierarchy(properties);
+			properties = PropertyUtil.getPropertyHierarchy(properties);
 			Optional<Property> property = properties.stream()
-					.filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName) || (p.getOwner().equals(PlayerData.EMPTY) &&
+					.filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName) || (p.getOwner().equals(PlayerIdentity.EMPTY) &&
 							p.getNameByLandlord().equalsIgnoreCase(propertyName)))
 					.findFirst();
 			if (!property.isPresent()) {
@@ -437,7 +439,7 @@ public class ProtectCommand {
 			}
 
 			// transfer ownership
-			ProtectionRegistries.block().updateOwner(property.get(), new PlayerData(player.getStringUUID(), player.getName().getString()));
+			ProtectionRegistries.block().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
@@ -514,8 +516,8 @@ public class ProtectCommand {
 	 * @param targetOwner
 	 * @return
 	 */
-	private static int subdivide(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, ServerPlayer targetOwner) {
-		return subdivide(source, propertyName, pos, pos2, new PlayerData(targetOwner.getStringUUID(), targetOwner.getName().getString()));
+	private static int createFief(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, ServerPlayer targetOwner) {
+		return createFief(source, propertyName, pos, pos2, new PlayerIdentity(targetOwner.getUUID(), targetOwner.getName().getString()));
 	}
 
 	/**
@@ -527,8 +529,8 @@ public class ProtectCommand {
 	 * @param targetOwner
 	 * @return
 	 */
-	private static int subdivide(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, PlayerData targetOwner) {
-		ProtectIt.LOGGER.debug("executing subdivide command...");
+	private static int createFief(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, PlayerIdentity targetOwner) {
+		ProtectIt.LOGGER.debug("executing createFief command...");
 
 		try {
 			// get the owner
@@ -556,7 +558,7 @@ public class ProtectCommand {
 			Property target = parent.get();
 
 			// is the property subdivisible
-			if (!target.isSubdivisible()) {
+			if (!target.isFiefdom()) {
 				source.sendFailure(Component.translatable(LangUtil.message("subdivide.not_divisible"))
 						.withStyle(ChatFormatting.RED));
 				return 1;
@@ -573,8 +575,8 @@ public class ProtectCommand {
 			Box box = new Box(validCoords.get().getA(), validCoords.get().getB());
 
 			// doesn't over any sibling properties
-			for (Property c : target.getChildren()) {
-				if (c.intersects(box)) {
+			for (Optional<Property> c : target.getChildren().stream().map(uuid -> ProtectionRegistries.block().getPropertyByUuid(uuid)).toList()) { //target.getChildren()) {
+				if (c.isPresent() && c.get().intersects(box)) {
 					source.sendFailure(Component.translatable(LangUtil.message("subdivide.intersects_property"))
 							.withStyle(ChatFormatting.RED));
 					return 1;
@@ -590,7 +592,7 @@ public class ProtectCommand {
 				ProtectIt.LOGGER.debug("property name -> {}", name1);
 			} else {
 				name2 = (StringUtils.isEmpty(targetOwner.getName()) ? target.getNameByOwner() : targetOwner.getName())
-						+ "." + (ProtectionRegistries.block().getProtections(targetOwner.getName()).size() + 1);
+						+ "." + (ProtectionRegistries.block().getPropertiesByOwner(targetOwner.getUuid()).size() + 1);
 				ProtectIt.LOGGER.debug("property name -> {}", name1);
 			}
 
@@ -598,14 +600,14 @@ public class ProtectCommand {
 			Property property = new Property(
 					box.getMinCoords(),
 					box,
-					new PlayerData(targetOwner.getUuid(), targetOwner.getName()),
+					targetOwner,
 					name2);
 			property.setParent(target.getUuid());
-			property.setLandlord(new PlayerData(owner.getStringUUID(), owner.getName().getString()));
+			property.setLord(target.getOwner());
 			property.setNameByLandlord(name1);
 			property.setCreateTime(source.getLevel().getGameTime());
 
-			Optional<Property> finalProperty = ProtectionRegistries.block().addSubdivision(target, property);
+			Optional<Property> finalProperty = ProtectionRegistries.block().addFief(target, property);
 			if (finalProperty.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 						.withStyle(ChatFormatting.RED));
@@ -622,7 +624,7 @@ public class ProtectCommand {
 			if(source.getLevel().getServer().isDedicatedServer()) {
 				SubdivideS2CPush2 message = new SubdivideS2CPush2(
 						target.getUuid(),
-						UUID.fromString(property.getLandlord().getUuid()),
+						property.getLord().getUuid(),
 						owner.getUUID(),
 						property.getUuid(),
 						property.getBox()
@@ -670,7 +672,7 @@ public class ProtectCommand {
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
 			// get the owner's properties
-			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner.getUUID());
 			// get the named property
 			List<Property> namedProperties = properties.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (namedProperties.isEmpty()) {
@@ -726,7 +728,7 @@ public class ProtectCommand {
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
 			// get the owner's properties
-			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner.getUUID());
 			// get the named property
 			List<Property> namedProperties = properties.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (namedProperties.isEmpty()) {
@@ -778,7 +780,7 @@ public class ProtectCommand {
 			ServerPlayer owner = source.getPlayerOrException();
 			// TODO replace with CommmandHelper call
 			// get the owner's properties
-			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner.getUUID());
 			// get the named property
 			List<Property> namedProperties = properties.stream().filter(prop -> prop.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (namedProperties.isEmpty()) {
@@ -789,7 +791,7 @@ public class ProtectCommand {
 			Property property = namedProperties.get(0);
 			// update property whitelist with player
 			if (property.getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(player.getDisplayName().getString()))) {
-				property.getWhitelist().add(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
+				property.getWhitelist().add(new PlayerIdentity(player.getUUID(), player.getDisplayName().getString()));
 				CommandHelper.saveData(source.getLevel());
 			}
 			//send update to client
@@ -830,7 +832,7 @@ public class ProtectCommand {
 			ServerPlayer owner = source.getPlayerOrException();
 			// TODO replace with CommandHelper call
 			// get the owner's properties
-			List<Property> properties = ProtectionRegistries.block().getProtections(owner.getStringUUID());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner.getUUID());
 			// get the named property
 			List<Property> names = properties.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 			if (names.isEmpty()) {
@@ -933,7 +935,7 @@ public class ProtectCommand {
 		}
 
 		// TODO replace with CommadnHelper call
-		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
 		List<Property> namedProperties = properties.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 		if (namedProperties.isEmpty()) {
 			source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))

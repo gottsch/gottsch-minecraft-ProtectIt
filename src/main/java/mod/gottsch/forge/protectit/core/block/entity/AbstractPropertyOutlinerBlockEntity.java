@@ -20,14 +20,13 @@ package mod.gottsch.forge.protectit.core.block.entity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
+import mod.gottsch.forge.protectit.core.util.UuidUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -73,31 +72,41 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 	public void tickServer() {
 		// fetch overlaps from protection registry every 5 seconds
 		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
+			// get current properties
+			UUID previousUuid = getPropertyUuid();
+			
 			ICoords c1 = new Coords(getBlockPos());
 			Box box = new Box(c1);
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), true, false);
+			// need to find ALL the protections
+			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+//			ProtectIt.LOGGER.debug("found protections -> {}", protections);
+			
+			Optional<Property> property = Optional.empty();
 			if (!protections.isEmpty()) {
-				// get current properties
-				UUID previousUuid = getPropertyUuid();
+				// get the properties
+				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+//				ProtectIt.LOGGER.debug("properties -> {}", properties);
+				property = selectProperty(properties, box);
+//				ProtectIt.LOGGER.debug("selected -> {}", property);
+			}
 
-				// get the property
-				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getPropertyByCoords(b.getMinCoords())).collect(Collectors.toList());
-				Optional<Property> property = selectProperty(properties, box);
-
-				if (property.isPresent()) {
-					setPropertyCoords(property.get().getCoords());
-					setPropertyUuid(property.get().getUuid());
-					setPropertyBox(property.get().getBox());
-				}
-				else {
-					setPropertyCoords(Coords.EMPTY);
-					setPropertyUuid(Deed.EMPTY_UUID);
-					setPropertyBox(Box.EMPTY);
-				}
-				// if the value has changed then send an update.
-				if (!getPropertyUuid().equals(previousUuid)) {
-					getLevel().sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 2);
-				}
+			if (property.isPresent()) {
+				setPropertyCoords(property.get().getBox().getMinCoords());
+				setPropertyUuid(property.get().getUuid());
+				setPropertyBox(property.get().getBox());
+//				ProtectIt.LOGGER.debug("setting props: coords -> {}, uuid -> {}, box -> {}", property.get().getBox().getMinCoords(),
+//						property.get().getUuid(), property.get().getBox());
+			}
+			else {
+				setPropertyCoords(Coords.EMPTY);
+				setPropertyUuid(UuidUtil.EMPTY_UUID);
+				setPropertyBox(Box.EMPTY);
+//				ProtectIt.LOGGER.debug("setting props: EMPTY");
+			}
+			
+			// if the value has changed then send an update.
+			if (!getPropertyUuid().equals(previousUuid)) {
+				getLevel().sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 2);
 			}
 		}
 	}

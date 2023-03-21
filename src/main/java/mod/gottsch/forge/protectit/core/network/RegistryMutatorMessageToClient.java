@@ -47,7 +47,7 @@ public class RegistryMutatorMessageToClient {
 	private boolean valid;
 	private String type;												//0
 	private String action;											//1
-	private String uuid;												//2
+	private String uuid;												//2 // i think this is player uuid
 	private String playerName; 								//3
 	private ICoords coords;										//4
 	private ICoords coords1;									//5

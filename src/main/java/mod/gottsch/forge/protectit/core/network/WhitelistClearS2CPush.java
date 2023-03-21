@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;

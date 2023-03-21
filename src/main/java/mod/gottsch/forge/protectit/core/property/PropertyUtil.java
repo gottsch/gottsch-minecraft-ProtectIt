@@ -19,11 +19,12 @@ package mod.gottsch.forge.protectit.core.property;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.mojang.authlib.GameProfile;
 
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -35,7 +36,7 @@ import net.minecraft.world.entity.player.Player;
  * @author Mark Gottschling Mar 6, 2023
  *
  */
-public class PropertyUtils {
+public class PropertyUtil {
 
 	/**
 	 * 
@@ -54,25 +55,30 @@ public class PropertyUtils {
 				.append(Component.translatable(player.getName()).withStyle(ChatFormatting.AQUA)));
 		messages.add(Component.literal(""));
 
-		List<Property> owners = new ArrayList<>();
-		List<Property> landlords = new ArrayList<>();
+//		List<Property> owners = new ArrayList<>();
+//		List<Property> lords = new ArrayList<>();
 
 		// get top-level properties only by player
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getId())
-				.stream().filter(p -> p.getLandlord() == null || p.getLandlord().equals(PlayerData.EMPTY)).toList();
+		List<Property> owners = ProtectionRegistries.block().getPropertiesByOwner(player.getId())
+				.stream().filter(p -> p.getLord() == null || p.getLord().getUuid().equals(player.getId())).toList();
+		
+		List<Property> lords = ProtectionRegistries.block().getPropertiesByLord(player.getId())
+				.stream().filter(p -> p.getLord().getUuid().equals(player.getId()) &&
+						!p.getLord().equals(p.getOwner())).toList();
+				
 		// get the entire property hierarchy and organize into the 2 lists
-		getPropertyHierarchy(properties).forEach(p -> {
-			if (p.getOwner().getUuid().equals(player.getId().toString())) {
-				owners.add(p);
-			}
-			else {
-				landlords.add(p);
-			}
-		});
+//		getPropertyHierarchy(properties).forEach(p -> {
+//			if (p.getOwner().getUuid().equals(player.getId().toString())) {
+//				owners.add(p);
+//			}
+//			else {
+//				lords.add(p);
+//			}
+//		});
 
 		//		List<Component> components = formatList(messages, ProtectionRegistries.block().getProtections(player.getStringUUID()));
 		//		List<Component> components = formatList(messages, ProtectionRegistries.block().getPropertiesByOwner(player.getUUID()));
-		List<Component> components = formatList(messages, owners, landlords);
+		List<Component> components = formatList(messages, owners, lords);
 		//		components.forEach(component -> {
 		//			source.sendSuccess(component, false); // TODO just generate a list and return to caller
 		//		});
@@ -158,9 +164,9 @@ public class PropertyUtils {
 
 		result = getPropertyHierarchy(properties);
 
-		PlayerData playerData = new PlayerData(player.getStringUUID(), player.getName().getString());
+		PlayerIdentity playerData = new PlayerIdentity(player.getUUID(), player.getName().getString());
 		names = result.stream().filter(p -> p.getOwner().equals(playerData) || 
-				(p.getOwner().equals(PlayerData.EMPTY) && p.getLandlord().equals(playerData))).map(p -> p.getName(player.getUUID())).toList();
+				(p.getOwner().equals(PlayerIdentity.EMPTY) && p.getLord().equals(playerData))).map(p -> p.getName(player.getUUID())).toList();
 
 		return names;
 	}
@@ -173,12 +179,19 @@ public class PropertyUtils {
 	public static List<Property> getPropertyHierarchy(Property property) {
 		List<Property> result = new ArrayList<>();
 
-		property.getChildren().forEach(child -> {
-			if (!child.getChildren().isEmpty()) {
-				result.addAll(child.getChildren());
-			}
-		});
-		result.addAll(property.getChildren());
+		result.addAll(ProtectionRegistries.block().getAllPropertiesByUuid(property.getChildren()));
+		result.addAll(result.stream().flatMap(p -> ProtectionRegistries.block().getAllPropertiesByUuid(p.getChildren()).stream()).toList());
+
+//		property.getChildren().forEach(uuid -> {
+//			Optional<Property> child = ProtectionRegistries.block().getPropertyByUuid(uuid);
+//			if (child.isPresent()) {
+//				if (!child.get().getChildren().isEmpty()) {
+//					P
+//					result.addAll(child.getChildren());
+//				}
+//			}
+//		});
+//		result.addAll(property.getChildren());
 
 		result.add(property);
 		return result;
@@ -190,18 +203,57 @@ public class PropertyUtils {
 	 */
 	public static List<Property> getPropertyHierarchy(List<Property> properties) {
 		List<Property> result = new ArrayList<>();
+		
 		properties.forEach(parent -> {
-			if (!parent.getChildren().isEmpty()) {
-				parent.getChildren().forEach(child -> {
-					if (!child.getChildren().isEmpty()) {
-						result.addAll(child.getChildren());
-					}
-				});
-				result.addAll(parent.getChildren());
-			}
+//			if (!parent.getChildren().isEmpty()) {
+//				parent.getChildren().forEach(child -> {
+//					if (!child.getChildren().isEmpty()) {
+//						result.addAll(child.getChildren());
+//					}
+//				});
+//				result.addAll(parent.getChildren());
+//			}
+			result.addAll(ProtectionRegistries.block().getAllPropertiesByUuid(parent.getChildren()));
+			result.addAll(result.stream().flatMap(p -> ProtectionRegistries.block().getAllPropertiesByUuid(p.getChildren()).stream()).toList());
+
 			result.add(parent);
 		});
 
 		return result;
+	}
+
+	/**
+	 * It is assumed that the properties list is of the same hierarchy.
+	 * @param properties
+	 * @return
+	 */
+	public static Optional<Property> getLeastSignificant(List<Property> properties) {
+		/*
+		 * NOTE this list of properties may or may not contain any children properties, or only some (ie middle).
+		 * Property.getChildren() only contains UUIDs of the children
+		 */
+		if (properties.size() == 1) {
+			return Optional.of(properties.get(0));
+		}
+		
+		Property selected = null;
+		for (Property p : properties) {
+			if (!p.isDomain()) {
+				selected = p;
+				// short-circuit if found the least significant
+				if (!selected.hasChildren()) {
+					return Optional.of(selected);
+				}
+			}
+		}
+		return Optional.ofNullable(selected);
+//		
+//		Optional<Property> property = properties.stream().filter(p -> !p.hasChildren()).findFirst();
+//		return property;
+	}
+	
+	public static Optional<Property> getMostSignificant(List<Property> properties) {
+		Optional<Property> property = properties.stream().filter(p -> p.isDomain()).findFirst();
+		return property;
 	}
 }

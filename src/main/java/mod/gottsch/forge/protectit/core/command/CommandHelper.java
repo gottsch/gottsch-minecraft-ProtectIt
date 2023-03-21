@@ -36,7 +36,7 @@ import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.property.PropertyUtils;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -80,12 +80,12 @@ public class CommandHelper {
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
-	static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
-		return SharedSuggestionProvider.suggest(ProtectionRegistries.block().findPropertiesBy(p -> !p.getOwner().getUuid().isEmpty()).stream()
-				.map(i -> String.format("%s [%s]", 
-						(i.getOwner().getName() == null) ? "" : i.getOwner().getName(),
-								(i.getOwner().getUuid() == null) ? "" : i.getOwner().getUuid())), builder);
-	};
+//	static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
+//		return SharedSuggestionProvider.suggest(ProtectionRegistries.block().findPropertiesBy(p -> !p.getOwner().getUuid().isEmpty()).stream()
+//				.map(i -> String.format("%s [%s]", 
+//						(i.getOwner().getName() == null) ? "" : i.getOwner().getName(),
+//								(i.getOwner().getUuid() == null) ? "" : i.getOwner().getUuid())), builder);
+//	};
 
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_GIVABLE_ITEMS = (source, builder) -> {
 		List<String> items = Arrays.asList(
@@ -96,15 +96,17 @@ public class CommandHelper {
 	};
 
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_PROPERTY_NAMES = (source, builder) -> {
-		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
-		List<String> names = properties.stream().map(p -> p.getNameByOwner().toUpperCase()).collect(Collectors.toList());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+//		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
+		List<String> names = properties.stream().map(p -> p.getNameByOwner()).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_TARGET_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
-		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		List<String> names = properties.stream().map(p -> p.getName(player.getUUID()).toUpperCase()).collect(Collectors.toList());
+//		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<String> names = properties.stream().map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
@@ -120,8 +122,9 @@ public class CommandHelper {
 
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_ALL_NESTED_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
-		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		List<String> names = PropertyUtils.getPropertyHierarchyNames(properties, player);
+//		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<String> names = PropertyUtil.getPropertyHierarchyNames(properties, player);
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
@@ -173,7 +176,7 @@ public class CommandHelper {
 		List<Property> owners = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
 		List<Property> namedClaims = owners.stream().filter(p -> p.getNameByOwner().equals(oldName)).toList();
 		if (namedClaims.isEmpty()) {
-			List<Property> landlords = ProtectionRegistries.block().getPropertiesByLandlord(player.getUUID());
+			List<Property> landlords = ProtectionRegistries.block().getPropertiesByLord(player.getUUID());
 			namedClaims = landlords.stream().filter(p -> p.getNameByLandlord().equals(oldName)).toList();
 		}
 
@@ -219,7 +222,7 @@ public class CommandHelper {
 	 * @return
 	 */
 	public static int listProperties(CommandSourceStack source, ServerPlayer player) {
-		List<Component> components = PropertyUtils.listProperties(player);
+		List<Component> components = PropertyUtil.listProperties(player);
 		components.forEach(component -> {
 			source.sendSuccess(component, false);
 		});
@@ -233,7 +236,7 @@ public class CommandHelper {
 			Optional<GameProfile> profile = cache.get(player.toLowerCase());
 			if (profile.isPresent()) {
 //				ProtectIt.LOGGER.debug("profile -> {}", profile.get().getId());
-				List<Component> components = PropertyUtils.listProperties(profile.get());
+				List<Component> components = PropertyUtil.listProperties(profile.get());
 				components.forEach(component -> {
 					source.sendSuccess(component, false);
 				});
@@ -315,7 +318,8 @@ public class CommandHelper {
 	 */
 	public static Optional<Property> getProperty(UUID owner, UUID property) {
 		// get the owner's properties
-		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
+//		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner);
 		// get the named property
 		List<Property> namedProperties = properties.stream().filter(p -> p.getUuid().equals(property)).collect(Collectors.toList());
 		if (namedProperties.isEmpty()) {
@@ -332,7 +336,8 @@ public class CommandHelper {
 	 */
 	public static Optional<Property> getPropertyByName(UUID owner, String propertyName) {
 		// get the owner's properties
-		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
+//		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner);
 		// get the named property
 		List<Property> namedProperties = properties.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 		if (namedProperties.isEmpty()) {

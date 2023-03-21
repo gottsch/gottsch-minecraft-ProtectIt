@@ -23,8 +23,11 @@ import java.util.List;
 import java.util.Optional;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -34,7 +37,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * @author Mark Gottschling on Nov 8, 2021
  *
  */
-public class PropertyLeverBlockEntity extends AbstractPropertyOutlinerBlockEntity {//BlockEntity {
+public class PropertyLeverBlockEntity extends AbstractPropertyOutlinerBlockEntity {
 	
 	public PropertyLeverBlockEntity(BlockPos pos, BlockState state) {
 		this(ModBlockEntities.PROPERTY_LEVER_TYPE.get(), pos, state);
@@ -45,8 +48,17 @@ public class PropertyLeverBlockEntity extends AbstractPropertyOutlinerBlockEntit
 	}
 
 	@Override
+	public void tickServer() {
+		BlockState state =  getBlockState();
+		if (!state.is(ModBlocks.PROPERTY_LEVER.get()) || !state.getValue(LeverBlock.POWERED) ) {
+			return;
+		}
+		super.tickServer();
+	}
+	
+	@Override
 	protected Optional<Property> selectProperty(List<Property> properties, Box box) {
-		Property property = properties.get(0);
-		return Optional.ofNullable(property);
+		Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+		return property;
 	}
 }

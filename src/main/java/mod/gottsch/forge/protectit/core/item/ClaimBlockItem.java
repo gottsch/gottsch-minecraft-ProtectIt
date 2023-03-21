@@ -58,9 +58,9 @@ public class ClaimBlockItem extends BlockItem {
 	@Override
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// gather the number of claims the player has
-		List<Property> claims = ProtectionRegistries.block().getProtections(context.getPlayer().getStringUUID());
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(context.getPlayer().getUUID());
 		
-		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
+		if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			if (WorldInfo.isServerSide(context.getLevel())) {
 				context.getPlayer().sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			}

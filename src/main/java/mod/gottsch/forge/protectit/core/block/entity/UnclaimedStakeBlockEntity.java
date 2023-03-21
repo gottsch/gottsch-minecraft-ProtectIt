@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -50,13 +50,14 @@ public class UnclaimedStakeBlockEntity extends AbstractPropertyOutlinerBlockEnti
 	@Override
 	protected Optional<Property> selectProperty(List<Property> properties, Box box) {
 		// get all the children
-		properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
-		Property property = null;
-		for (Property p : properties	) {
-			if ((p.getOwner() == null || p.getOwner().equals(PlayerData.EMPTY)) && p.intersects(box)) {
-				property = p;
-			}
-		}
-		return Optional.ofNullable(property);
+//		properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
+//		Property property = null;
+//		for (Property p : properties	) {
+//			if ((p.getOwner() == null || p.getOwner().equals(PlayerIdentity.EMPTY)) && p.intersects(box)) {
+//				property = p;
+//			}
+//		}
+//		return Optional.ofNullable(property);
+		return PropertyUtil.getLeastSignificant(properties);
 	}
 }

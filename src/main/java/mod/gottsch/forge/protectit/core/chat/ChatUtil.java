@@ -22,6 +22,6 @@ package mod.gottsch.forge.protectit.core.chat;
  * @author Mark Gottschling Mar 6, 2023
  *
  */
-public class ChatUtils {
+public class ChatUtil {
 
 }

@@ -20,10 +20,12 @@
 package mod.gottsch.forge.protectit.core.item;
 
 import java.util.List;
+import java.util.Optional;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -62,8 +64,11 @@ public class RemoveClaimBlockItem extends BlockItem {
 		Coords coords = new Coords(context.getClickedPos());
 		List<Box> list = ProtectionRegistries.block().getProtections(coords, coords.add(1, 1,1), false, false);
 		if (!list.isEmpty()) {				
-			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
-			if (property != null && !context.getPlayer().getStringUUID().equalsIgnoreCase(property.getOwner().getUuid())) {
+//			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
+			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+			
+			if (property.isPresent() && !context.getPlayer().getUUID().equals(property.get().getOwner().getUuid())) {
 				context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_owner")));
 				return false;
 			}

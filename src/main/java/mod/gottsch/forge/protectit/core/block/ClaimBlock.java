@@ -32,7 +32,7 @@ import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -132,8 +132,9 @@ public class ClaimBlock extends Block implements EntityBlock {
 	public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 		// gather the number of claims the player has
-		List<Property> claims = ProtectionRegistries.block().getProtections(placer.getStringUUID());		
-		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(placer.getUUID());
+//				ProtectionRegistries.block().getProtections(placer.getStringUUID());		
+		if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			placer.sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			return;
 		}
@@ -163,12 +164,13 @@ public class ClaimBlock extends Block implements EntityBlock {
 		}
 		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
-		// gather the number of claims the player has
-		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());		
-		ProtectIt.LOGGER.debug("claims -> {}", claims);
+		// gather the number of properties the player has
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
+//				.getProtections(player.getStringUUID());		
+		ProtectIt.LOGGER.debug("properties -> {}", properties);
 		
 		// prevent the use of claim if max claims is met
-		if (claims.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
+		if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			player.sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
 			return InteractionResult.SUCCESS;
 		}
@@ -187,11 +189,11 @@ public class ClaimBlock extends Block implements EntityBlock {
 				Property property = new Property(
 						box.getMinCoords(), 
 						box,
-						new PlayerData(player.getStringUUID(), player.getName().getString()),
-						String.valueOf(claims.size() + 1));
+						new PlayerIdentity(player.getUUID(), player.getName().getString()),
+						String.valueOf(properties.size() + 1));
 				property.setCreateTime(level.getGameTime());
 								
-				ProtectionRegistries.block().addProtection(property);
+				ProtectionRegistries.block().addProperty(property);
 
 				ProtectIt.LOGGER.debug("should've added -> {} {}", box, player.getStringUUID());
 				ProtectItSavedData savedData = ProtectItSavedData.get(level);

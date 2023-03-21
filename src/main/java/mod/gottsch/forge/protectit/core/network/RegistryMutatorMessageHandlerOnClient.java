@@ -19,14 +19,16 @@
  */
 package mod.gottsch.forge.protectit.core.network;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.IBlockProtectionRegistry;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LogicalSidedProvider;
@@ -36,7 +38,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 
 /**
- * 
+ * TODO refactor and remove and replace
  * @author Mark Gottschling on Oct 13, 2021
  *
  */
@@ -95,9 +97,9 @@ public class RegistryMutatorMessageHandlerOnClient {
 			}
 			
 			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
-				PlayerData data = new PlayerData(message.getUuid(), message.getPlayerName());
-				Property claim = new Property(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
-				registry.addProtection(claim);
+				PlayerIdentity data = new PlayerIdentity(UUID.fromString(message.getUuid()), message.getPlayerName());
+				Property property = new Property(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
+				registry.addProperty(property);
 			}
 			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
 				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {
@@ -105,22 +107,31 @@ public class RegistryMutatorMessageHandlerOnClient {
 					// use methods that take coords
 					if (message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
 						ProtectIt.LOGGER.debug("doesn't have uuid");
-						registry.removeProtection(message.getCoords1(), message.getCoords2());
+						registry.removeProperties(message.getCoords1(), message.getCoords2());
 					}
 					else {
 						ProtectIt.LOGGER.debug("has uuid");
-						registry.removeProtection(message.getCoords1(), message.getCoords2(), message.getUuid());
+						Box box = new Box(message.getCoords1(), message.getCoords2());
+						List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(UUID.fromString(message.getUuid()))
+								.stream().filter(p -> p.intersects(box)).toList();
+						for (Property p : properties) {
+							registry.removeProperty(p);
+						}
+						
 					}
 				}
 				else {
 					if (!message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
 						ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
-						registry.removeProtection(message.getUuid());
+						List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(UUID.fromString(message.getUuid()));
+						for (Property p : properties) {
+							registry.removeProperty(p);
+						}
 					}
 				}
 			}
 			else if (message.getAction().equals(RegistryMutatorMessageToClient.CLEAR_ACTION)) {
-				registry.removeProtection(message.getUuid());
+				registry.clear();
 			}
 		}
 		catch(Exception e) {

@@ -19,7 +19,6 @@
  */
 package mod.gottsch.forge.protectit.core.command;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,7 +42,7 @@ import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -57,9 +56,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
@@ -88,16 +85,16 @@ public class OpsProtectCommand {
 					return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 				}).then(Commands.argument(CommandHelper.POS, BlockPosArgument.blockPos())
 						.then(Commands.argument(CommandHelper.POS2, BlockPosArgument.blockPos()).then(
-								Commands.argument(CommandHelper.TARGETS, EntityArgument.players()).executes(source -> {
+								Commands.argument(CommandHelper.TARGET, EntityArgument.player()).executes(source -> {
 									return add(source.getSource(),
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
-											EntityArgument.getPlayers(source, CommandHelper.TARGETS), false);
+											EntityArgument.getPlayer(source, CommandHelper.TARGET), false);
 								}).then(Commands.literal("override_limit").executes(source -> {
 									return add(source.getSource(),
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
 											BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
-											EntityArgument.getPlayers(source, CommandHelper.TARGETS), true);
+											EntityArgument.getPlayer(source, CommandHelper.TARGET), true);
 								})
 										)))))
 				///// REMOVE OPTION /////
@@ -105,15 +102,15 @@ public class OpsProtectCommand {
 						.requires(source -> {
 							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 						})
-						.then(Commands.literal(CommandHelper.UUID)
-								.then(Commands.argument(CommandHelper.UUID, StringArgumentType.greedyString())
-										.suggests(CommandHelper.SUGGEST_UUID)
-										// TODO pick a specific property from here
-										.executes(source -> {
-											return remove(source.getSource(), StringArgumentType.getString(source, CommandHelper.UUID));							
-										})
-										)
-								)
+//						.then(Commands.literal(CommandHelper.UUID)
+//								.then(Commands.argument(CommandHelper.UUID, StringArgumentType.greedyString())
+//										.suggests(CommandHelper.SUGGEST_UUID)
+//										// TODO pick a specific property from here
+//										.executes(source -> {
+//											return remove(source.getSource(), StringArgumentType.getString(source, CommandHelper.UUID));							
+//										})
+//										)
+//								)
 						.then(Commands.literal("player")
 								.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 										// TODO option to pick a specific property
@@ -131,18 +128,18 @@ public class OpsProtectCommand {
 												.executes(source -> {
 													return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, "pos2"));
 												})
-												.then(Commands.literal(CommandHelper.UUID)
-														.then(Commands.argument(CommandHelper.UUID, StringArgumentType.greedyString())
-																.suggests(CommandHelper.SUGGEST_UUID)
+//												.then(Commands.literal(CommandHelper.UUID)
+//														.then(Commands.argument(CommandHelper.UUID, StringArgumentType.greedyString())
+//																.suggests(CommandHelper.SUGGEST_UUID)
+//																.executes(source -> {
+//																	return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2), StringArgumentType.getString(source, CommandHelper.UUID));							
+//																})
+//																)
+//														)
+												.then(Commands.literal("player")
+														.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 																.executes(source -> {
-																	return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2), StringArgumentType.getString(source, CommandHelper.UUID));							
-																})
-																)
-														)
-												.then(Commands.literal("entity")
-														.then(Commands.argument(CommandHelper.TARGETS, EntityArgument.entities())
-																.executes(source -> {
-																	return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2), EntityArgument.getEntities(source, CommandHelper.TARGETS));							
+																	return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2), EntityArgument.getPlayer(source, CommandHelper.TARGET));							
 																})
 																)													
 														)
@@ -246,6 +243,7 @@ public class OpsProtectCommand {
 						.requires(source -> {
 							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 						})
+						// TODO rename player - clear is clear all
 						.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 								.executes(source -> {
 									return clear(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
@@ -304,15 +302,11 @@ public class OpsProtectCommand {
 		return 1;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	private static int dump() {
-		//		Path path = Paths.get("config", ProtectIt.MODID, "dumps").toAbsolutePath();
-		//		if (Files.notExists(path)) { 
-		//			try {
-		//				Files.createDirectories(path);
-		//			} catch (Exception e) {
-		//				ProtectIt.LOGGER.error("unable to create dump file: ", e);
-		//			}
-		//		}
 		try {
 			ProtectionRegistries.block().dump();
 		} catch(Exception e) {
@@ -350,7 +344,7 @@ public class OpsProtectCommand {
 			}
 
 			// create item stack
-			ItemStack itemStack = new ItemStack(ModItems.SUBDIVIDE_LICENSE.get());
+			ItemStack itemStack = new ItemStack(ModItems.FIEFDOM_GRANT.get());
 
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
@@ -390,7 +384,7 @@ public class OpsProtectCommand {
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-			property.get().setSubdivisible(value);
+			property.get().setFiefdom(value);
 			CommandHelper.saveData(source.getLevel());
 
 			source.sendSuccess(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
@@ -430,7 +424,7 @@ public class OpsProtectCommand {
 			return 1;
 		}
 
-		ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB());
+		ProtectionRegistries.block().removeProperties(validCoords.get().getA(), validCoords.get().getB());
 		// save world data
 		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -465,7 +459,14 @@ public class OpsProtectCommand {
 
 			uuid = CommandHelper.parseNameUuid(uuid);
 
-			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
+//			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
+			Box box = new Box(validCoords.get().getA(), validCoords.get().getB());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(UUID.fromString(uuid))
+					.stream().filter(p -> p.intersects(box)).toList();
+			for (Property p : properties) {
+				ProtectionRegistries.block().removeProperty(p);
+			}
+			
 			// save world data
 			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -488,11 +489,17 @@ public class OpsProtectCommand {
 	 * @param uuid
 	 * @return
 	 */
+	@Deprecated
 	private static int remove(CommandSourceStack source, String uuid) {
 		try {
 			// parse out the uuid
 			uuid = CommandHelper.parseNameUuid(uuid);
-			ProtectionRegistries.block().removeProtection(uuid);
+//			ProtectionRegistries.block().removeProtection(uuid);
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(UUID.fromString(uuid));
+			for (Property p : properties) {
+				ProtectionRegistries.block().removeProperty(p);
+			}
+			
 			// save world data
 			ServerLevel world = source.getLevel();
 			ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -516,7 +523,12 @@ public class OpsProtectCommand {
 	 * @return
 	 */
 	private static int remove(CommandSourceStack source, ServerPlayer player) {
-		ProtectionRegistries.block().removeProtection(player.getStringUUID());
+//		ProtectionRegistries.block().removeProtection(player.getStringUUID());
+		ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
+		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
+		for (Property p : properties) {
+			ProtectionRegistries.block().removeProperty(p);
+		}
 		// save world data
 		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);
@@ -537,7 +549,7 @@ public class OpsProtectCommand {
 	 * @param pos2
 	 * @return
 	 */
-	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, Collection<? extends Entity> entities) {
+	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, ServerPlayer player) {
 		try {
 			// first, check that pos2 > pos1
 			Optional<Tuple<ICoords, ICoords>> validCoords = CommandHelper.validateCoords(new Coords(pos), new Coords(pos2));
@@ -546,14 +558,13 @@ public class OpsProtectCommand {
 				return 1;
 			}
 
-			String uuid = "";
-			Entity entity = entities.iterator().next();
-
-			if (entity instanceof Player) {
-				Player player = (Player)entity;
-				uuid = player.getStringUUID();				
+//			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
+			Box box = new Box(validCoords.get().getA(), validCoords.get().getB());
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID())
+					.stream().filter(p -> p.intersects(box)).toList();
+			for (Property p : properties) {
+				ProtectionRegistries.block().removeProperty(p);
 			}
-			ProtectionRegistries.block().removeProtection(validCoords.get().getA(), validCoords.get().getB(), uuid);
 
 			// save world data
 			ServerLevel world = source.getLevel();
@@ -565,7 +576,7 @@ public class OpsProtectCommand {
 				sendRemoveMessage(RegistryMutatorMessageToClient.BLOCK_TYPE, 
 						validCoords.get().getA(), 
 						validCoords.get().getB(), 
-						uuid);
+						player.getUUID().toString());
 			}
 		}
 		catch(Exception e) {
@@ -605,7 +616,7 @@ public class OpsProtectCommand {
 	 * @param players
 	 * @return
 	 */
-	private static int add(CommandSourceStack source, BlockPos pos, BlockPos pos2, Collection<ServerPlayer> players, boolean overrideLimit) {
+	private static int add(CommandSourceStack source, BlockPos pos, BlockPos pos2, ServerPlayer player, boolean overrideLimit) {
 		ProtectIt.LOGGER.debug("Executing add command...");
 		try {
 			// first, check that pos2 > pos1
@@ -624,21 +635,13 @@ public class OpsProtectCommand {
 				return 1;
 			}
 
-			// determine the player uuid
-			String uuid = "";
-
-			if (players == null) {
-				// TODO message
-				return 1;
-			}
-
-			ServerPlayer player = players.iterator().next();
 			ProtectIt.LOGGER.debug("player entity -> {}", player.getDisplayName().getString());
-			uuid = player.getStringUUID();
+
 			AtomicReference<String> name = new AtomicReference<>(player.getName().getString());			
 
 			// check if player already owns protections
-			List<Property> properties = ProtectionRegistries.block().getProtections(uuid);
+//			List<Property> properties = ProtectionRegistries.block().getProtections(uuid);
+			List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
 
 			// check if the max # of properties has been reached (via config value)
 			if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get() && !overrideLimit) {
@@ -650,12 +653,12 @@ public class OpsProtectCommand {
 			Property property = new Property(
 					validCoords.get().getA(), 
 					new Box(validCoords.get().getA(), validCoords.get().getB()),
-					new PlayerData(uuid, name.get()),
+					new PlayerIdentity(player.getUUID(), name.get()),
 					String.valueOf(properties.size() + 1));
 			property.setCreateTime(player.level.getGameTime());
 
 			// add protection on server
-			ProtectionRegistries.block().addProtection(property);
+			ProtectionRegistries.block().addProperty(property);
 
 			// save world data
 			CommandHelper.saveData(source.getLevel());
@@ -665,7 +668,7 @@ public class OpsProtectCommand {
 				RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 						RegistryMutatorMessageToClient.BLOCK_TYPE, 
 						RegistryMutatorMessageToClient.ADD_ACTION, 
-						uuid).with($ -> {
+						player.getUUID().toString()).with($ -> {
 							$.coords1 = validCoords.get().getA();
 							$.coords2 = validCoords.get().getB();
 							$.playerName = name.get();
@@ -683,13 +686,13 @@ public class OpsProtectCommand {
 	}
 
 	/**
-	 * 
+	 * TODO refactor removing player
 	 * @param source
 	 * @return
 	 */
 	private static int clear(CommandSourceStack source, ServerPlayer player) {
 		// remove all properties from player
-		ProtectionRegistries.block().removeProtection(player.getStringUUID());
+		ProtectionRegistries.block().clear();
 
 		ServerLevel world = source.getLevel();
 		ProtectItSavedData savedData = ProtectItSavedData.get(world);

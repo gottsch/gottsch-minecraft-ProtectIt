@@ -20,7 +20,6 @@
 package mod.gottsch.forge.protectit.core.client.render.blockentity;
 
 import java.awt.Color;
-import java.util.Optional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -29,11 +28,7 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.block.entity.AbstractPropertyOutlinerBlockEntity;
-import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
 import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
-import mod.gottsch.forge.protectit.core.item.Deed;
-import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -57,16 +52,7 @@ public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<Un
 	@Override
 	public void render(UnclaimedStakeBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
-		
-//		if (blockEntity.getPropertyUuid() == null || blockEntity.getPropertyUuid().equals(Deed.EMPTY_UUID)) {
-//			return;
-//		}
-//
-//		Optional<Property> property = ProtectionRegistries.block().getPropertyByUuid(blockEntity.getPropertyUuid());
-//		
-//		if (property.isEmpty()) {
-//			return;
-//		}
+
 		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY)) {
 			return;
 		}
@@ -77,7 +63,6 @@ public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<Un
 		float blue = Color.WHITE.getBlue() / 255.0f;
 		
 		// render the claim
-//		ICoords size = property.get().getBox().getMaxCoords().delta(property.get().getBox().getMinCoords());
 		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords());
 		renderProperty(blockEntity, matrixStack, builder, size, 0, 0, blue, 1.0f);	
 		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
@@ -96,18 +81,12 @@ public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<Un
 	
 	@Override
 	public void updateHighlightTranslation(BlockEntity blockEntity, PoseStack matrixStack) {
-		// TODO use template method and extract, this calc to a method
-//		Optional<Property> property = ProtectionRegistries.block().getPropertyByUuid(((AbstractPropertyOutlinerBlockEntity)blockEntity).getPropertyUuid());
-//		if (property.isEmpty()) {
-//			return;
-//		}
 		Box box = ((UnclaimedStakeBlockEntity)blockEntity).getPropertyBox();
 		if (box == null || box.equals(Box.EMPTY)) {
 			return;
 		}
 		ICoords coords = new Coords(blockEntity.getBlockPos());
 		ICoords highlightFloor = new Coords(coords);
-//		while (highlightFloor.getY() > property.get().getBox().getMinCoords().getY()) {
 		while (highlightFloor.getY() > box.getMinCoords().getY()) {
 			if (blockEntity.getLevel().getBlockState(highlightFloor.down(1).toPos()).getMaterial().isSolid()) {
 				break;

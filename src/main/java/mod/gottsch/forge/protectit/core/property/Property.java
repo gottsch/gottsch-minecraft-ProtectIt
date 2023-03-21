@@ -31,7 +31,8 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.ProtectIt;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
+import mod.gottsch.forge.protectit.core.util.UuidUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -43,45 +44,54 @@ import net.minecraft.nbt.Tag;
  *
  */
 public class Property {
-	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
-
 	private static final String NO_NAME = "";
-//	private static final String NAME_KEY = "name";
+
 	private static final String NAMES_KEY = "names";
 	private static final String UUID_KEY = "uuid";
 	private static final String OWNER_KEY = "owner";
-	private static final String COORDS_KEY = "coords";
+	private static final String LORD_KEY = "lord";
+
 	private static final String BOX_KEY = "box";
+
 	private static final String WHITELIST_KEY = "whitelist";
 	private static final String PERMISSION_KEY = "permissions";
-	private static final String SUBDIVIDE_KEY = "subdivisible";
+	private static final String FIEFDOM_KEY = "fiefdom";
 	private static final String PARENT_KEY = "parent";
 	private static final String CHILDREN_KEY = "children";
-	private static final String LANDLORD_KEY = "landlord";
+
 	private static final String CREATE_TIME_KEY = "createTime";
-	
+
+	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
+
+	/**
+	 * member properties
+	 */
+
+	// identity
 	private UUID uuid;
-//	private String name;
 	private Map<UUID, String> names;
-	private PlayerData landlord;
-	private PlayerData owner;
-	private List<PlayerData> whitelist;
-	private ICoords coords;
+
+	// location / dimensions
 	private Box box;
-	
+
+	// ownership
+	private PlayerIdentity lord;
+	private PlayerIdentity owner;
+	private List<PlayerIdentity> whitelist;
+
 	// event permssion
 	private byte permissions;
-	
+
 	// subdivisible permission
-	private boolean subdivisible;
+	private boolean fiefdom;
 
+	// property hierarchy
 	private UUID parent;
-	private List<Property> children;
+	private List<UUID> children;
 
+	// other
 	private long createTime;
-	
-	// TODO probably a good candidate for a Builder
-	// TODO add equals, hashCode()
+
 
 	/**
 	 * Empty constructor
@@ -95,37 +105,53 @@ public class Property {
 	 * @param coords
 	 * @param box
 	 */
-	public Property(ICoords coords, Box box) {
-		setCoords(coords);
+	public Property(@Deprecated ICoords coords, Box box) {
 		setBox(box);
-		setOwner(new PlayerData());
+		setLord(PlayerIdentity.EMPTY);
+		setOwner(PlayerIdentity.EMPTY);
 		setNameByOwner(NO_NAME);
 		setUuid(UUID.randomUUID());
-		setPermissions((byte)0); // ie no permission granted
+		// no permission granted
+		setPermissions((byte)0);
 	}
 
-	public Property(ICoords coords, Box box, PlayerData data) {
+	public Property(@Deprecated ICoords coords, Box box, PlayerIdentity owner) {
 		this(coords, box);
-		setOwner(data);
+		setLord(owner);
+		setOwner(owner);
 	}
-	
-	public Property(ICoords coords, Box box, PlayerData data, String name) {
-		this(coords, box, data);
+
+	public Property(@Deprecated ICoords coords, Box box, PlayerIdentity owner, String name) {
+		this(coords, box, owner);
 		setNameByOwner(name);
 	}
-	
-	@Deprecated
-	public Property(ICoords coords, Box box, PlayerData data, String name, UUID uuid) {
-		this(coords, box, data, name);
-		setUuid(uuid);
-	}
-	
-	public Property(UUID uuid, String name, ICoords coords, Box box, PlayerData data) {
+
+	public Property(UUID uuid, String name, @Deprecated ICoords coords, Box box, PlayerIdentity owner) {
 		this(coords, box);
 		setUuid(uuid);
 		setNameByOwner(name);
 	}
-	
+
+	public boolean isDomain() {
+		return !hasParent() && getLord().equals(getOwner());
+	}
+
+	public boolean isFief() {
+		return hasParent();
+	}
+
+	public boolean isFiefAvailable() {
+		return isFief() && (getLord().equals(getOwner()) || getOwner().equals(PlayerIdentity.EMPTY));
+	}
+
+	public boolean hasParent() {
+		return getParent() != null && !getParent().equals(UuidUtil.EMPTY_UUID);
+	}
+
+	public boolean hasChildren() {
+		return !getChildren().isEmpty();
+	}
+
 	/**
 	 * 
 	 * @param tag
@@ -134,7 +160,7 @@ public class Property {
 		ProtectIt.LOGGER.debug("saving property -> {}", this);
 
 		tag.putUUID(UUID_KEY, getUuid());
-		
+
 		if (!getNames().isEmpty()) {
 			ListTag listTag = new ListTag();
 			getNames().forEach((key, value) -> {
@@ -145,19 +171,19 @@ public class Property {
 			});
 			tag.put(NAMES_KEY, listTag);
 		}
-		
-		if (getLandlord() != null) {
+
+		if (getLord() != null) {
 			CompoundTag landlordTag = new CompoundTag();
-			getLandlord().save(landlordTag);
-			tag.put(LANDLORD_KEY, landlordTag);
+			getLord().save(landlordTag);
+			tag.put(LORD_KEY, landlordTag);
 		}
-		
+
 		if (getOwner() != null) {
 			CompoundTag ownerNbt = new CompoundTag();
 			getOwner().save(ownerNbt);
 			tag.put(OWNER_KEY, ownerNbt);
 		}
-		
+
 		ListTag list = new ListTag();
 		getWhitelist().forEach(data -> {
 			CompoundTag playerNbt = new CompoundTag();
@@ -165,32 +191,30 @@ public class Property {
 			list.add(playerNbt);
 		});
 		tag.put(WHITELIST_KEY, list);
-		
-		CompoundTag coordsNbt = new CompoundTag();
-		getCoords().save(coordsNbt);
-		tag.put(COORDS_KEY, coordsNbt);
 
-		CompoundTag boxNbt = new CompoundTag();
-		getBox().save(boxNbt);
-		tag.put(BOX_KEY, boxNbt);
-				
+		CompoundTag boxTag = new CompoundTag();
+		getBox().save(boxTag);
+		tag.put(BOX_KEY, boxTag);
+
 		tag.putByte(PERMISSION_KEY, getPermissions());
-		tag.putBoolean(SUBDIVIDE_KEY, isSubdivisible());
+		tag.putBoolean(FIEFDOM_KEY, isFiefdom());
 
 		if (getParent() != null) {
 			tag.putUUID(PARENT_KEY, getParent());
 		}
-		
+
 		if (!getChildren().isEmpty()) {
 			ListTag childrenTag = new ListTag();
 			getChildren().forEach(child -> {
 				CompoundTag childTag = new CompoundTag();
-				child.save(childTag);
+				//				child.save(childTag);
+				childTag.putUUID(UUID_KEY, child);
 				childrenTag.add(childTag);
 			});
 			tag.put(CHILDREN_KEY, childrenTag);
-			tag.putLong(CREATE_TIME_KEY, createTime);
 		}
+		ProtectIt.LOGGER.debug("saving createTime -> {}", getCreateTime());
+		tag.putLong(CREATE_TIME_KEY, getCreateTime());
 	}
 
 	/**
@@ -212,10 +236,10 @@ public class Property {
 				getNames().put(((CompoundTag)nameTag).getUUID("key"), ((CompoundTag)nameTag).getString("value"));
 			});
 		}
-		if (tag.contains(LANDLORD_KEY)) {
-			PlayerData data = new PlayerData();
-			data.load(tag.getCompound(LANDLORD_KEY));
-			setLandlord(data);
+		if (tag.contains(LORD_KEY)) {
+			PlayerIdentity data = new PlayerIdentity();
+			data.load(tag.getCompound(LORD_KEY));
+			setLord(data);
 		}
 		if (tag.contains(OWNER_KEY)) {
 			getOwner().load(tag.getCompound(OWNER_KEY));
@@ -223,41 +247,43 @@ public class Property {
 		if (tag.contains(WHITELIST_KEY)) {
 			ListTag list = tag.getList(WHITELIST_KEY, 10);
 			list.forEach(element -> {
-				PlayerData playerData = new PlayerData("");
+				PlayerIdentity playerData = new PlayerIdentity();
 				playerData.load((CompoundTag)element);
 				getWhitelist().add(playerData);
 			});
 		}
-		
-		if (tag.contains(COORDS_KEY)) {
-			setCoords(Coords.EMPTY.load(tag.getCompound(COORDS_KEY)));
-		}
+
 		if (tag.contains(BOX_KEY)) {
 			setBox(Box.load(tag.getCompound(BOX_KEY)));
 		}
-		
+
 		if (tag.contains(PERMISSION_KEY)) {
 			setPermissions(tag.getByte(PERMISSION_KEY));
 		}
-		
-		if (tag.contains(SUBDIVIDE_KEY)) {
-			setSubdivisible(tag.getBoolean(SUBDIVIDE_KEY));
+
+		if (tag.contains(FIEFDOM_KEY)) {
+			setFiefdom(tag.getBoolean(FIEFDOM_KEY));
 		}
-		
+
 		if (tag.contains(PARENT_KEY)) {
 			setParent(tag.getUUID(PARENT_KEY));
 		}
-		
+
 		if (tag.contains(CHILDREN_KEY)) {
 			ListTag childrenTag = tag.getList(CHILDREN_KEY, Tag.TAG_COMPOUND);
 			childrenTag.forEach(childTag -> {
-				getChildren().add(new Property().load((CompoundTag)childTag));
+				//				getChildren().add(new Property().load((CompoundTag)childTag));
+				if (((CompoundTag)childTag).contains(UUID_KEY)) {
+					getChildren().add( ((CompoundTag)childTag).getUUID(UUID_KEY) );
+				}
 			});
-			
-			if (tag.contains(CREATE_TIME_KEY)) {
-				setCreateTime(tag.getLong(CREATE_TIME_KEY));
-			}
-		}		
+		}
+		
+		if (tag.contains(CREATE_TIME_KEY)) {
+			setCreateTime(tag.getLong(CREATE_TIME_KEY));
+			ProtectIt.LOGGER.debug("loading createTime -> nbt -> {}, object -> {}", tag.getLong(CREATE_TIME_KEY), getCreateTime());
+		}
+		
 		return this;
 	}
 
@@ -272,21 +298,7 @@ public class Property {
 				&& box.getMinCoords().getY() <= box2.getMaxCoords().getY() && box.getMaxCoords().getY() >= box2.getMinCoords().getY()
 				&& box.getMinCoords().getZ() <=  box2.getMaxCoords().getZ() && box.getMaxCoords().getZ() >= box2.getMinCoords().getZ();
 	}
-	
-	/**
-	 * @deprecated check the value of ProtectionRegistries.block.getHotel()
-	 * @return
-	 */
-//	@Deprecated
-//	public boolean isHotel() {
-//		return isHotelable() && hasChildren();
-//	}
-//
-//
-//	public boolean isRoom() {
-//		return !isHotelable() && parent != null;
-//	}
-	
+
 	/**
 	 * Specific interact permission query
 	 * @return
@@ -294,7 +306,11 @@ public class Property {
 	public boolean hasInteractPermission() {
 		return getPermission(Permission.INTERACT_PERMISSION.value) == 1;
 	}
-	
+
+	public boolean hasDoorPermission() {
+		return getPermission(Permission.DOOR_INTERACT_PERMISSION.value) == 1;
+	}
+
 	/**
 	 * General permission query.
 	 * @param permission
@@ -303,7 +319,7 @@ public class Property {
 	public boolean hasPermission(int permission) {
 		return getPermission(permission) == 1;
 	}
-	
+
 	/**
 	 * 
 	 * @param position
@@ -312,7 +328,7 @@ public class Property {
 	public byte getPermission(int position) {
 		return (byte) ((getPermissions() >> position) & 1);
 	}
-	
+
 	/**
 	 * 
 	 * @param position
@@ -328,7 +344,7 @@ public class Property {
 		}
 		setPermissions(data);
 	}
-	
+
 	public byte getPermissions() {
 		return permissions;
 	}
@@ -336,38 +352,31 @@ public class Property {
 	public void setPermissions(byte permissions) {
 		this.permissions = permissions;
 	}
-	
-	public PlayerData getOwner() {
+
+	public PlayerIdentity getOwner() {
 		return owner;
 	}
 
-	public void setOwner(PlayerData owner) {
+	public void setOwner(PlayerIdentity owner) {
 		if (this.owner != null) {
-			// remove old name by owner
+			// remove name by old owner
 			String name = getNameByOwner();
-			getNames().remove(UUID.fromString(this.owner.getUuid()));
-			setName(UUID.fromString(owner.getUuid()), name);
+			getNames().remove(this.owner.getUuid());
+			// add name by new owner
+			setName(owner.getUuid(), name);
 		}
 		this.owner = owner;
 	}
 
-	public List<PlayerData> getWhitelist() {
+	public List<PlayerIdentity> getWhitelist() {
 		if (whitelist == null) {
 			whitelist = new ArrayList<>();
 		}
 		return whitelist;
 	}
 
-	public void setWhitelist(List<PlayerData> whitelist) {
+	public void setWhitelist(List<PlayerIdentity> whitelist) {
 		this.whitelist = whitelist;
-	}
-
-	public ICoords getCoords() {
-		return coords;
-	}
-
-	public void setCoords(ICoords coords) {
-		this.coords = coords;
 	}
 
 	public Box getBox() {
@@ -386,14 +395,6 @@ public class Property {
 		setNameByOwner(name);
 	}
 
-//	@Override
-//	public String toString() {
-//		return "Claim [name=" + name + ", owner=" + owner + ", whitelist=" + whitelist + ", coords=" + coords + ", box="
-//				+ box + "]";
-//	}
-
-
-
 	public UUID getUuid() {
 		return uuid;
 	}
@@ -402,85 +403,60 @@ public class Property {
 		this.uuid = uuid;
 	}
 
-	public boolean isSubdivisible() {
-		return subdivisible;
+	public boolean isFiefdom() {
+		return fiefdom;
 	}
 
-	public void setSubdivisible(boolean hotelable) {
-		this.subdivisible = hotelable;
-	}
-//
-//	public ICoords getParent() {
-//		return parent;
-//	}
-//
-//	public void setParent(ICoords parent) {
-//		this.parent = parent;
-//	}
-//
-//	public boolean hasChildren() {
-//		return children;
-//	}
-
-
-
-	public PlayerData getLandlord() {
-		return landlord;
+	public void setFiefdom(boolean hotelable) {
+		this.fiefdom = hotelable;
 	}
 
-	public void setLandlord(PlayerData tenant) {
-		this.landlord = tenant;
+	public PlayerIdentity getLord() {
+		return lord;
 	}
 
-//	public Property getParent() {
-//		if (parent == null) {
-//			parent = EMPTY;
-//		}
-//		return parent;
-//	}
-//
-//	public void setParent(Property parent) {
-//		this.parent = parent;
-//	}
+	public void setLord(PlayerIdentity lord) {
+		this.lord = lord;
+	}
 
-	public List<Property> getChildren() {
+	public List<UUID> getChildren() {
 		if (children == null) {
 			children = new ArrayList<>();
 		}
 		return children;
 	}
 
-	public void setChildren(List<Property> children) {
+	public void setChildren(List<UUID> children) {
 		this.children = children;
 	}
 
 	public String getNameByOwner() {
-		return getName(UUID.fromString(getOwner().getUuid()));
+		return getName(getOwner().getUuid());
 	}
-	
+
 	public void setNameByOwner(String name) {
-		setName(UUID.fromString(getOwner().getUuid()), name);
+		setName(getOwner().getUuid(), name);
 	}
-	
+
 	public String getNameByLandlord() {
-		return getName(UUID.fromString(getLandlord().getUuid()));
+		return getName(getLord().getUuid());
 	}
-	
+
 	public void setNameByLandlord(String name) {
-		setName(UUID.fromString(getLandlord().getUuid()), name);
+		setName(getLord().getUuid(), name);
 	}
-	
+
 	public String getName(UUID owner) {
 		if (getNames().containsKey(owner)) {
 			return getNames().get(owner);
 		}
 		return NO_NAME;
 	}
-	
+
 	public void setName(UUID owner, String name) {
 		getNames().put(owner, name);
 	}
-	
+
 	public Map<UUID, String> getNames() {
 		if (names == null) {
 			names = Maps.newHashMap();
@@ -490,30 +466,6 @@ public class Property {
 
 	public void setNames(Map<UUID, String> nameMap) {
 		this.names = nameMap;
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(coords, uuid);
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Property other = (Property) obj;
-		return Objects.equals(coords, other.coords) && Objects.equals(uuid, other.uuid);
-	}
-
-	@Override
-	public String toString() {
-		return "Property [uuid=" + uuid + ", names=" + names + ", landlord=" + landlord + ", owner=" + owner
-				+ ", whitelist=" + whitelist + ", coords=" + coords + ", box=" + box + ", permissions=" + permissions
-				+ ", subdivisible=" + subdivisible + "]";
 	}
 
 	public long getCreateTime() {
@@ -531,4 +483,29 @@ public class Property {
 	public void setParent(UUID parent) {
 		this.parent = parent;
 	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(createTime, uuid);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Property other = (Property) obj;
+		return createTime == other.createTime && Objects.equals(uuid, other.uuid);
+	}
+
+	@Override
+	public String toString() {
+		return "Property [uuid=" + uuid + ", names=" + names + ", box=" + box + ", lord=" + lord + ", owner=" + owner
+				+ ", whitelist=" + whitelist + ", permissions=" + permissions + ", fiefdom=" + fiefdom + ", parent="
+				+ parent + ", children=" + children + ", createTime=" + createTime + "]";
+	}	
+
 }

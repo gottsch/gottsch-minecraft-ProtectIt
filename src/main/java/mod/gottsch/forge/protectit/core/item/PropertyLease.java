@@ -5,24 +5,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.gottschcore.world.WorldInfo;
-import mod.gottsch.forge.protectit.core.command.CommandHelper;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.property.PropertyUtils;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -61,8 +53,8 @@ public class PropertyLease extends Deed {
 					Box box = Box.load(tag.getCompound("propertyBox"));
 					tooltip.add(Component.translatable(LangUtil.tooltip("lease.property_location")).withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(String.format("(%s) to (%s)", 
-									PropertyUtils.formatCoords(box.getMinCoords()), 
-									PropertyUtils.formatCoords(box.getMaxCoords())
+									PropertyUtil.formatCoords(box.getMinCoords()), 
+									PropertyUtil.formatCoords(box.getMaxCoords())
 									))
 							.withStyle(style -> {
 								return style.withColor(ChatFormatting.GREEN);
@@ -96,21 +88,26 @@ public class PropertyLease extends Deed {
 	@Override
 	public Optional<Property> selectProperty(Player player, Property property) {
 		ICoords coords = new Coords(player.blockPosition());
+		Box box = new Box(coords);
+//		
+//		// find the first unclaimed property that intersect the player position
+//		Property selectedProperty = null;
+//		if (!property.getChildren().isEmpty()) {
+//			List<Property> properties = property.getChildren();
+//			properties.addAll(property.getChildren().stream().flatMap(p -> p.getChildren().stream()).toList());
+//			// determine if any of the childen intersect with the coords and properties don't have an owner
+//			for (Property child : properties) {
+//				if (child.intersects(new Box(coords))) {
+//					selectedProperty = child;
+//					break;
+//				}
+//			}
+//		}
+//		return Optional.ofNullable(selectedProperty);
+		List<Property> properties = PropertyUtil.getPropertyHierarchy(property);
 		
-		// find the first unclaimed property that intersect the player position
-		Property selectedProperty = null;
-		if (!property.getChildren().isEmpty()) {
-			List<Property> properties = property.getChildren();
-			properties.addAll(property.getChildren().stream().flatMap(p -> p.getChildren().stream()).toList());
-			// determine if any of the childen intersect with the coords and properties don't have an owner
-			for (Property child : properties) {
-				if (child.intersects(new Box(coords))) {
-					selectedProperty = child;
-					break;
-				}
-			}
-		}
-		return Optional.ofNullable(selectedProperty);
+		// TODO determine the property - how to flag a property that is available for lease?
+		return properties.stream().filter(p -> p.isFiefAvailable() && p.intersects(box)).findFirst();
 	}
 	
 	@Override
@@ -118,11 +115,11 @@ public class PropertyLease extends Deed {
 		boolean isValid = false;
 		UUID propertyOwnerUuid;
 		
-		if (ObjectUtils.isEmpty(property.getLandlord()) || StringUtils.isEmpty(property.getLandlord().getUuid())) {
+		if (ObjectUtils.isEmpty(property.getLord()) ||ObjectUtils.isEmpty(property.getLord().getUuid())) {
 			propertyOwnerUuid = EMPTY_UUID;
 		}
 		else {
-			propertyOwnerUuid = UUID.fromString(property.getLandlord().getUuid());
+			propertyOwnerUuid = property.getLord().getUuid();
 		}
 
 		if (propertyOwnerUuid.equals(itemOwnerUuid)) {

@@ -18,6 +18,7 @@
 package mod.gottsch.forge.protectit.core.block;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -26,7 +27,8 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.PlayerData;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -85,22 +87,25 @@ public class UnclaimedStake extends ClaimBlock {
 		if (blockEntity instanceof UnclaimedStakeBlockEntity) {
 //			((UnclaimedStakeBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
 			Box box = getBox(level, blockEntity.getBlockPos());
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), true, false);
+			// need to find ALL the protections
+			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			if (!protections.isEmpty()) {
 				// get the property
-				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getPropertyByCoords(b.getMinCoords())).collect(Collectors.toList());
+//				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getPropertyByCoords(b.getMinCoords())).collect(Collectors.toList());
+				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 				// get all the children
-				properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
-				Property property = null;
-				for (Property p : properties	) {
-					if ((p.getOwner() == null || p.getOwner().equals(PlayerData.EMPTY)) && p.intersects(box)) {
-						property = p;
-					}
-				}
-				if (property != null) {
-					((UnclaimedStakeBlockEntity)blockEntity).setPropertyCoords(property.getCoords());
-					((UnclaimedStakeBlockEntity)blockEntity).setPropertyUuid(property.getUuid());
-					((UnclaimedStakeBlockEntity)blockEntity).setPropertyBox(property.getBox());
+//				properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
+//				Property property = null;
+//				for (Property p : properties	) {
+//					if ((p.getOwner() == null || p.getOwner().equals(PlayerIdentity.EMPTY)) && p.intersects(box)) {
+//						property = p;
+//					}
+//				}
+				if (property != null && property.isPresent()) {
+					((UnclaimedStakeBlockEntity)blockEntity).setPropertyCoords(property.get().getBox().getMinCoords());
+					((UnclaimedStakeBlockEntity)blockEntity).setPropertyUuid(property.get().getUuid());
+					((UnclaimedStakeBlockEntity)blockEntity).setPropertyBox(property.get().getBox());
 				}
 			}
 			level.markAndNotifyBlock(pos, null, state, state, 0, 0);

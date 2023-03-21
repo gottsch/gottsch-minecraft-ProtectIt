@@ -20,6 +20,9 @@
 package mod.gottsch.forge.protectit.core.block;
 
 import java.util.List;
+import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -33,6 +36,7 @@ import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.property.PropertySizes;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.core.BlockPos;
@@ -47,7 +51,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.PacketDistributor;
@@ -58,7 +65,7 @@ import net.minecraftforge.network.PacketDistributor;
  * @author Mark Gottschling on Dec 2, 2021
  *
  */
-public class RemoveClaimBlock extends ClaimBlock {
+public class RemoveClaimBlock extends ClaimBlock implements EntityBlock {
 
 	public RemoveClaimBlock(Block.Properties properties) {
 		super(properties);
@@ -81,23 +88,44 @@ public class RemoveClaimBlock extends ClaimBlock {
 		return blockEntity;
 	}
 
+	@Nullable
+	@Override
+	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+		if (!level.isClientSide()) {
+			return (lvl, pos, blockState, t) -> {
+				if (t instanceof RemoveClaimBlockEntity entity) { // test and cast
+					entity.tickServer();
+				}
+			};
+		}
+		return null;
+	}
+	
 	/**
 	 * 
 	 */
 	@Override
 	public void setPlacedBy(Level worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
-		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
-		if (tileEntity instanceof RemoveClaimBlockEntity) {
+		BlockEntity blockEntity = worldIn.getBlockEntity(pos);
+		if (blockEntity instanceof RemoveClaimBlockEntity) {
 			// get the claim for this position
-			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
+//			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 			ProtectIt.LOGGER.debug("search for property @ -> {}", new Coords(pos).toShortString());
-			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos), false, false);
 			if (!list.isEmpty()) {				
-				Property properties = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
-				if (properties != null) {
-					ProtectIt.LOGGER.debug("found claim -> {}", properties);
-					((RemoveClaimBlockEntity)tileEntity).setPropertyCoords(properties.getBox().getMinCoords());
-				}
+//				List<Property> properties = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
+				List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+
+//				if (properties != null && !properties.isEmpty()) {
+//					Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+					if (property.isPresent()) {
+						ProtectIt.LOGGER.debug("found property -> {}", property.get());
+						((RemoveClaimBlockEntity)blockEntity).setPropertyCoords(property.get().getBox().getMinCoords());
+						((RemoveClaimBlockEntity)blockEntity).setPropertyUuid(property.get().getUuid());
+						((RemoveClaimBlockEntity)blockEntity).setPropertyBox(property.get().getBox());
+					}
+//				}
 			}
 		}
 	}
@@ -120,14 +148,15 @@ public class RemoveClaimBlock extends ClaimBlock {
 		if (blockEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
-			Property property = ProtectionRegistries.block().getPropertyByCoords(((RemoveClaimBlockEntity)blockEntity).getPropertyCoords());
-			if (property == null || !player.getStringUUID().equalsIgnoreCase(property.getOwner().getUuid())) {
+			List<Property> properties = ProtectionRegistries.block().getPropertyByCoords(((RemoveClaimBlockEntity)blockEntity).getPropertyCoords());
+			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+			if (property.isEmpty() || !player.getUUID().equals(property.get().getOwner().getUuid())) {
 				player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")));
 				return InteractionResult.SUCCESS;
 			}
 
-			// remove claim
-			ProtectionRegistries.block().removeProtection(property.getBox().getMinCoords());
+			// remove property
+			ProtectionRegistries.block().removeProperty(property.get()); //.get().getBox().getMinCoords());
 
 			ProtectIt.LOGGER.debug("should've removed -> {} {}", property, player.getStringUUID());
 
@@ -137,15 +166,15 @@ public class RemoveClaimBlock extends ClaimBlock {
 				savedData.setDirty();
 			}
 
-			// TODO update message and handler
+			// update message and handler
 			if(((ServerLevel)world).getServer().isDedicatedServer()) {
 				// send message to remove protection on all clients
 				RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 						RegistryMutatorMessageToClient.BLOCK_TYPE, 
 						RegistryMutatorMessageToClient.REMOVE_ACTION, 
 						player.getStringUUID()).with($ -> {
-							$.coords1 = property.getBox().getMinCoords();
-							$.coords2 = property.getBox().getMaxCoords();
+							$.coords1 = property.get().getBox().getMinCoords();
+							$.coords2 = property.get().getBox().getMaxCoords();
 							$.playerName = player.getName().getString();
 						}).build();
 				ProtectIt.LOGGER.debug("sending message to sync client side ");
@@ -156,7 +185,7 @@ public class RemoveClaimBlock extends ClaimBlock {
 			world.removeBlock(pos, false);
 
 			// calculate the size
-			ICoords propertySize = property.getBox().getMaxCoords().delta(property.getBox().getMinCoords());
+			ICoords propertySize = property.get().getBox().getMaxCoords().delta(property.get().getBox().getMinCoords());
 			ItemStack claimStack;
 			if (propertySize.equals(PropertySizes.SMALL_CLAIM_SIZE)) {
 				claimStack = new ItemStack(ModBlocks.SMALL_CLAIM.get());

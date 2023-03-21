@@ -19,8 +19,12 @@
  */
 package mod.gottsch.forge.protectit.core.registry;
 
+import java.util.Objects;
 import java.util.UUID;
 
+import com.mojang.authlib.GameProfile;
+
+import mod.gottsch.forge.protectit.core.util.UuidUtil;
 import net.minecraft.nbt.CompoundTag;
 
 /**
@@ -28,29 +32,38 @@ import net.minecraft.nbt.CompoundTag;
  * @author Mark Gottschling on Oct 9, 2021
  *
  */
-public class PlayerData {
-	private static UUID EMPTY_UUID = new UUID(0L, 0L);
+public class PlayerIdentity {
+	private static final String UUID_KEY = "uuid";
+	private static final String NAME_KEY = "name";
 	
-	public static final PlayerData EMPTY = new PlayerData(EMPTY_UUID.toString(), "");
+	public static final PlayerIdentity EMPTY = new PlayerIdentity(UuidUtil.EMPTY_UUID, "");
 	
-	private String uuid;
+	private UUID uuid;
 	private String name;
 	
 	/**
 	 * 
 	 */
-	public PlayerData() {
-		this(EMPTY_UUID.toString(), "");
+	public PlayerIdentity() {
+		this(UuidUtil.EMPTY_UUID);
 	}
 	
-	public PlayerData(String uuid) {
+	public PlayerIdentity(UUID uuid) {
 		setUuid(uuid);
 		setName("");
 	}
 	
-	public PlayerData(String uuid, String name) {
+	public PlayerIdentity(UUID uuid, String name) {
 		this(uuid);
 		setName(name);
+	}
+	
+	/**
+	 * Convenience wrapper.
+	 * @param profile
+	 */
+	public PlayerIdentity(GameProfile profile) {
+		this(profile.getId(), profile.getName());
 	}
 	
 	public CompoundTag save() {
@@ -60,24 +73,24 @@ public class PlayerData {
 	}
 	
 	public void save(CompoundTag tag) {
-		tag.putString("uuid", getUuid());
-		tag.putString("name", (getName() == null) ? "" : getName());
+		tag.putUUID(UUID_KEY, getUuid());
+		tag.putString(NAME_KEY, (getName() == null) ? "" : getName());
 	}
 	
-	public PlayerData load(CompoundTag tag) {
-		if (tag.contains("uuid")) {
-			setUuid(tag.getString("uuid"));
+	public PlayerIdentity load(CompoundTag tag) {
+		if (tag.contains(UUID_KEY)) {
+			setUuid(tag.getUUID(UUID_KEY));
 		}
-		if (tag.contains("name")) {
-			setName(tag.getString("name"));
+		if (tag.contains(NAME_KEY)) {
+			setName(tag.getString(NAME_KEY));
 		}
 		return this;
 	}
 	
-	public String getUuid() {
+	public UUID getUuid() {
 		return uuid;
 	}
-	public void setUuid(String uuid) {
+	public void setUuid(UUID uuid) {
 		this.uuid = uuid;
 	}
 	
@@ -89,17 +102,8 @@ public class PlayerData {
 	}
 
 	@Override
-	public String toString() {
-		return "PlayerData [uuid=" + uuid + ", name=" + name + "]";
-	}
-
-	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
-		return result;
+		return Objects.hash(name, uuid);
 	}
 
 	@Override
@@ -110,18 +114,12 @@ public class PlayerData {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PlayerData other = (PlayerData) obj;
-		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (uuid == null) {
-			if (other.uuid != null)
-				return false;
-		} else if (!uuid.equals(other.uuid))
-			return false;
-		return true;
+		PlayerIdentity other = (PlayerIdentity) obj;
+		return Objects.equals(name, other.name) && Objects.equals(uuid, other.uuid);
 	}
-	
+
+	@Override
+	public String toString() {
+		return "PlayerData [uuid=" + uuid + ", name=" + name + "]";
+	}
 }
