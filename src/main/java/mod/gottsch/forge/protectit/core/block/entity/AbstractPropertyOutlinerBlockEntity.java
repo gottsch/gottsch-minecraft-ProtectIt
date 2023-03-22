@@ -78,13 +78,13 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 			ICoords c1 = new Coords(getBlockPos());
 			Box box = new Box(c1);
 			// need to find ALL the protections
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> protections = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 //			ProtectIt.LOGGER.debug("found protections -> {}", protections);
 			
 			Optional<Property> property = Optional.empty();
 			if (!protections.isEmpty()) {
 				// get the properties
-				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 //				ProtectIt.LOGGER.debug("properties -> {}", properties);
 				property = selectProperty(properties, box);
 //				ProtectIt.LOGGER.debug("selected -> {}", property);

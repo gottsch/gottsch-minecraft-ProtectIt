@@ -19,11 +19,42 @@
  */
 package mod.gottsch.forge.protectit.core.registry;
 
+import java.util.List;
+import java.util.UUID;
+
+import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.protectit.core.zone.Zone;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+
 /**
  *  * Protection Registry more specific to PVP play. The protected areas are safe-zones.
  * @author Mark Gottschling on Nov 6, 2021
  *
  */
-public interface IPvpProtectionRegistry extends IProtectionRegistry {
+public interface IPvpRegistry {
+
+	boolean isProtected(ICoords a, ICoords b);
+
+	void addZone(Zone zone);
+	void removeZone(Zone zone);
+	void removeZone(UUID uuid, ICoords coords);
+	
+	Tag save(CompoundTag compoundTag);
+	void load(CompoundTag compound);
+
+	List<Box> getProtections(ICoords coords, ICoords add, boolean findFast, boolean includeBorder);
+	List<Zone> getZoneByCoords(ICoords minCoords);
+
+	int size();
+	void clear();
+	List<Zone> getAll();
+
+	void dump();
+
+	
+
+	
 
 }

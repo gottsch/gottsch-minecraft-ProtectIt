@@ -43,16 +43,16 @@ import net.minecraftforge.network.NetworkEvent;
  * @author Mark Gottschling Feb 20, 2023
  *
  */
-public class SubdivideS2CPush2 implements ICoordsHandler {
+public class AddFiefS2CPush2 implements ICoordsHandler {
 	private UUID target;
 	private UUID landlord;
 	private UUID owner;
 	private UUID property;
 	private Box box;
 	
-	protected SubdivideS2CPush2() {}
+	protected AddFiefS2CPush2() {}
 	
-	public SubdivideS2CPush2(UUID target, UUID landlord, UUID owner, UUID property, Box box) {
+	public AddFiefS2CPush2(UUID target, UUID landlord, UUID owner, UUID property, Box box) {
 		this.target = target;
 		this.landlord = landlord;
 		this.owner = owner;
@@ -78,8 +78,8 @@ public class SubdivideS2CPush2 implements ICoordsHandler {
 	 * @param buf
 	 * @return
 	 */
-	public static SubdivideS2CPush2 decode(FriendlyByteBuf buf) {
-		SubdivideS2CPush2 message = new SubdivideS2CPush2();
+	public static AddFiefS2CPush2 decode(FriendlyByteBuf buf) {
+		AddFiefS2CPush2 message = new AddFiefS2CPush2();
 		
 		try {
 			message.target = buf.readUUID();
@@ -102,7 +102,7 @@ public class SubdivideS2CPush2 implements ICoordsHandler {
 	 * @param message
 	 * @param ctxSupplier
 	 */
-	public static void handle(final SubdivideS2CPush2 message, Supplier<NetworkEvent.Context> ctxSupplier) {
+	public static void handle(final AddFiefS2CPush2 message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		
 		if (ctx.getDirection().getReceptionSide() != LogicalSide.CLIENT) {
@@ -127,12 +127,12 @@ public class SubdivideS2CPush2 implements ICoordsHandler {
 	 * @param message
 	 * @param sendingPlayer
 	 */
-	static void processMessage(ClientLevel level, SubdivideS2CPush2 message) {
+	static void processMessage(ClientLevel level, AddFiefS2CPush2 message) {
 
 		try {
 			// get the property by uuid
 //			Optional<Property> property = CommandHelper.getProperty(message.owner, message.property);
-			Optional<Property> target = ProtectionRegistries.block().getPropertyByUuid(message.target);
+			Optional<Property> target = ProtectionRegistries.property().getPropertyByUuid(message.target);
 			if (target.isPresent()) {
 				// create a box from the valid coords
 				Box box = message.box;
@@ -147,7 +147,7 @@ public class SubdivideS2CPush2 implements ICoordsHandler {
 				property.setLord(new PlayerIdentity(message.owner, message.owner.toString()));
 				property.setNameByLandlord("NAME_DOESNT_MATTER_ON_CLIENT");
 				
-				ProtectionRegistries.block().addFief(target.get(), property);
+				ProtectionRegistries.property().addFief(target.get(), property);
 			}
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to update whitelist on client: ", e);

@@ -40,7 +40,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * @author Mark Gottschling Mar 1, 2023
  *
  */
-public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<UnclaimedStakeBlockEntity>, IPropertyRenderer {//extends PropertyLeverBlockEntityRenderer {
+public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<UnclaimedStakeBlockEntity>, IPropertyRenderer {
+	//extends PropertyLeverBlockEntityRenderer {
 	
 	/**
 	 * 

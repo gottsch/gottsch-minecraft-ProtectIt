@@ -28,6 +28,7 @@ import net.minecraft.network.FriendlyByteBuf;
  * @author Mark Gottschling on Dec 9, 2021
  *
  */
+@Deprecated
 public interface ICoordsHandler {
 
 	default public void writeCoords(ICoords coords, FriendlyByteBuf buf) {

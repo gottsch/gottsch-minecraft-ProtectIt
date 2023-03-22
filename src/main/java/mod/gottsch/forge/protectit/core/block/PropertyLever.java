@@ -168,10 +168,10 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 			BlockEntity blockEntity = worldIn.getBlockEntity(pos);
 			if (blockEntity instanceof PropertyLeverBlockEntity) {
 				// get the claim for this position
-				List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+				List<Box> list = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 				ProtectIt.LOGGER.debug("found protections -> {}", list);
 				if (!list.isEmpty()) {				
-					List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+					List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 //					ProtectIt.LOGGER.debug("properties -> {}", properties);
 					// NOTE this list of properties may or may not contain the children properties
 					Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
@@ -196,7 +196,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
 		if (blockEntity instanceof PropertyLeverBlockEntity) {
-			List<Property> properties = ProtectionRegistries.block().getPropertyByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
+			List<Property> properties = ProtectionRegistries.property().getPropertyByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 			if (property.isPresent() && !player.getUUID().equals(property.get().getOwner().getUuid()) &&
 					property.get().getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getUUID()))) {

@@ -39,7 +39,7 @@ import net.minecraft.nbt.Tag;
 
 
 /**
- * 
+ * TODO a Property could extend a Zone
  * @author Mark Gottschling on Nov 4, 2021
  *
  */
@@ -61,7 +61,7 @@ public class Property {
 
 	private static final String CREATE_TIME_KEY = "createTime";
 
-	public static Property EMPTY = new Property(Coords.EMPTY, Box.EMPTY);
+	public static final Property EMPTY = new Property(UuidUtil.EMPTY_UUID, "", Coords.EMPTY, Box.EMPTY, PlayerIdentity.EMPTY);
 
 	/**
 	 * member properties
@@ -141,7 +141,8 @@ public class Property {
 	}
 
 	public boolean isFiefAvailable() {
-		return isFief() && (getLord().equals(getOwner()) || getOwner().equals(PlayerIdentity.EMPTY));
+//		return isFief() && (getLord().equals(getOwner()) || getOwner().equals(PlayerIdentity.EMPTY));
+		return isFief() && getOwner().equals(PlayerIdentity.EMPTY);
 	}
 
 	public boolean hasParent() {
@@ -213,7 +214,7 @@ public class Property {
 			});
 			tag.put(CHILDREN_KEY, childrenTag);
 		}
-		ProtectIt.LOGGER.debug("saving createTime -> {}", getCreateTime());
+//		ProtectIt.LOGGER.debug("saving createTime -> {}", getCreateTime());
 		tag.putLong(CREATE_TIME_KEY, getCreateTime());
 	}
 
@@ -242,7 +243,9 @@ public class Property {
 			setLord(data);
 		}
 		if (tag.contains(OWNER_KEY)) {
-			getOwner().load(tag.getCompound(OWNER_KEY));
+			PlayerIdentity data = new PlayerIdentity();
+			data.load(tag.getCompound(OWNER_KEY));
+			setOwner(data);
 		}
 		if (tag.contains(WHITELIST_KEY)) {
 			ListTag list = tag.getList(WHITELIST_KEY, 10);
@@ -281,7 +284,7 @@ public class Property {
 		
 		if (tag.contains(CREATE_TIME_KEY)) {
 			setCreateTime(tag.getLong(CREATE_TIME_KEY));
-			ProtectIt.LOGGER.debug("loading createTime -> nbt -> {}, object -> {}", tag.getLong(CREATE_TIME_KEY), getCreateTime());
+//			ProtectIt.LOGGER.debug("loading createTime -> nbt -> {}, object -> {}", tag.getLong(CREATE_TIME_KEY), getCreateTime());
 		}
 		
 		return this;

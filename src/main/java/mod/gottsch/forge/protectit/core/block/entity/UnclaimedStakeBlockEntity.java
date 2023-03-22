@@ -58,6 +58,14 @@ public class UnclaimedStakeBlockEntity extends AbstractPropertyOutlinerBlockEnti
 //			}
 //		}
 //		return Optional.ofNullable(property);
-		return PropertyUtil.getLeastSignificant(properties);
+		Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+		
+		// now determine if it is a unclaimed/leasable fief
+		if (property.isPresent()) {
+			if (property.get().isDomain() || !property.get().isFiefAvailable()) {
+				property = Optional.empty();
+			}
+		}
+		return property;
 	}
 }

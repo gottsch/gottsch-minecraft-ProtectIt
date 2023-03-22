@@ -59,10 +59,10 @@ public class PropertyUtil {
 //		List<Property> lords = new ArrayList<>();
 
 		// get top-level properties only by player
-		List<Property> owners = ProtectionRegistries.block().getPropertiesByOwner(player.getId())
+		List<Property> owners = ProtectionRegistries.property().getPropertiesByOwner(player.getId())
 				.stream().filter(p -> p.getLord() == null || p.getLord().getUuid().equals(player.getId())).toList();
 		
-		List<Property> lords = ProtectionRegistries.block().getPropertiesByLord(player.getId())
+		List<Property> lords = ProtectionRegistries.property().getPropertiesByLord(player.getId())
 				.stream().filter(p -> p.getLord().getUuid().equals(player.getId()) &&
 						!p.getLord().equals(p.getOwner())).toList();
 				
@@ -179,8 +179,8 @@ public class PropertyUtil {
 	public static List<Property> getPropertyHierarchy(Property property) {
 		List<Property> result = new ArrayList<>();
 
-		result.addAll(ProtectionRegistries.block().getAllPropertiesByUuid(property.getChildren()));
-		result.addAll(result.stream().flatMap(p -> ProtectionRegistries.block().getAllPropertiesByUuid(p.getChildren()).stream()).toList());
+		result.addAll(ProtectionRegistries.property().getAllPropertiesByUuid(property.getChildren()));
+		result.addAll(result.stream().flatMap(p -> ProtectionRegistries.property().getAllPropertiesByUuid(p.getChildren()).stream()).toList());
 
 //		property.getChildren().forEach(uuid -> {
 //			Optional<Property> child = ProtectionRegistries.block().getPropertyByUuid(uuid);
@@ -213,8 +213,8 @@ public class PropertyUtil {
 //				});
 //				result.addAll(parent.getChildren());
 //			}
-			result.addAll(ProtectionRegistries.block().getAllPropertiesByUuid(parent.getChildren()));
-			result.addAll(result.stream().flatMap(p -> ProtectionRegistries.block().getAllPropertiesByUuid(p.getChildren()).stream()).toList());
+			result.addAll(ProtectionRegistries.property().getAllPropertiesByUuid(parent.getChildren()));
+			result.addAll(result.stream().flatMap(p -> ProtectionRegistries.property().getAllPropertiesByUuid(p.getChildren()).stream()).toList());
 
 			result.add(parent);
 		});

@@ -22,6 +22,10 @@ import java.util.UUID;
 
 import com.google.common.collect.Maps;
 
+import mod.gottsch.forge.protectit.ProtectIt;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+
 /**
  * NOTE  Deeds have a count limit of 1.
  * Leases do not have a limit.
@@ -125,5 +129,61 @@ public class TransactionRegistry {
 	public static void clear() {
 		DEEDS_COUNT.clear();
 		LEASES_COUNT.clear();
+	}
+	
+	public synchronized static CompoundTag save(CompoundTag tag) {
+		ProtectIt.LOGGER.debug("saving registry...");
+
+		if (!DEEDS_COUNT.isEmpty()) {
+			ListTag list = new ListTag();
+			DEEDS_COUNT.forEach((uuid, count) -> {
+				if (count > 0) {
+					CompoundTag deedTag = new CompoundTag();
+					deedTag.putUUID("uuid", uuid);
+					deedTag.putInt("count", count);
+					list.add(deedTag);
+				}
+			});
+			tag.put("deeds", list);
+		}
+		
+		if (!LEASES_COUNT.isEmpty()) {
+			ListTag list = new ListTag();
+			LEASES_COUNT.forEach((uuid, count) -> {
+				if (count > 0) {
+					CompoundTag leaseTag = new CompoundTag();
+					leaseTag.putUUID("uuid", uuid);
+					leaseTag.putInt("count", count);
+					list.add(leaseTag);
+				}
+			});
+			tag.put("leases", list);
+		}
+		return tag;
+	}
+	
+	public synchronized static void load(CompoundTag tag) {
+		ProtectIt.LOGGER.debug("loading registry...");
+		clear();
+
+		if (tag.contains("deeds")) {
+			ListTag list = tag.getList("deeds", CompoundTag.TAG_COMPOUND);
+			list.forEach(element -> {
+				CompoundTag deedTag = (CompoundTag)element;
+				if (deedTag.contains("uuid") && deedTag.contains("count")) {
+					DEEDS_COUNT.put(deedTag.getUUID("uuid"), deedTag.getInt("count"));
+				}
+			});
+		}
+		
+		if (tag.contains("leases")) {
+			ListTag list = tag.getList("leases", CompoundTag.TAG_COMPOUND);
+			list.forEach(element -> {
+				CompoundTag leaseTag = (CompoundTag)element;
+				if (leaseTag.contains("uuid") && leaseTag.contains("count")) {
+					LEASES_COUNT.put(leaseTag.getUUID("uuid"), leaseTag.getInt("count"));
+				}
+			});
+		}
 	}
 }

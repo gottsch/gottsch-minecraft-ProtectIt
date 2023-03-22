@@ -24,27 +24,42 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.ProtectIt;
+import mod.gottsch.forge.protectit.core.block.entity.ClaimBlockEntity;
 import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
+import mod.gottsch.forge.protectit.core.config.Config;
+import mod.gottsch.forge.protectit.core.network.ModNetworking;
+import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
+import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * 
  * @author Mark Gottschling Feb 28, 2023
  *
  */
-public class UnclaimedStake extends ClaimBlock {
+public class UnclaimedStake extends ClaimBlock implements EntityBlock {
 
 	/**
 	 * 
@@ -66,7 +81,7 @@ public class UnclaimedStake extends ClaimBlock {
 		ProtectIt.LOGGER.debug("blockEntity -> {}", blockEntity);
 		return blockEntity;
 	}
-	
+
 	@Nullable
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -79,30 +94,30 @@ public class UnclaimedStake extends ClaimBlock {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+		if (level.isClientSide()) {
+			return;
+		}
+		
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 
 		if (blockEntity instanceof UnclaimedStakeBlockEntity) {
-//			((UnclaimedStakeBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
-			Box box = getBox(level, blockEntity.getBlockPos());
+			//			Box box = getBox(level, blockEntity.getBlockPos());
 			// need to find ALL the protections
-			List<Box> protections = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> protections = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
 			if (!protections.isEmpty()) {
 				// get the property
-//				List<Property> properties = protections.stream().map(b -> ProtectionRegistries.block().getPropertyByCoords(b.getMinCoords())).collect(Collectors.toList());
-				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 				Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
-				// get all the children
-//				properties.addAll(properties.stream().flatMap(p -> p.getChildren().stream()).toList());
-//				Property property = null;
-//				for (Property p : properties	) {
-//					if ((p.getOwner() == null || p.getOwner().equals(PlayerIdentity.EMPTY)) && p.intersects(box)) {
-//						property = p;
-//					}
-//				}
-				if (property != null && property.isPresent()) {
+				// ensure property is an available fief
+				if (property.isPresent()) {
+					if (property.get().isDomain() || !property.get().isFiefAvailable()) {
+						property = Optional.empty();
+					}
+				}
+				if (property.isPresent()) {
 					((UnclaimedStakeBlockEntity)blockEntity).setPropertyCoords(property.get().getBox().getMinCoords());
 					((UnclaimedStakeBlockEntity)blockEntity).setPropertyUuid(property.get().getUuid());
 					((UnclaimedStakeBlockEntity)blockEntity).setPropertyBox(property.get().getBox());
@@ -110,5 +125,14 @@ public class UnclaimedStake extends ClaimBlock {
 			}
 			level.markAndNotifyBlock(pos, null, state, state, 0, 0);
 		}
+	}
+
+	/**
+	 * Nothing happens on use. Ownership transfer is accomplished with Lease item.
+	 */
+	@Override
+	public  InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+			InteractionHand handIn, BlockHitResult hit) {
+		return InteractionResult.SUCCESS;
 	}
 }

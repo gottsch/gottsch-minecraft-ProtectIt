@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.IBlockProtectionRegistry;
+import mod.gottsch.forge.protectit.core.registry.IPropertyRegistry;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LogicalSidedProvider;
@@ -81,11 +81,11 @@ public class RegistryLoadMessageHandlerOnClient {
 	private static void processMessage(Level worldClient, RegistryLoadMessageToClient message) {
 		ProtectIt.LOGGER.debug("received registry load message -> {}", message);
 		try {
-			IBlockProtectionRegistry registry = null;
+			IPropertyRegistry registry = null;
 			switch(message.getType()) {
 			default:
 			case RegistryMutatorMessageToClient.BLOCK_TYPE:
-				registry = ProtectionRegistries.block();
+				registry = ProtectionRegistries.property();
 				break;
 			case RegistryMutatorMessageToClient.PVP_TYPE:
 				// TODO

@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.property.Property;
-import mod.gottsch.forge.protectit.core.registry.IBlockProtectionRegistry;
+import mod.gottsch.forge.protectit.core.registry.IPropertyRegistry;
 import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.world.level.Level;
@@ -85,11 +85,11 @@ public class RegistryMutatorMessageHandlerOnClient {
 	private static void processMessage(Level worldClient, RegistryMutatorMessageToClient message) {
 		ProtectIt.LOGGER.debug("received registry mutator message -> {}", message);
 		try {
-			IBlockProtectionRegistry registry = null;
+			IPropertyRegistry registry = null;
 			switch(message.getType()) {
 			default:
 			case RegistryMutatorMessageToClient.BLOCK_TYPE:
-				registry = ProtectionRegistries.block();
+				registry = ProtectionRegistries.property();
 				break;
 			case RegistryMutatorMessageToClient.PVP_TYPE:
 				// TODO
@@ -112,7 +112,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 					else {
 						ProtectIt.LOGGER.debug("has uuid");
 						Box box = new Box(message.getCoords1(), message.getCoords2());
-						List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(UUID.fromString(message.getUuid()))
+						List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(UUID.fromString(message.getUuid()))
 								.stream().filter(p -> p.intersects(box)).toList();
 						for (Property p : properties) {
 							registry.removeProperty(p);
@@ -123,7 +123,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 				else {
 					if (!message.getUuid().equals(RegistryMutatorMessageToClient.NULL_UUID)) {
 						ProtectIt.LOGGER.debug("doesn't have coord, but has uuid");
-						List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(UUID.fromString(message.getUuid()));
+						List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(UUID.fromString(message.getUuid()));
 						for (Property p : properties) {
 							registry.removeProperty(p);
 						}

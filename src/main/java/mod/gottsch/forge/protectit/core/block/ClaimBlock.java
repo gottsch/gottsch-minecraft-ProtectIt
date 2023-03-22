@@ -132,7 +132,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 	public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 		// gather the number of claims the player has
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(placer.getUUID());
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(placer.getUUID());
 //				ProtectionRegistries.block().getProtections(placer.getStringUUID());		
 		if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
 			placer.sendSystemMessage(Component.translatable("message.protectit.max_claims_met"));
@@ -143,7 +143,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 			((ClaimBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
 			// save any overlaps to the TileEntity
 			Box box = getBox(level, blockEntity.getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.block().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
 			ProtectIt.LOGGER.debug("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
 				((ClaimBlockEntity)blockEntity).getOverlaps().addAll(overlaps);
@@ -165,7 +165,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 		ProtectIt.LOGGER.debug("in claim block use() on server... is dedicated -> {}", player.getServer().isDedicatedServer());
 
 		// gather the number of properties the player has
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
 //				.getProtections(player.getStringUUID());		
 		ProtectIt.LOGGER.debug("properties -> {}", properties);
 		
@@ -175,13 +175,13 @@ public class ClaimBlock extends Block implements EntityBlock {
 			return InteractionResult.SUCCESS;
 		}
 		
-		// get the tile entity
+		// get the block entity
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 		if (blockEntity instanceof ClaimBlockEntity) {
 			final Box box = getBox(level, pos);
 
 			// add area to protections registry if this is a dedicated server
-			if (!ProtectionRegistries.block().isProtected(box.getMinCoords(), box.getMaxCoords(), false)) {
+			if (!ProtectionRegistries.property().isProtected(box.getMinCoords(), box.getMaxCoords(), false)) {
 				ProtectIt.LOGGER.debug("not protected");
 				// check if player already owns protections
 //				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
@@ -193,7 +193,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 						String.valueOf(properties.size() + 1));
 				property.setCreateTime(level.getGameTime());
 								
-				ProtectionRegistries.block().addProperty(property);
+				ProtectionRegistries.property().addProperty(property);
 
 				ProtectIt.LOGGER.debug("should've added -> {} {}", box, player.getStringUUID());
 				ProtectItSavedData savedData = ProtectItSavedData.get(level);

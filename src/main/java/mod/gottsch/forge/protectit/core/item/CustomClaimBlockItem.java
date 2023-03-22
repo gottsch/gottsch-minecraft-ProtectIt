@@ -43,7 +43,7 @@ public class CustomClaimBlockItem extends ClaimBlockItem {
 	@Override
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// gather the number of claims the player has
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(context.getPlayer().getUUID());
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(context.getPlayer().getUUID());
 //				.getProtections(context.getPlayer().getStringUUID());
 		
 		if (properties.size() >= Config.GENERAL.propertiesPerPlayer.get()) {

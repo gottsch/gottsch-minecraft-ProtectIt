@@ -29,10 +29,12 @@ import mod.gottsch.forge.protectit.core.block.entity.ModBlockEntities;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.network.ModNetworking;
+import mod.gottsch.forge.protectit.core.network.PvpRegistryLoadS2CPush;
 import mod.gottsch.forge.protectit.core.network.RegistryLoadMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
 import mod.gottsch.forge.protectit.core.property.Permission;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
+import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import mod.gottsch.forge.protectit.core.setup.CommonSetup;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
@@ -126,7 +128,9 @@ public class ProtectIt {
 			ProtectIt.LOGGER.debug("In world load event for dimension {}", WorldInfo.getDimension(world).toString());
 			if (WorldInfo.isSurfaceWorld(world)) {
 				LOGGER.debug("loading Protect It data...");
-				ProtectionRegistries.block().clear();
+				ProtectionRegistries.property().clear();
+				ProtectionRegistries.pvp().clear();
+				TransactionRegistry.clear();
 				ProtectItSavedData.get(world);
 			}
 		}
@@ -139,9 +143,12 @@ public class ProtectIt {
 			ProtectIt.LOGGER.debug("player logged in -> {}, sending registry data...", player.getDisplayName().getString());
 			// TODO will need two different message types now - block & pvp
 			//RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getPlayer().getStringUUID(), ProtectionRegistries.block().list());
-			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getEntity().getStringUUID(), ProtectionRegistries.block().getAll());
-			ProtectIt.LOGGER.debug("player logged in, sending all property data -> {}", ProtectionRegistries.block().getAll());
+			RegistryLoadMessageToClient message = new RegistryLoadMessageToClient(event.getEntity().getStringUUID(), ProtectionRegistries.property().getAll());
+			ProtectIt.LOGGER.debug("player logged in, sending all property data -> {}", ProtectionRegistries.property().getAll());
 			ModNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), message);
+			
+			PvpRegistryLoadS2CPush pvpMessage = new PvpRegistryLoadS2CPush(ProtectionRegistries.pvp().getAll());
+			ModNetworking.channel.send(PacketDistributor.PLAYER.with(() -> player), pvpMessage);
 		}
 	}
 
@@ -156,7 +163,7 @@ public class ProtectIt {
 		}
 		
 //		LOGGER.debug("block break is protectedagainst -> {}", ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getStringUUID()));
-		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getUUID(), Permission.BLOCK_BREAK_PERMISSION.value)) {
+		if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getUUID(), Permission.BLOCK_BREAK_PERMISSION.value)) {
 			event.setCanceled(true);
 			LOGGER.debug("denied breakage -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 			if (!event.getLevel().isClientSide()) {
@@ -174,15 +181,15 @@ public class ProtectIt {
 
 		// prevent protected blocks from placing
 		if (event.getEntity() instanceof Player) {
-			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
+			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
 				event.setCanceled(true);
-//				LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+				LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 				if (!event.getLevel().isClientSide()) {
 					sendProtectedMessage(event.getLevel(), (Player) event.getEntity());
 				}
 			}
 		}
-		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
+		else if (ProtectionRegistries.property().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -196,7 +203,7 @@ public class ProtectIt {
 
 		// prevent protected blocks from breaking
 		if (event.getEntity() instanceof Player) {
-			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.MULTIBLOCK_PLACE_PERMISSION.value)) {
+			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.MULTIBLOCK_PLACE_PERMISSION.value)) {
 				event.setCanceled(true);
 				if (!event.getLevel().isClientSide()) {
 //					LOGGER.debug("denied multi-block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
@@ -204,7 +211,7 @@ public class ProtectIt {
 				}
 			}
 		}
-		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
+		else if (ProtectionRegistries.property().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}		
 	}
@@ -216,7 +223,7 @@ public class ProtectIt {
 			return;
 		}
 
-		if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getUUID(), Permission.TOOL_PERMISSION.value)) {
+		if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getPlayer().getUUID(), Permission.TOOL_PERMISSION.value)) {
 			event.setCanceled(true);
 			if (!event.getLevel().isClientSide()) {
 				sendProtectedMessage(event.getLevel(), event.getPlayer());
@@ -235,15 +242,15 @@ public class ProtectIt {
 		if (event.getEntity() instanceof Player) {
 
 			// get the item in the player's hand
-			if (ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INTERACT_PERMISSION.value)) {
+			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INTERACT_PERMISSION.value)) {
 
 				Block block = event.getLevel().getBlockState(event.getPos()).getBlock();
 				if ((block instanceof DoorBlock || block instanceof TrapDoorBlock) && 
-						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.DOOR_INTERACT_PERMISSION.value)) {
+						!ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.DOOR_INTERACT_PERMISSION.value)) {
 					return;
 				}
 				if ((block instanceof ChestBlock) && 
-						!ProtectionRegistries.block().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INVENTORY_INTERACT_PERMISSION.value)) {
+						!ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INVENTORY_INTERACT_PERMISSION.value)) {
 					return;
 				}
 				
@@ -257,7 +264,7 @@ public class ProtectIt {
 				}
 			}
 		}
-		else if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
+		else if (ProtectionRegistries.property().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -266,7 +273,7 @@ public class ProtectIt {
 	public void onLivingDestroyBlock(final LivingDestroyBlockEvent event) {
 		// prevent protected blocks from breaking by mob action
 		if (Config.PROTECTION.enableLivingDestroyBlockEvent.get()
-				&& ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
+				&& ProtectionRegistries.property().isProtected(new Coords(event.getPos()))) {
 			event.setCanceled(true);
 		}
 	}
@@ -284,7 +291,7 @@ public class ProtectIt {
 		// can be checked against an adjacent property.
 		
 		// check if piston itself is inside protected area - if so, exit ie. allow movement
-		if (ProtectionRegistries.block().isProtected(new Coords(event.getPos()))) {
+		if (ProtectionRegistries.property().isProtected(new Coords(event.getPos()))) {
 			return;
 		}
 
@@ -316,8 +323,8 @@ public class ProtectIt {
 
 				if (event.getLevel().getBlockState(event.getPos().offset(xOffset, 0, zOffset)).getMaterial().isSolid()) {
 					// prevent protected blocks from breaking
-					if (ProtectionRegistries.block().isProtected(new Coords(event.getPos().offset(xOffset, 0, zOffset))) || 
-							ProtectionRegistries.block().isProtected(new Coords(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush)))) {
+					if (ProtectionRegistries.property().isProtected(new Coords(event.getPos().offset(xOffset, 0, zOffset))) || 
+							ProtectionRegistries.property().isProtected(new Coords(event.getPos().offset(xOffset + xPush, 0, zOffset + zPush)))) {
 						event.setCanceled(true);
 						return;
 					}
@@ -335,7 +342,7 @@ public class ProtectIt {
 		event.getAffectedBlocks().removeIf(block -> {
 			// prevent protected blocks from breaking
 			return Config.PROTECTION.enableExplosionDetonateEvent.get()
-					&& ProtectionRegistries.block().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
+					&& ProtectionRegistries.property().isProtected(new Coords(block.getX(), block.getY(), block.getZ()));
 		});
 	}
 }

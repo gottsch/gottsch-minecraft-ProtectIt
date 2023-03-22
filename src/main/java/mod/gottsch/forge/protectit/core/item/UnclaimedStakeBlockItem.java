@@ -21,11 +21,13 @@ package mod.gottsch.forge.protectit.core.item;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.property.PropertyUtil;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -62,14 +64,15 @@ public class UnclaimedStakeBlockItem extends BlockItem {
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// prevent use if not the owner
 		Coords coords = new Coords(context.getClickedPos());
-		List<Box> list = ProtectionRegistries.block().getProtections(coords, coords.add(1, 1,1), false, false);
+		List<Box> list = ProtectionRegistries.property().getProtections(coords, coords.add(1, 1,1), false, false);
 		if (!list.isEmpty()) {				
 //			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
-			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 			
-			// TODO change to only landlord or owner
-			if (property.isPresent() && !context.getPlayer().getUUID().equals(property.get().getOwner().getUuid())) {
+			UUID uuid = context.getPlayer().getUUID();
+			if (property.isPresent() && !(property.get().getOwner().getUuid().equals(uuid) ||
+					(property.get().getOwner().equals(PlayerIdentity.EMPTY) && property.get().getLord().getUuid().equals(uuid))) ) {
 				context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_owner")));
 				return false;
 			}

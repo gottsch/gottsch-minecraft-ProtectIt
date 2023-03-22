@@ -51,7 +51,7 @@ import net.minecraft.nbt.ListTag;
  * @author Mark Gottschling Mar 19, 2023
  *
  */
-public class PropertyRegistry implements IBlockProtectionRegistry {
+public class PropertyRegistry implements IPropertyRegistry {
 	private static final String PROPERTIES_KEY = "properties";
 	
 	// NOTE all properties should added to all maps
@@ -91,14 +91,6 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 	public void addProperty(Property property) {
 		ProtectIt.LOGGER.debug("adding property protection -> {}", property);
 
-		// add properties by owner
-//		List<Property> properties = null;
-//		if (!PROPERTY_BY_OWNER.containsKey(property.getOwner().getUuid())) {
-//			// create new list entry
-//			PROPERTY_BY_OWNER.put(property.getOwner().getUuid(), new ArrayList<>());
-//		}
-//		properties = PROPERTY_BY_OWNER.get(property.getOwner().getUuid());
-//		properties.add(property);
 		PROPERTY_BY_OWNER.put(property.getOwner().getUuid(), property);
 		PROPERTY_BY_LORD.put(property.getLord().getUuid(), property);
 		PROPERTY_BY_COORDS.put(property.getBox().getMinCoords(), property);
@@ -242,27 +234,16 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 	 */
 	@Override
 	public boolean isProtectedAgainst(ICoords coords1, UUID uuid, int permission) {
+		// TODO should includeBorders = true
 		// check for top-level protections
-		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords1), true, false);
+		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords1), false, true);
 		if (protections.isEmpty()) {
 			return false;
 		}
 		else {
-			// get first as there should only be one since using findFast option in search
-			Interval protection = protections.get(0);
-			ProtectIt.LOGGER.debug("isProtectedAgainst interval.coords -> {}, interval -> {}", coords1, protection);
-			
-			// get the properties by coord
-			List<Property> properties = (List<Property>) PROPERTY_BY_COORDS.get(protection.getCoords1());
+			List<Property> properties = protections.stream().flatMap(p -> getPropertyByCoords(p.getCoords1()).stream()).toList();
 			ProtectIt.LOGGER.debug("isProtectedAgainst properties -> {}", properties);
-//			if (!properties.getChildren().isEmpty()) {
-//				Box box = new Box(coords1);
-//				List<Property> properties = PropertyUtil.getPropertyHierarchy(Arrays.asList(properties));
-//				Optional<Property> target = properties.stream().filter(p -> p.intersects(box)).findFirst();
-//				if (target.isPresent()) {
-//					properties = target.get();
-//				}
-//			}
+
 			Property property;
 			Optional<Property> target = PropertyUtil.getLeastSignificant(properties);
 			if (target.isPresent()) {
@@ -287,7 +268,6 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 
 			// short circuit on permission
 			if (property.hasPermission(permission)) {
-				//					break;
 				return false;
 			}
 
@@ -309,8 +289,7 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 			return true;
 		}
 	}
-	
-	// TODO redo
+
 	/**
 	 * 
 	 */
@@ -344,20 +323,7 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 			}
 
 			// update property
-			//			property.setOwner(newOwner);
-//			if (!PROPERTY_BY_OWNER.containsKey(newOwner.getUuid())) {
-//				PROPERTY_BY_OWNER.put(newOwner.getUuid(), new ArrayList<>());
-//			}
-//			PROPERTY_BY_OWNER.get(newOwner.getUuid()).add(p);
 			PROPERTY_BY_OWNER.put(newOwner.getUuid(), p);
-
-			// NOTE only the owner is being updated. the property should already be present in the PROPERTY_BY_UUID
-			
-//			UUID ownerUuid = UUID.fromString(newOwner.getUuid());
-//			if (!PROPERTY_BY_LORD.containsKey(ownerUuid)) {
-//				PROPERTY_BY_LORD.put(ownerUuid, new ArrayList<>());
-//			}
-//			PROPERTY_BY_LORD.get(ownerUuid).add(p);
 		});
 	}
 	
@@ -396,31 +362,6 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 			return Optional.empty();
 		}
 
-		/*
-		 *  update indexes/maps
-		 */
-		// update the owner
-//		List<Property> properties;
-//		if (!PROPERTY_BY_OWNER.containsKey(property.getOwner().getUuid())) {
-//			// create new list entry
-//			PROPERTY_BY_OWNER.put(property.getOwner().getUuid(), new ArrayList<>());
-//		}
-//		properties = PROPERTY_BY_OWNER.get(property.getOwner().getUuid());
-//		properties.add(property);
-		
-
-		// update the landlord
-//		UUID landlordUuid = UUID.fromString(property.getLord().getUuid());
-//		if (!PROPERTY_BY_LANDLORD.containsKey(landlordUuid)) {
-//			// create new list entry
-//			PROPERTY_BY_LANDLORD.put(landlordUuid, new ArrayList<>());
-//		}
-//		properties = PROPERTY_BY_LANDLORD.get(landlordUuid);
-//		properties.add(property);
-//
-//		// update the uuid
-//		PROPERTY_BY_UUID.put(property.getUuid(), property);
-
 		addProperty(property);
 		
 		// add to parent's children list
@@ -440,7 +381,6 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 		ProtectIt.LOGGER.debug("saving registry...");
 
 		if (!PROPERTY_BY_COORDS.isEmpty()) {
-			// legacy
 			ListTag list = new ListTag();
 			PROPERTY_BY_COORDS.forEach((coords, property) -> {
 				ProtectIt.LOGGER.debug("registry saving property -> {}", property);
@@ -470,11 +410,6 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 				ProtectIt.LOGGER.debug("loaded property -> {}", property);
 				PROPERTY_BY_COORDS.put(property.getBox().getMinCoords(), property);
 
-//				if (!PROPERTY_BY_OWNER.containsKey(property.getOwner().getUuid())) {
-//					// create new list entry
-//					PROPERTY_BY_OWNER.put(property.getOwner().getUuid(), new ArrayList<>());
-//				}
-//				PROPERTY_BY_OWNER.get(property.getOwner().getUuid()).add(property);
 				PROPERTY_BY_OWNER.put(property.getOwner().getUuid(), property);
 				PROPERTY_BY_LORD.put(property.getLord().getUuid(), property);
 				PROPERTY_BY_UUID.put(property.getUuid(), property);
@@ -482,22 +417,14 @@ public class PropertyRegistry implements IBlockProtectionRegistry {
 				ProtectIt.LOGGER.debug("property BEFORE inserting into tree -> {}", PROPERTY_BY_COORDS.get(property.getBox().getMinCoords()));
 				tree.insert(new Interval(property.getBox().getMinCoords(), property.getBox().getMaxCoords()));
 
-				// TODO now walk the children and update BY_UUID, BY_OWNER, BY_LANDLORD
-//				property.getChildren().forEach(child -> {
-//					addSubdivision(property, child);
-//				});
-
 				ProtectIt.LOGGER.debug("property AFTER inserting into tree -> {}", PROPERTY_BY_COORDS.get(property.getBox().getMinCoords()));
 				ProtectIt.LOGGER.debug("running loaded propertys_by_coords -> {}", PROPERTY_BY_COORDS);
 			});
-			//			ProtectIt.LOGGER.debug("0.all loaded properties_by_coords -> {}", CLAIMS_BY_COORDS);
 		}
-
-		// TODO load by landlord
 
 		// print the loaded property again
 		ProtectIt.LOGGER.debug("1. all loaded propertiess_by_coords -> {}", PROPERTY_BY_COORDS);
-		ProtectIt.LOGGER.debug("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
+//		ProtectIt.LOGGER.debug("all loaded in tree -> {}", tree.toStringList(tree.getRoot()));
 	}
 	
 	/**

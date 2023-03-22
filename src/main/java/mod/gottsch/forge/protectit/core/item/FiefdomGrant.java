@@ -114,7 +114,7 @@ public class FiefdomGrant extends Item {
 			if (itemOwnerUuid != null) {
 				ICoords coords = new Coords(player.blockPosition());
 				// get all properties by coords and uuid
-				List<Box> protections = ProtectionRegistries.block().getProtections(coords, coords, false, false);
+				List<Box> protections = ProtectionRegistries.property().getProtections(coords, coords, false, false);
 				if (protections.isEmpty()) {
 					player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected")));
 					return InteractionResultHolder.pass(itemStack);
@@ -122,7 +122,7 @@ public class FiefdomGrant extends Item {
 
 				// parent property
 //				Property property = ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords());
-				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 				Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 				Property selectedProperty = property.get();
 

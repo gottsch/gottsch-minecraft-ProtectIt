@@ -53,6 +53,8 @@
 	"message.protectit.property.transfer.criteria_not_met": "Property does not meet transfer criteria.",
 	"message.protectit.property.transfer.success": "Successfully transfered ownership of property  ",
 	
+	"message.protectit.property.fief.not_divisible": "The property is not a fiefdom.",
+	
 	"message.protectit.deed.exceeded_limit": "The number of concurrent Deeds for this property has already been met.",
 	"message.protectit.lease.exceeded_limit": "The number of concurrent Leases for this property has already been met.",
 	
@@ -62,6 +64,9 @@
 	"message.protectit.hotel.list": "Hotels for property ",
 	"message.protectit.hotel.list.empty": "[Empty]",
 	"message.protectit.hotel.set.success": "The hotel was successfully set.",
+	
+	"message.protectit.zone.unknown_name": "Unable to locate zone named ",
+	"message.protectit.zone.successfully_removed": "The pvp zone has been removed.",
 	
 	"tooltip.protectit.hold_shift": "Hold [SHIFT] to expand",
 	"tooltip.protectit.claim.howto": "Place block to highlight the area you wish to claim. Use placed stake to claim the land.",

@@ -111,10 +111,10 @@ public class RemoveClaimBlock extends ClaimBlock implements EntityBlock {
 			// get the claim for this position
 //			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 			ProtectIt.LOGGER.debug("search for property @ -> {}", new Coords(pos).toShortString());
-			List<Box> list = ProtectionRegistries.block().getProtections(new Coords(pos), new Coords(pos), false, false);
+			List<Box> list = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos), false, false);
 			if (!list.isEmpty()) {				
 //				List<Property> properties = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
-				List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+				List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 				Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 
 //				if (properties != null && !properties.isEmpty()) {
@@ -148,7 +148,7 @@ public class RemoveClaimBlock extends ClaimBlock implements EntityBlock {
 		if (blockEntity instanceof RemoveClaimBlockEntity) {
 			// get this claim
 			// prevent use if not the owner
-			List<Property> properties = ProtectionRegistries.block().getPropertyByCoords(((RemoveClaimBlockEntity)blockEntity).getPropertyCoords());
+			List<Property> properties = ProtectionRegistries.property().getPropertyByCoords(((RemoveClaimBlockEntity)blockEntity).getPropertyCoords());
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 			if (property.isEmpty() || !player.getUUID().equals(property.get().getOwner().getUuid())) {
 				player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")));
@@ -156,7 +156,7 @@ public class RemoveClaimBlock extends ClaimBlock implements EntityBlock {
 			}
 
 			// remove property
-			ProtectionRegistries.block().removeProperty(property.get()); //.get().getBox().getMinCoords());
+			ProtectionRegistries.property().removeProperty(property.get()); //.get().getBox().getMinCoords());
 
 			ProtectIt.LOGGER.debug("should've removed -> {} {}", property, player.getStringUUID());
 

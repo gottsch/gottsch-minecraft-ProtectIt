@@ -158,7 +158,7 @@ public class Deed extends Item {
 
 				// claim property
 				if (isValid) {
-					ProtectionRegistries.block().updateOwner(selectedProperty.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
+					ProtectionRegistries.property().updateOwner(selectedProperty.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 					
 					// TODO send message to client
 					
@@ -232,12 +232,12 @@ public class Deed extends Item {
 	public Optional<Property> getProperty(Player player	) {
 		ICoords coords = new Coords(player.blockPosition());
 		// get all properties by coords and uuid
-		List<Box> protections = ProtectionRegistries.block().getProtections(coords);
+		List<Box> protections = ProtectionRegistries.property().getProtections(coords);
 		if (protections.isEmpty()) {
 			return Optional.empty();
 		}
 //		return Optional.ofNullable(ProtectionRegistries.block().getPropertyByCoords(protections.get(0).getMinCoords()));
-		List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+		List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 		Optional<Property> property = PropertyUtil.getMostSignificant(properties);
 		return property;
 	}

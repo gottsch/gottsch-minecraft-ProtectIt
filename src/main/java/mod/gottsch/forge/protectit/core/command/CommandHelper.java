@@ -39,6 +39,7 @@ import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
+import mod.gottsch.forge.protectit.core.zone.Zone;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -56,6 +57,7 @@ import net.minecraft.world.item.ItemStack;
  *
  */
 public class CommandHelper {
+	public static final String PROPERTY = "property";
 	public static final String BLOCK = "block";
 	public static final String ADD = "add";
 	public static final String CLEAR = "clear";
@@ -71,6 +73,8 @@ public class CommandHelper {
 	public static final String UUID = "uuid";
 	public static final String PROPERTY_NAME = "property_name";
 
+	public static final String ZONE_NAME = "zone_name";
+	
 	public static final String GIVE = "give";
 	public static final String GIVE_ITEM = "giveItem";
 
@@ -96,7 +100,7 @@ public class CommandHelper {
 	};
 
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_PROPERTY_NAMES = (source, builder) -> {
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 //		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
 		List<String> names = properties.stream().map(p -> p.getNameByOwner()).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
@@ -105,7 +109,7 @@ public class CommandHelper {
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_TARGET_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
 //		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 		List<String> names = properties.stream().map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
@@ -123,26 +127,16 @@ public class CommandHelper {
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_ALL_NESTED_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
 //		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 		List<String> names = PropertyUtil.getPropertyHierarchyNames(properties, player);
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
-
-	//	static void buildName(Property property, String prefix, List<String> names) {
-	//		if (!property.getChildren().isEmpty()) {
-	//			property.getChildren().forEach(c -> {
-	//				buildName(c, property.getNameByOwner(), names);
-	//			});
-	//		}
-	//		else {
-	//			if (prefix.equals("")) {
-	//				names.add(property.getNameByOwner());
-	//			} else {
-	//				names.add(prefix + "." + property.getNameByOwner());
-	//			}
-	//		}
-	//	}
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_ZONE_NAMES = (source, builder) -> {
+		List<Zone> zones = ProtectionRegistries.pvp().getAll();
+		List<String> names = zones.stream().map(p -> p.getName()).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
 
 	/**
 	 * 
@@ -173,10 +167,10 @@ public class CommandHelper {
 			return 1;
 		}
 		// TODO need to get the whole heirarchy and then filter from there
-		List<Property> owners = ProtectionRegistries.block().getPropertiesByOwner(player.getUUID());
+		List<Property> owners = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
 		List<Property> namedClaims = owners.stream().filter(p -> p.getNameByOwner().equals(oldName)).toList();
 		if (namedClaims.isEmpty()) {
-			List<Property> landlords = ProtectionRegistries.block().getPropertiesByLord(player.getUUID());
+			List<Property> landlords = ProtectionRegistries.property().getPropertiesByLord(player.getUUID());
 			namedClaims = landlords.stream().filter(p -> p.getNameByLandlord().equals(oldName)).toList();
 		}
 
@@ -319,7 +313,7 @@ public class CommandHelper {
 	public static Optional<Property> getProperty(UUID owner, UUID property) {
 		// get the owner's properties
 //		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner);
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(owner);
 		// get the named property
 		List<Property> namedProperties = properties.stream().filter(p -> p.getUuid().equals(property)).collect(Collectors.toList());
 		if (namedProperties.isEmpty()) {
@@ -337,7 +331,7 @@ public class CommandHelper {
 	public static Optional<Property> getPropertyByName(UUID owner, String propertyName) {
 		// get the owner's properties
 //		List<Property> properties = ProtectionRegistries.block().getProtections(owner.toString());
-		List<Property> properties = ProtectionRegistries.block().getPropertiesByOwner(owner);
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(owner);
 		// get the named property
 		List<Property> namedProperties = properties.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
 		if (namedProperties.isEmpty()) {

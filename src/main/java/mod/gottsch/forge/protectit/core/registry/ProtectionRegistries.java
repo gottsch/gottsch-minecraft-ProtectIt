@@ -29,20 +29,20 @@ public class ProtectionRegistries {
 	 * block protection registry - ie. land claims
 	 */
 //	private static final IBlockProtectionRegistry REGISTRY = new _BlockProtectionRegistry();
-	private static final IBlockProtectionRegistry REGISTRY = new PropertyRegistry();
+	private static final IPropertyRegistry REGISTRY = new PropertyRegistry();
 	/*
 	 * PVP protection registry - player vs player protection areas ie. safe zones
 	 */
-	private static final IPvpProtectionRegistry PVP_REGISTRY = new PvpProtectionRegistry();
+	private static final IPvpRegistry PVP_REGISTRY = new PvpRegistry();
 	
 	/*
 	 *  use accessors instead of directly accessing static property because the backing may change
 	 */
-	public static IBlockProtectionRegistry block() {
+	public static IPropertyRegistry property() {
 		return REGISTRY;
 	}
 	
-	public static IPvpProtectionRegistry pvp() {
+	public static IPvpRegistry pvp() {
 		return PVP_REGISTRY;
 	}
 }

@@ -30,9 +30,10 @@ import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
-import mod.gottsch.forge.protectit.core.block.entity.UnclaimedStakeBlockEntity;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
+import mod.gottsch.forge.protectit.core.util.UuidUtil;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -50,9 +51,7 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<PropertyLeverBlockEntity>, IPropertyRenderer {
 
-	public PropertyLeverBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-//		super(context);
-	}
+	public PropertyLeverBlockEntityRenderer(BlockEntityRendererProvider.Context context) {	}
 
 	@Override
 	public void render(PropertyLeverBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
@@ -63,6 +62,19 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 		}
 
 		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY)) {
+			return;
+		}
+		
+		// get the property by uuid
+		Optional<Property> property = ProtectionRegistries.property().getPropertyByUuid(blockEntity.getPropertyUuid());
+		// if can't find the property in the client registry, don't render
+		if (property.isEmpty()) {
+			return;
+		}
+		// don't render if not owner or owner's whitelist
+		if (property.get().getOwner().getUuid().equals(UuidUtil.EMPTY_UUID) ||
+				(!Minecraft.getInstance().player.getUUID().equals(property.get().getOwner().getUuid()) &&
+				property.get().getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getUUID())))) {	
 			return;
 		}
 		

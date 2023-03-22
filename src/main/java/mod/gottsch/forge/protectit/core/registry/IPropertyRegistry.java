@@ -35,7 +35,7 @@ import net.minecraft.nbt.Tag;
  * @author Mark Gottschling on Oct 5, 2021
  *
  */
-public interface IBlockProtectionRegistry {
+public interface IPropertyRegistry {
 //
 //	public void addProtection(ICoords coords, PlayerIdentity data);
 //	public void addProtection(ICoords coords1, ICoords coords2, PlayerIdentity data);

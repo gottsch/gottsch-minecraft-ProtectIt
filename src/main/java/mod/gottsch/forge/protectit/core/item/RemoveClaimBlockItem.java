@@ -62,10 +62,10 @@ public class RemoveClaimBlockItem extends BlockItem {
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// prevent use if not the owner
 		Coords coords = new Coords(context.getClickedPos());
-		List<Box> list = ProtectionRegistries.block().getProtections(coords, coords.add(1, 1,1), false, false);
+		List<Box> list = ProtectionRegistries.property().getProtections(coords, coords.add(1, 1,1), false, false);
 		if (!list.isEmpty()) {				
 //			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
-			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.block().getPropertyByCoords(p.getMinCoords()).stream()).toList();
+			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 			
 			if (property.isPresent() && !context.getPlayer().getUUID().equals(property.get().getOwner().getUuid())) {

@@ -21,6 +21,7 @@ package mod.gottsch.forge.protectit.core.persistence;
 
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
+import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -36,6 +37,8 @@ public class ProtectItSavedData extends SavedData {
 
 	private static final String PROTECT_IT = ProtectIt.MODID;
 	private static final String PROTECTION_REGISTRY = "protectionRegistry";
+	private static final String PVP_REGISTRY = "pvpRegistry";
+	private static final String TRANSACTION_REGISTRY = "transactionRegistry";
 	
 	/**
 	 * 
@@ -48,7 +51,13 @@ public class ProtectItSavedData extends SavedData {
 	public static ProtectItSavedData load(CompoundTag tag) {
 		ProtectIt.LOGGER.debug("world data loading...");
 		if (tag.contains(PROTECTION_REGISTRY)) {
-			ProtectionRegistries.block().load(tag.getCompound(PROTECTION_REGISTRY));
+			ProtectionRegistries.property().load(tag.getCompound(PROTECTION_REGISTRY));
+		}
+		if (tag.contains(PVP_REGISTRY)) {
+			ProtectionRegistries.pvp().load(tag.getCompound(PVP_REGISTRY));
+		}
+		if (tag.contains(TRANSACTION_REGISTRY)) {
+			TransactionRegistry.load(tag.getCompound(TRANSACTION_REGISTRY));
 		}
 		return create();
 	}
@@ -56,7 +65,9 @@ public class ProtectItSavedData extends SavedData {
 	@Override
 	public CompoundTag save(CompoundTag tag) {
 		ProtectIt.LOGGER.debug("world data saving...");
-		tag.put(PROTECTION_REGISTRY, ProtectionRegistries.block().save(new CompoundTag()));
+		tag.put(PROTECTION_REGISTRY, ProtectionRegistries.property().save(new CompoundTag()));
+		tag.put(PVP_REGISTRY, ProtectionRegistries.pvp().save(new CompoundTag()));
+		tag.put(TRANSACTION_REGISTRY, TransactionRegistry.save(new CompoundTag()));
 		return tag;
 	}
 	
