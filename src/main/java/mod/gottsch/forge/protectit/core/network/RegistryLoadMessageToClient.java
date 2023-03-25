@@ -69,9 +69,10 @@ public class RegistryLoadMessageToClient {
 		 buf.writeUtf(StringUtils.defaultString(type, ""));
 		 buf.writeInt(properties.size());
 
-		properties.forEach(claim -> {
-			writeProperty(buf, claim);
+		properties.forEach(property -> {
+			writeProperty(buf, property);
 		});
+		ProtectIt.LOGGER.debug("encoded property -> {}", this);
 	}
 
 	/**
@@ -218,7 +219,7 @@ public class RegistryLoadMessageToClient {
 			property.getChildren().add(buf.readUUID());
 		}
 		
-		ProtectIt.LOGGER.debug("decoded claim -> {}", property);
+		ProtectIt.LOGGER.debug("decoded property -> {}", property);
 		return property;
 	}
 	
@@ -264,13 +265,13 @@ public class RegistryLoadMessageToClient {
 		return properties;
 	}
 
-	protected void setProperties(List<Property> claims) {
-		this.properties = claims;
+	protected void setProperties(List<Property> properties) {
+		this.properties = properties;
 	}
 
 	@Override
 	public String toString() {
-		return "RegistryLoadMessageToClient [valid=" + valid + ", type=" + type + ", size=" + size + ", claims="
+		return "RegistryLoadMessageToClient [valid=" + valid + ", type=" + type + ", size=" + size + ", properties="
 				+ properties + "]";
 	}
 }

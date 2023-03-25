@@ -1,6 +1,6 @@
 {
     "parent": "item/generated",
     "textures": {
-        "layer0": "protectit:item/property_lease"
+        "layer0": "protectit:item/fief_deed"
     }
 }

@@ -19,6 +19,7 @@
  */
 package mod.gottsch.forge.protectit.core.command;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
@@ -40,23 +42,29 @@ import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.network.PvpAddZoneS2CPush;
 import mod.gottsch.forge.protectit.core.network.PvpClearS2CPush;
+import mod.gottsch.forge.protectit.core.network.PvpPermissionChangeS2CPush;
 import mod.gottsch.forge.protectit.core.network.PvpRemoveZoneS2CPush;
 import mod.gottsch.forge.protectit.core.network.ModNetworking;
+import mod.gottsch.forge.protectit.core.network.PermissionChangeS2CPush;
 import mod.gottsch.forge.protectit.core.network.RegistryMutatorMessageToClient;
 import mod.gottsch.forge.protectit.core.persistence.ProtectItSavedData;
+import mod.gottsch.forge.protectit.core.property.Permission;
 import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import mod.gottsch.forge.protectit.core.zone.Zone;
+import mod.gottsch.forge.protectit.core.zone.ZonePermission;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
@@ -73,8 +81,9 @@ import net.minecraftforge.network.PacketDistributor;
 public class OpsProtectCommand {
 	private static final String PROTECT = "protect-ops";
 
-	// TODO add Whitelist OPS commands
-	// it takes extra params like player
+	private static final SuggestionProvider<CommandSourceStack> ZONE_PERMISSIONS = (source, builder) -> {
+		return SharedSuggestionProvider.suggest(ZonePermission.getNames(), builder);
+	};
 
 	/**
 	 * 
@@ -86,9 +95,6 @@ public class OpsProtectCommand {
 		}).then(Commands.literal(CommandHelper.PROPERTY)
 				///// ADD OPTION /////
 				.then(Commands.literal(CommandHelper.ADD)
-						//						.requires(source -> {
-						//					return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
-						//				})
 						.then(Commands.argument(CommandHelper.POS, BlockPosArgument.blockPos())
 								.then(Commands.argument(CommandHelper.POS2, BlockPosArgument.blockPos()).then(
 										Commands.argument(CommandHelper.TARGET, EntityArgument.player()).executes(source -> {
@@ -108,15 +114,6 @@ public class OpsProtectCommand {
 						.requires(source -> {
 							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
 						})
-						//						.then(Commands.literal(CommandHelper.UUID)
-						//								.then(Commands.argument(CommandHelper.UUID, StringArgumentType.greedyString())
-						//										.suggests(CommandHelper.SUGGEST_UUID)
-						//										// TODO pick a specific property from here
-						//										.executes(source -> {
-						//											return remove(source.getSource(), StringArgumentType.getString(source, CommandHelper.UUID));							
-						//										})
-						//										)
-						//								)
 						.then(Commands.literal("player")
 								.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 										// TODO option to pick a specific property
@@ -134,14 +131,6 @@ public class OpsProtectCommand {
 												.executes(source -> {
 													return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, "pos2"));
 												})
-												//												.then(Commands.literal(CommandHelper.UUID)
-												//														.then(Commands.argument(CommandHelper.UUID, StringArgumentType.greedyString())
-												//																.suggests(CommandHelper.SUGGEST_UUID)
-												//																.executes(source -> {
-												//																	return remove(source.getSource(), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS), BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2), StringArgumentType.getString(source, CommandHelper.UUID));							
-												//																})
-												//																)
-												//														)
 												.then(Commands.literal("player")
 														.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 																.executes(source -> {
@@ -182,14 +171,14 @@ public class OpsProtectCommand {
 												.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
 												.then(Commands.literal("enable")
 														.executes(source -> {
-															return enableSubdivisible(source.getSource(), 
+															return enableFiefdom(source.getSource(), 
 																	EntityArgument.getPlayer(source, CommandHelper.TARGET),
 																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME), true);
 														})										
 														)
 												.then(Commands.literal("disable")
 														.executes(source -> {
-															return enableSubdivisible(source.getSource(), 
+															return enableFiefdom(source.getSource(), 
 																	EntityArgument.getPlayer(source, CommandHelper.TARGET),
 																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME), false);
 														})											
@@ -199,18 +188,18 @@ public class OpsProtectCommand {
 								)
 						// TODO rename to fiefdom-deed
 						///// GENERATE LICENSE /////
-						.then(Commands.literal("generate-license")
+						.then(Commands.literal("generate-fiefdom-deed")
 								///// BY PLAYER (ONLINE) /////
 								.then(Commands.literal("player")
 										.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 												.executes(source -> {
-													return generateSubdivideLicense(source.getSource(), 
+													return generateFiefdomDeed(source.getSource(), 
 															EntityArgument.getPlayer(source, CommandHelper.TARGET));
 												})
 												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
 														.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
 														.executes(source -> {
-															return generateSubdivideLicense(source.getSource(),
+															return generateFiefdomDeed(source.getSource(),
 																	EntityArgument.getPlayer(source, CommandHelper.TARGET),
 																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
 														})
@@ -247,21 +236,12 @@ public class OpsProtectCommand {
 						)
 				///// CLEAR OPTION /////
 				.then(Commands.literal("clear")
-						.requires(source -> {
-							return source.hasPermission(Config.GENERAL.opsPermissionLevel.get());
-						})
-						// TODO rename player - clear is clear all
-						.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
-								.executes(source -> {
-									return clear(source.getSource(), EntityArgument.getPlayer(source, CommandHelper.TARGET));
-								})
-								)
-						)
+						.executes(source -> {
+							return clear(source.getSource());
+						})					
+					)
 				///// GIVE OPTION /////
 				.then(Commands.literal(CommandHelper.GIVE)
-						.requires(source -> {
-							return source.hasPermission(Config.GENERAL.giveCommandLevel.get());
-						})
 						.then(Commands.argument(CommandHelper.GIVE_ITEM, StringArgumentType.greedyString())
 								.suggests(CommandHelper.SUGGEST_GIVABLE_ITEMS)
 								.executes(source -> {
@@ -295,8 +275,6 @@ public class OpsProtectCommand {
 											return removeZone(source.getSource(), StringArgumentType.getString(source, CommandHelper.ZONE_NAME));
 										})									
 										)
-								// TODO
-
 								)
 						///// CLEAR
 						.then(Commands.literal(CommandHelper.CLEAR)
@@ -312,6 +290,41 @@ public class OpsProtectCommand {
 									return CommandHelper.unavailable(source.getSource());
 								})
 								)
+						///// PERMISSION
+						.then(Commands.literal("permission")
+								///// PERMISSION CHANGE
+								.then(Commands.literal("change")
+										.then(Commands.argument(CommandHelper.ZONE_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_ZONE_NAMES)
+												.then(Commands.argument("permission", StringArgumentType.string())
+														.suggests(ZONE_PERMISSIONS)
+														.then(Commands.literal("on")
+																.executes(source -> {
+																	return changeZonePermission(source.getSource(), 
+																			StringArgumentType.getString(source, CommandHelper.ZONE_NAME), 
+																			StringArgumentType.getString(source, "permission"), true);
+																})
+																)
+														.then(Commands.literal("off")
+																.executes(source -> {
+																	return changeZonePermission(source.getSource(), 
+																			StringArgumentType.getString(source, CommandHelper.ZONE_NAME), 
+																			StringArgumentType.getString(source, "permission"), false);
+																})
+																)
+														)
+												)
+										)
+								///// PERMISSION LIST
+								.then(Commands.literal("list")
+										.then(Commands.argument(CommandHelper.ZONE_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_ZONE_NAMES)
+												.executes(source -> {
+													return listZonePermissions(source.getSource(), StringArgumentType.getString(source, CommandHelper.ZONE_NAME));
+												})
+												)
+										)
+								)
 						//// DUMP
 						.then(Commands.literal("dump") 
 								.executes(source -> {
@@ -321,8 +334,97 @@ public class OpsProtectCommand {
 						));
 	}
 
+	/**
+	 * 
+	 * @param source
+	 * @param string
+	 * @return
+	 */
+	private static int listZonePermissions(CommandSourceStack source, String zoneName) {
+		try {
+			// get the owner
+			ServerPlayer owner = source.getPlayerOrException();
+			Optional<Zone> zone = ProtectionRegistries.pvp().getAll().stream().filter(z -> z.getName().equalsIgnoreCase(zoneName)).findFirst();
+			if (zone.isPresent()) {
+				List<Component> messages = new ArrayList<>();
+				messages.add(Component.literal(""));
+				messages.add(Component.translatable(LangUtil.message("zone.permission.list"))
+						.withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE)
+						.append(zoneName).withStyle(ChatFormatting.AQUA));
+				messages.add(Component.literal(""));
+
+				for (int i = 0; i < ZonePermission.values().length; i++) {
+					zone.get().hasPermission(i);
+					ZonePermission permission = ZonePermission.getByValue(i);
+					MutableComponent component = Component.translatable(permission.name()).withStyle(ChatFormatting.AQUA)
+							.append(Component.literal(" = "));
+					if (zone.get().hasPermission(i)) {
+						component.append(Component.translatable(LangUtil.message("permission.state.on")).withStyle(ChatFormatting.GREEN));
+					}
+					else {
+						component.append(Component.translatable(LangUtil.message("permission.state.off")).withStyle(ChatFormatting.RED));
+					}
+					messages.add(component);
+				}
+
+				messages.forEach(component -> {
+					source.sendSuccess(component, false);
+				});
+			}
+			else {
+				source.sendFailure(Component.translatable(LangUtil.message("zone.unknown_name"))
+						.append(Component.translatable(zoneName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute listZonePermissions command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		return 1;
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param zoneName
+	 * @param permissionName
+	 * @param value
+	 * @return
+	 */
+	private static int changeZonePermission(CommandSourceStack source, String zoneName, String permissionName, boolean value) {
+		try {
+			Optional<Zone> zone = ProtectionRegistries.pvp().getAll().stream().filter(z -> z.getName().equalsIgnoreCase(zoneName)).findFirst();
+			if (zone.isPresent()) {
+				zone.get().setPermission(ZonePermission.valueOf(permissionName.toUpperCase()).value, value);
+
+				//send update to client
+				if(source.getLevel().getServer().isDedicatedServer()) {
+					PvpPermissionChangeS2CPush message = new PvpPermissionChangeS2CPush(
+							zone.get().getUuid(),
+							zone.get().getBox(),
+							ZonePermission.valueOf(permissionName.toUpperCase()).value,
+							value
+							);
+					ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+
+					source.sendSuccess(Component.translatable(LangUtil.message("zone.permission.change_success"))
+							.append(Component.translatable(zoneName).withStyle(ChatFormatting.AQUA)), false);
+				}
+			} else {
+				// failed message
+				source.sendFailure(Component.translatable(LangUtil.message("zone.unknown_name")).withStyle(ChatFormatting.RED)
+						.append(Component.translatable(zoneName).withStyle(ChatFormatting.AQUA))	);
+			}
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute listZonePermissions command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		return 1;
+	}
+
 	private static int removeZone(CommandSourceStack source, String zoneName) {
-		// TODO find zone
 		Optional<Zone> zone = ProtectionRegistries.pvp().getAll().stream().filter(z -> z.getName().equalsIgnoreCase(zoneName)).findFirst();
 		if (zone.isPresent()) {
 			ProtectionRegistries.pvp().removeZone(zone.get());
@@ -449,7 +551,7 @@ public class OpsProtectCommand {
 		}
 		return 1;
 	}
-	
+
 	private static int dumpPvp() {
 		try {
 			ProtectionRegistries.pvp().dump();
@@ -465,11 +567,18 @@ public class OpsProtectCommand {
 	 * @param player
 	 * @return
 	 */
-	private static int generateSubdivideLicense(CommandSourceStack source, ServerPlayer player) {
-		return generateSubdivideLicense(source, player, null);
+	private static int generateFiefdomDeed(CommandSourceStack source, ServerPlayer player) {
+		return generateFiefdomDeed(source, player, null);
 	}
 
-	private static int generateSubdivideLicense(CommandSourceStack source, ServerPlayer player, String propertyName) {
+	/**
+	 * 
+	 * @param source
+	 * @param player
+	 * @param propertyName
+	 * @return
+	 */
+	private static int generateFiefdomDeed(CommandSourceStack source, ServerPlayer player, String propertyName) {
 		try {
 			Optional<Property> property = Optional.empty();
 			UUID propertyUuid = null;
@@ -488,7 +597,7 @@ public class OpsProtectCommand {
 			}
 
 			// create item stack
-			ItemStack itemStack = new ItemStack(ModItems.FIEFDOM_GRANT.get());
+			ItemStack itemStack = new ItemStack(ModItems.FIEFDOM_DEED.get());
 
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
@@ -513,14 +622,14 @@ public class OpsProtectCommand {
 			}
 
 		} catch (Exception e) {
-			ProtectIt.LOGGER.error("Unable to execute generateSubdivideLicense() command:", e);
+			ProtectIt.LOGGER.error("Unable to execute generateFiefdomDeed() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
 		return 1;
 	}
 
-	private static int enableSubdivisible(CommandSourceStack source, ServerPlayer owner, String propertyName, boolean value) {
+	private static int enableFiefdom(CommandSourceStack source, ServerPlayer owner, String propertyName, boolean value) {
 		try {
 			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
 			if (property.isEmpty()) {
@@ -531,11 +640,11 @@ public class OpsProtectCommand {
 			property.get().setFiefdom(value);
 			CommandHelper.saveData(source.getLevel());
 
-			source.sendSuccess(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
+			source.sendSuccess(Component.translatable(LangUtil.message("property.fiefdom.enable_success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {
-			ProtectIt.LOGGER.error("Unable to execute enableSubdivisible command:", e);
+			ProtectIt.LOGGER.error("Unable to execute enableFiefdom command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
@@ -592,6 +701,7 @@ public class OpsProtectCommand {
 	 * @param uuid
 	 * @return
 	 */
+	@Deprecated
 	private static int remove(CommandSourceStack source, BlockPos pos, BlockPos pos2, String uuid) {
 		try {
 			// first, check that pos2 > pos1
@@ -834,7 +944,7 @@ public class OpsProtectCommand {
 	 * @param source
 	 * @return
 	 */
-	private static int clear(CommandSourceStack source, ServerPlayer player) {
+	private static int clear(CommandSourceStack source) {
 		// remove all properties from player
 		ProtectionRegistries.property().clear();
 
@@ -849,7 +959,7 @@ public class OpsProtectCommand {
 			RegistryMutatorMessageToClient message = new RegistryMutatorMessageToClient.Builder(
 					RegistryMutatorMessageToClient.BLOCK_TYPE, 
 					RegistryMutatorMessageToClient.CLEAR_ACTION, 
-					player.getStringUUID()).build();
+					PlayerIdentity.EMPTY.toString()).build();
 			ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 		}
 		return 1;

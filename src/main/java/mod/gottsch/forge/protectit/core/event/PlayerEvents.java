@@ -29,6 +29,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingSpawnEvent;
+import net.minecraftforge.eventbus.api.Event.Result;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -58,7 +60,7 @@ public class PlayerEvents {
 
 
 				// prevent mob from hurting player
-				if (ProtectionRegistries.property().isProtectedAgainst(new Coords(player.blockPosition()), event.getEntity().getUUID(), ZonePermission.MOB_PVP_PERMISSION.value)) {
+				if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(player.blockPosition()), ZonePermission.MOB_PVP_PERMISSION.value)) {
 					event.setCanceled(true);
 					ProtectIt.LOGGER.debug("denied mob attack -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(player.blockPosition()).toShortString());
 //					if (!event.getEntity().level.isClientSide()) {
@@ -69,7 +71,7 @@ public class PlayerEvents {
 			// player on player hurt
 			else if (event.getSource().getEntity() instanceof Player) {
 				// prevent player from hurting player
-				if (ProtectionRegistries.property().isProtectedAgainst(new Coords(player.blockPosition()), event.getEntity().getUUID(), ZonePermission.PLAYER_PVP_PERMISSION.value)) {
+				if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(player.blockPosition()), ZonePermission.PLAYER_PVP_PERMISSION.value)) {
 					event.setCanceled(true);
 					ProtectIt.LOGGER.debug("denied player attack -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(player.blockPosition()).toShortString());
 //					if (!event.getEntity().level.isClientSide()) {
@@ -88,6 +90,14 @@ public class PlayerEvents {
 
 	}
 
+	@SubscribeEvent
+	public void onPlayerHurt(LivingSpawnEvent.CheckSpawn event) {
+		if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(event.getEntity().blockPosition()), ZonePermission.MOB_PVP_PERMISSION.value)) {
+			event.setResult(Result.DENY);
+			ProtectIt.LOGGER.debug("denied mob spawn -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getEntity().blockPosition()).toShortString());
+		}
+	}
+	
 	private void sendProtectedMessage(LevelAccessor world, Player player) {
 		if (world.isClientSide() && Config.GUI.enableProtectionMessage.get()) {
 			player.sendSystemMessage((Component.translatable("message.protectit.mob_pvp_protected").withStyle(new ChatFormatting[]{ChatFormatting.GRAY, ChatFormatting.ITALIC})));

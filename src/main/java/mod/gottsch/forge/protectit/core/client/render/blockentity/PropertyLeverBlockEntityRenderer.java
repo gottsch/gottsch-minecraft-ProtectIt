@@ -20,6 +20,7 @@
 package mod.gottsch.forge.protectit.core.client.render.blockentity;
 
 import java.awt.Color;
+import java.util.List;
 import java.util.Optional;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -28,9 +29,11 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.block.ModBlocks;
 import mod.gottsch.forge.protectit.core.block.entity.PropertyLeverBlockEntity;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.UuidUtil;
 import net.minecraft.client.Minecraft;
@@ -66,16 +69,32 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 		}
 		
 		// get the property by uuid
-		Optional<Property> property = ProtectionRegistries.property().getPropertyByUuid(blockEntity.getPropertyUuid());
-		// if can't find the property in the client registry, don't render
-		if (property.isEmpty()) {
-			return;
-		}
-		// don't render if not owner or owner's whitelist
-		if (property.get().getOwner().getUuid().equals(UuidUtil.EMPTY_UUID) ||
-				(!Minecraft.getInstance().player.getUUID().equals(property.get().getOwner().getUuid()) &&
-				property.get().getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getUUID())))) {	
-			return;
+//		Optional<Property> property = ProtectionRegistries.property().getPropertyByUuid(blockEntity.getPropertyUuid());
+		
+		if (blockEntity.getPropertyOwner() != null && blockEntity.getPropertyWhitelist() != null) {
+			if (blockEntity.getPropertyOwner().equals(UuidUtil.EMPTY_UUID) ||
+					(!Minecraft.getInstance().player.getUUID().equals(blockEntity.getPropertyOwner()) &&
+						blockEntity.getPropertyWhitelist().stream().noneMatch(uuid -> uuid.equals(Minecraft.getInstance().player.getUUID())))) {	
+	//			ProtectIt.LOGGER.debug("dont render");
+				return;
+			}
+		} else {			
+			// client side registry only syncs property coords
+			List<Property> properties = ProtectionRegistries.property().getPropertyByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
+	//		ProtectIt.LOGGER.debug("properties -> {}", properties);
+			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+	//		ProtectIt.LOGGER.debug("selected -> {}", property);
+			// if can't find the property in the client registry, don't render
+			if (property.isEmpty()) {
+				return;
+			}
+			// don't render if not owner or owner's whitelist
+			if (property.get().getOwner().getUuid().equals(UuidUtil.EMPTY_UUID) ||
+					(!Minecraft.getInstance().player.getUUID().equals(property.get().getOwner().getUuid()) &&
+					property.get().getWhitelist().stream().noneMatch(p -> p.getUuid().equals(Minecraft.getInstance().player.getUUID())))) {	
+	//			ProtectIt.LOGGER.debug("dont render");
+				return;
+			}
 		}
 		
 		BlockPos pos = blockEntity.getBlockPos();

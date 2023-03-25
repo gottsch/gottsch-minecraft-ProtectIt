@@ -67,7 +67,6 @@ import net.minecraftforge.network.PacketDistributor;
  */
 public class ClaimBlock extends Block implements EntityBlock {
 	public static final EnumProperty<Direction> FACING = EnumProperty.create("facing", Direction.class);
-	public static final ICoords EMPTY = new Coords(0, -255, 0);
 	
 	/*
 	 * An array of VoxelShape shapes for the bounding box

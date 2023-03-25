@@ -21,7 +21,7 @@ import java.util.UUID;
 
 import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.item.Deed;
-import mod.gottsch.forge.protectit.core.item.PropertyLease;
+import mod.gottsch.forge.protectit.core.item.FiefDeed;
 import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -55,10 +55,10 @@ public class ItemEvents {
 						TransactionRegistry.buyDeed(uuid);
 					}
 				}
-			} else if (itemStack.getItem() instanceof PropertyLease) {
+			} else if (itemStack.getItem() instanceof FiefDeed) {
 				if (event.getEntity().isRemoved()) {
 					if (itemStack.hasTag()) {
-						UUID uuid = itemStack.getTag().getUUID(PropertyLease.PROPERTY_ID_KEY);
+						UUID uuid = itemStack.getTag().getUUID(FiefDeed.PROPERTY_ID_KEY);
 						TransactionRegistry.buyLease(uuid);
 					}
 				}				

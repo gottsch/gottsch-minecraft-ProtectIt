@@ -45,6 +45,7 @@ public class ModBlocks {
 			() -> new PropertyLever(Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.75F)));
 
 	public static final RegistryObject<Block> UNCLAIMED_STAKE;
+	public static final RegistryObject<Block> FIEF_STAKE;
 
 	static {
 		VoxelShape smallClaimShape = Block.box(7, 0, 7, 9, 10, 9);
@@ -85,6 +86,11 @@ public class ModBlocks {
 		UNCLAIMED_STAKE = Registration.BLOCKS.register("unclaimed_stake", 
 				() -> new UnclaimedStake(Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.75F))
 				.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape }));
+		
+		FIEF_STAKE = Registration.BLOCKS.register("fief_stake", 
+				() -> new FiefStake(Properties.of(Material.WOOD, MaterialColor.WOOD).strength(0.75F))
+				.setBounds(new VoxelShape[] {  mediumClaimShape, mediumClaimShape, mediumClaimShape, mediumClaimShape }));	
+
 	}
 
 	/**

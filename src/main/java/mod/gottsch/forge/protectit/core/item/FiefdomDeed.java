@@ -46,11 +46,11 @@ import net.minecraft.world.level.Level;
  * @author Mark Gottschling Feb 27, 2023
  *
  */
-public class FiefdomGrant extends Item {
+public class FiefdomDeed extends Item {
 	// TODO find a better home for this
 	private static final UUID EMPTY_UUID = new UUID(0, 0);
 
-	public FiefdomGrant(Properties properties) {
+	public FiefdomDeed(Properties properties) {
 		super(properties.stacksTo(1));
 	}
 
@@ -58,7 +58,7 @@ public class FiefdomGrant extends Item {
 	public void appendHoverText(ItemStack stack, Level worldIn, List<Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, worldIn, tooltip, flag);
 
-		Component component = Component.translatable(LangUtil.tooltip("subdivide_license.howto"));
+		Component component = Component.translatable(LangUtil.tooltip("fiefdom_deed.howto"));
 		for (String s : component.getString().split("~")) {	
 			tooltip.add(Component.translatable(LangUtil.INDENT2)
 					.append(Component.literal(s).withStyle(ChatFormatting.GREEN)));
@@ -68,15 +68,15 @@ public class FiefdomGrant extends Item {
 			CompoundTag tag = stack.getOrCreateTag();
 			LangUtil.appendAdvancedHoverText(tooltip, tt -> {
 				String propertyName = tag.getString("propertyName");
-				propertyName = "".equals(propertyName) ? Component.translatable(LangUtil.tooltip("subdivide_license.any_property")).getString() : propertyName;
+				propertyName = "".equals(propertyName) ? Component.translatable(LangUtil.tooltip("fiefdom_deed.any_property")).getString() : propertyName;
 
 				// TODO add any long text here like Owner Name, Property Name
-				tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.title")).withStyle(ChatFormatting.WHITE));
-				tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.owner_name"), tag.getString("ownerName")).withStyle(ChatFormatting.WHITE));
-				tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.property_name"), propertyName).withStyle(ChatFormatting.WHITE));
+				tooltip.add(Component.translatable(LangUtil.tooltip("fiefdom_deed.title")).withStyle(ChatFormatting.WHITE));
+				tooltip.add(Component.translatable(LangUtil.tooltip("fiefdom_deed.owner_name"), tag.getString("ownerName")).withStyle(ChatFormatting.WHITE));
+				tooltip.add(Component.translatable(LangUtil.tooltip("fiefdom_deed.property_name"), propertyName).withStyle(ChatFormatting.WHITE));
 				if (tag.contains("propertyBox")) {
 					Box box = Box.load(tag.getCompound("propertyBox"));
-					tooltip.add(Component.translatable(LangUtil.tooltip("subdivide_license.property_location")).withStyle(ChatFormatting.WHITE)
+					tooltip.add(Component.translatable(LangUtil.tooltip("fiefdom_deed.property_location")).withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(String.format("(%s) to (%s)", 
 									PropertyUtil.formatCoords(box.getMinCoords()), 
 									PropertyUtil.formatCoords(box.getMaxCoords())
@@ -153,7 +153,7 @@ public class FiefdomGrant extends Item {
 
 					if (!itemPropertyUuid.equals(EMPTY_UUID) && !itemPropertyUuid.equals(selectedProperty.getUuid())) {
 						isValid = false;
-						player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.owners_not_same"))
+						player.sendSystemMessage(Component.translatable(LangUtil.message("property.fiefdom.owners_not_same"))
 								.withStyle(ChatFormatting.WHITE));
 					}
 				}
@@ -165,7 +165,7 @@ public class FiefdomGrant extends Item {
 				// update the property with the the flag
 				if (isValid) {
 					selectedProperty.setFiefdom(true);
-					player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.enable.success"))
+					player.sendSystemMessage(Component.translatable(LangUtil.message("property.fiefdom.enable_success"))
 							.withStyle(ChatFormatting.WHITE)
 							.append(Component.translatable(selectedProperty.getName()).withStyle(ChatFormatting.AQUA)));
 					return InteractionResultHolder.consume(itemStack);

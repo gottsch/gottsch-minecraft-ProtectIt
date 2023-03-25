@@ -125,6 +125,14 @@ public class PvpRegistry implements IPvpRegistry {
 		BY_COORDS.get(coords).removeIf(z -> z.getUuid().equals(uuid));
 	}
 	
+	@Override
+	public void changePermission(UUID zoneUuid, Box box, int permission, boolean value) {
+		Optional<Zone> zone = BY_COORDS.get(box.getMinCoords()).stream().filter(z -> z.getUuid().equals(zoneUuid)).findFirst();
+		if (zone.isPresent()) {
+			zone.get().setPermission(permission, value);
+		}
+	}
+	
 	/**
 	 * For a single block
 	 * @param coords
@@ -163,6 +171,7 @@ public class PvpRegistry implements IPvpRegistry {
 	 * @return 
 	 * @return
 	 */
+	@Override
 	public boolean isProtectedAgainst(ICoords coords, int permission) {
 		// TODO should includeBorders = true
 		// check for top-level protections

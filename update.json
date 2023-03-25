@@ -6,6 +6,6 @@
   },
     "1.19.2": {
          "2.5.0": "Removed Claim Lectern.\nRemoved Claim Book (Access Manifest).\nAdded Whitelist command options.\nSplit out OPS protect command.\nAdded UUID property to Claim.\nRefactored naming.",
-         "3.0.0": "..."
+         "3.0.0": "Added fiefdoms ie nested properties.\nAdded PVP/Mob protection.Added Unclaimed Stake.\nAdded Custom Claim.\nAdded property and pvp permission overrides."
     }
 }

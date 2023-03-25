@@ -53,6 +53,7 @@ public class ModNetworking {
 	public static final int ZONE_REMOVE_ID = 27;
 	public static final int ZONE_LIST_ID = 28;
 	public static final int ZONE_CLEAR_ID = 29;
+	public static final int PVP_PERMISSION_CHANGE_ID = 30;
 	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
@@ -134,6 +135,11 @@ public class ModNetworking {
 		channel.registerMessage(ZONE_CLEAR_ID, PvpClearS2CPush.class,
 				PvpClearS2CPush::encode, PvpClearS2CPush::decode,
 				PvpClearS2CPush::handle,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
+		channel.registerMessage(PVP_PERMISSION_CHANGE_ID, PvpPermissionChangeS2CPush.class,
+				PvpPermissionChangeS2CPush::encode, PvpPermissionChangeS2CPush::decode,
+				PvpPermissionChangeS2CPush::handle,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 	}
 

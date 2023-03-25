@@ -7,8 +7,8 @@
 	"block.protectit.property_lever":"Property Lever",
 	"block.protectit.unclaimed_stake":"Unclaimed Stake",
 	
-	"item.protectit.subdivide_license":"Sub-divide License",
-	"item.protectit.property_lease":"Property Lease",
+	"item.protectit.fiefdom_deed":"Fiefdom Deed",
+	"item.protectit.fief_deed":"Fief Deed",
 	"item.protectit.property_deed":"Property Deed",
 	
 	"message.protectit.block_region.successfully_protected":"Region %s -> %s is now owned and protected.",
@@ -28,57 +28,53 @@
 	"message.protectit.property.list.empty": "[Empty]",
 	"message.protectit.property.rename.success": "The property was successfully renamed to ",
 	"message.protectit.property.name.unknown": "Player does not own a property named ",
-	"message.protectit.property.not_hotel": "Subdivisions are not allowed for this property.",
-	"message.protectit.property.subdivide.enable.success": "The subdivisibility was successfully set for property ",
-	"message.protectit.property.subdivide.enable.not_found": "???? ",
-	"message.protectit.property.subdivide.owners_not_same": "The license owner does not match the property owner.",
-	"message.protectit.property.subdivide.properties_not_same": "The license property does not match the property.",
 	
 	"message.protectit.whitelist.property.list": "Whitelist for property ",
 	"message.protectit.whitelist.add.success": "The player was successfully added to ",
 	"message.protectit.whitelist.remove.success": "The player was successfully removed from ",
 	"message.protectit.whitelist.clear.success": "The whitelist was successfully cleared from ",
 	
-	"message.protectit.property.permission.list":"Permissions of Property ",
 	"message.protectit.permission.state.on": "ON",
 	"message.protectit.permission.state.off": "OFF",
-	"message.protectit.permission.change.success": "The permission was successfully changed for property ",
+	"message.protectit.property.permission.list":"Permissions of Property ",
+	"message.protectit.property.permission.change_success": "The permission was successfully changed for property ",
 	
-	"message.protectit.subdivide.not_divisible": "The property is not enabled for subdivision.",
-	"message.protectit.subdivide.outside_property_boundary": "The subdivision region extends beyond the property boundaries.",
-	"message.protectit.subdivide.intersects_property": "The subdivision region intersects with multiple properties.",
-	"message.protectit.subdivide.success": "Successfully subdivided property  ",
+	"message.protectit.property.fiefdom.enable_success": "Fiefdom was successfully set for property ",
+	"message.protectit.property.fiefdom.owners_not_same": "The fiefdom deed owner does not match the property owner.",
+	"message.protectit.property.fiefdom.properties_not_same": "The fiefdom deed does not match the property.",
+	"message.protectit.property.fiefdom.not_granted": "The property is not enabled for fiefdom.",
+	
+	"message.protectit.property.fief.intersects_property": "The fief region intersects with multiple properties.",
+	"message.protectit.property.fief.outside_property_boundary": "The fief region extends beyond the property boundaries.",
+	"message.protectit.property.fief.success": "Successfully created a fief in property ",
+	"message.protectit.property.fief.no_parent": "That property is not a fief or has not parent.",
+	"message.protectit.property.fief.annex_success": "Successfully annexed property ",
+	
 	"message.protectit.property.transfer.owners_not_same": "The deed's owner does not match the property owner.",
 	"message.protectit.property.transfer.properties_not_same": "The deed's property does not match the property.",
 	"message.protectit.property.transfer.criteria_not_met": "Property does not meet transfer criteria.",
 	"message.protectit.property.transfer.success": "Successfully transfered ownership of property  ",
 	
-	"message.protectit.property.fief.not_divisible": "The property is not a fiefdom.",
-	
-	"message.protectit.deed.exceeded_limit": "The number of concurrent Deeds for this property has already been met.",
-	"message.protectit.lease.exceeded_limit": "The number of concurrent Leases for this property has already been met.",
-	
-	"message.protectit.hotel.spans_multiple_properties": "The hotel's region spans across multiple properties.",
-	
-	"message.protectit.hotel.unable_to_add": "Unable to add hotel to the property.",
-	"message.protectit.hotel.list": "Hotels for property ",
-	"message.protectit.hotel.list.empty": "[Empty]",
-	"message.protectit.hotel.set.success": "The hotel was successfully set.",
+	"message.protectit.property.deed.exceeded_limit": "The number of concurrent Deeds for this property has already been met.",
+	"message.protectit.property.fief_deed.exceeded_limit": "The number of concurrent Leases for this property has already been met.",
 	
 	"message.protectit.zone.unknown_name": "Unable to locate zone named ",
 	"message.protectit.zone.successfully_removed": "The pvp zone has been removed.",
+	
+	"message.protectit.zone.permission.list":"Permissions of zone ",
+	"message.protectit.zone.permission.change_success": "The permission was successfully changed for zone ",
 	
 	"tooltip.protectit.hold_shift": "Hold [SHIFT] to expand",
 	"tooltip.protectit.claim.howto": "Place block to highlight the area you wish to claim. Use placed stake to claim the land.",
 	"tooltip.protectit.remove_claim.howto": "Place block to highlight your property.\nUse placed stake to remove your claimed property and get a claim stake back.",
 	
 	"tooltip.protectit.property_lever.howto": "Place lever within your property.\nUse placed lever to highlight your land.",
-	"tooltip.protectit.subdivide_license.howto": "Use license when within the property region to enable subdivisibility.~The property can now be sub-divided using the command /protect block subdivide...",
-	"tooltip.protectit.subdivide_license.title": "Subdivision Licensed To",
-	"tooltip.protectit.subdivide_license.owner_name": "Property Owner: %s",
-	"tooltip.protectit.subdivide_license.property_name": "Property Name: %s",
-	"tooltip.protectit.subdivide_license.property_location": "Property Location: %s",
-	"tooltip.protectit.subdivide_license.any_property": "[Any]",
+	"tooltip.protectit.fiefdom_deed.howto": "Use license when within the property region to enable subdivisibility.~The property can now be sub-divided using the command /protect block subdivide...",
+	"tooltip.protectit.fiefdom_deed.title": "Subdivision Licensed To",
+	"tooltip.protectit.fiefdom_deed.owner_name": "Property Owner: %s",
+	"tooltip.protectit.fiefdom_deed.property_name": "Property Name: %s",
+	"tooltip.protectit.fiefdom_deed.property_location": "Property Location: %s",
+	"tooltip.protectit.fiefdom_deed.any_property": "[Any]",
 	"tooltip.protectit.unclaimed_stake.howto": "Place block within the highlighted region. Use placed stake to claim the land.",
 	
 	"tooltip.protectit.deed.howto": "Use deed when within the property region to transfer ownership.",

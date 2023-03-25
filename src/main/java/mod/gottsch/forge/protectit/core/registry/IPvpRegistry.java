@@ -53,6 +53,18 @@ public interface IPvpRegistry {
 
 	void dump();
 
+	void changePermission(UUID zone, Box box, int permission, boolean value);
+
+	/**
+	 * is protected against a permission
+	 * @param coords
+	 * @param coords2
+	 * @param uuid
+	 * @return 
+	 * @return
+	 */
+	boolean isProtectedAgainst(ICoords coords, int permission);
+
 	
 
 	

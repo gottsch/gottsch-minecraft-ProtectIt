@@ -54,6 +54,7 @@ import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
+import mod.gottsch.forge.protectit.core.util.UuidUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -137,14 +138,12 @@ public class ProtectCommand {
 										)
 								///// FIEF REMOVE /////
 								.then(Commands.literal("remove")
-										// TODO
-										// TODO should there be a time limit before annexing if it is owned
-										// TODO add annexStartTime to property, config value how long annex period is, somehow notify owner
-										.executes(source -> {
-											return CommandHelper.unavailable(source.getSource());
-											// return removeFief(source.getSource(), ...);
-										})
-										)
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_FIEF_NAMES)
+												.executes(source -> {
+													return annexFief(source.getSource(), StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+												})
+												) )
 								)
 
 
@@ -241,7 +240,7 @@ public class ProtectCommand {
 						///// RENAME OPTION
 						.then(Commands.literal(CommandHelper.RENAME)
 								.then(Commands.argument(CURRENT_NAME, StringArgumentType.string())
-										.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES) //SUGGEST_PROPERTY_NAMES)
+										.suggests(CommandHelper.SUGGEST_PLAYER_PROPERTY_NAMES) //SUGGEST_PROPERTY_NAMES)
 										.then(Commands.argument(NEW_NAME, StringArgumentType.string())
 												.executes(source -> {
 													return CommandHelper.rename(source.getSource(), 
@@ -327,6 +326,46 @@ public class ProtectCommand {
 				);
 	}
 
+	private static int annexFief(CommandSourceStack source, String propertyName) {
+		try {
+			// get the owner
+			ServerPlayer owner = source.getPlayerOrException();
+
+			Optional<Property> property = CommandHelper.getPropertyByLord(owner.getUUID(), propertyName);
+			if (property.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			} else if (property.get().getParent() == null || property.get().getParent().equals(UuidUtil.EMPTY_UUID)) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.no_parent"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+			
+			Optional<Property> parent = ProtectionRegistries.property().getPropertyByUuid(property.get().getParent());
+			if (parent.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.fief.no_parent"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+						
+			// remove child from registry
+			ProtectionRegistries.property().removeProperty(property.get());
+			
+			// remove child from parent
+			parent.get().getChildren().remove(property.get().getUuid());
+		} catch(Exception e) {
+			ProtectIt.LOGGER.error("Unable to execute annexFief() command:", e);
+			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
+					.withStyle(ChatFormatting.RED));
+		}
+		
+		source.sendSuccess(Component.translatable(LangUtil.message("property.fief.annex_success"))
+				.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
+		
+		return 1;
+	}
+
 	/**
 	 * 
 	 * @param source
@@ -383,7 +422,7 @@ public class ProtectCommand {
 			properties = PropertyUtil.getPropertyHierarchy(properties);
 			Optional<Property> property = properties.stream()
 					.filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName) || (p.getOwner().equals(PlayerIdentity.EMPTY) &&
-							p.getNameByLandlord().equalsIgnoreCase(propertyName)))
+							p.getNameByLord().equalsIgnoreCase(propertyName)))
 					.findFirst();
 			if (!property.isPresent()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
@@ -392,7 +431,7 @@ public class ProtectCommand {
 			}
 
 			// create item stack
-			ItemStack itemStack = new ItemStack(ModItems.PROPERTY_LEASE.get());
+			ItemStack itemStack = new ItemStack(ModItems.FIEF_DEED.get());
 
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
@@ -475,7 +514,7 @@ public class ProtectCommand {
 
 			// test against the TransactionRegistry
 			if (TransactionRegistry.getDeedsCount(property.get().getUuid()) > 0) {
-				source.sendFailure(Component.translatable(LangUtil.message("deed.exceeded_limit"))
+				source.sendFailure(Component.translatable(LangUtil.message("property.deed.exceeded_limit"))
 						.withStyle(ChatFormatting.RED));
 				return 1;
 			}
@@ -566,14 +605,14 @@ public class ProtectCommand {
 
 			// is the property a fiefdom
 			if (!target.isFiefdom()) {
-				source.sendFailure(Component.translatable(LangUtil.message("property.fief.not_divisible"))
+				source.sendFailure(Component.translatable(LangUtil.message("property.fiefdom.not_granted"))
 						.withStyle(ChatFormatting.RED));
 				return 1;
 			}
 
 			// within bounds of target property
 			if (isOutsideBoundary(coords1, target.getBox()) || isOutsideBoundary(coords2, target.getBox())) {
-				source.sendFailure(Component.translatable(LangUtil.message("subdivide.outside_property_boundary"))
+				source.sendFailure(Component.translatable(LangUtil.message("property.fief.outside_property_boundary"))
 						.withStyle(ChatFormatting.RED));
 				return 1;
 			}
@@ -584,7 +623,7 @@ public class ProtectCommand {
 			// doesn't over any sibling properties
 			for (Optional<Property> c : target.getChildren().stream().map(uuid -> ProtectionRegistries.property().getPropertyByUuid(uuid)).toList()) { //target.getChildren()) {
 				if (c.isPresent() && c.get().intersects(box)) {
-					source.sendFailure(Component.translatable(LangUtil.message("subdivide.intersects_property"))
+					source.sendFailure(Component.translatable(LangUtil.message("property.fief.intersects_property"))
 							.withStyle(ChatFormatting.RED));
 					return 1;
 				}
@@ -611,7 +650,7 @@ public class ProtectCommand {
 					name2);
 			property.setParent(target.getUuid());
 			property.setLord(target.getOwner());
-			property.setNameByLandlord(name1);
+			property.setNameByLord(name1);
 			property.setCreateTime(source.getLevel().getGameTime());
 
 			Optional<Property> finalProperty = ProtectionRegistries.property().addFief(target, property);
@@ -624,7 +663,7 @@ public class ProtectCommand {
 			// save world data
 			CommandHelper.saveData(source.getLevel());
 
-			source.sendSuccess(Component.translatable(LangUtil.message("subdivide.success"))
+			source.sendSuccess(Component.translatable(LangUtil.message("property.fief.success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 			// send message to subdivide protection on all clients
@@ -745,7 +784,7 @@ public class ProtectCommand {
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
-			source.sendSuccess(Component.translatable(LangUtil.message("permission.change.success"))
+			source.sendSuccess(Component.translatable(LangUtil.message("property.permission.change_success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
 		} catch (Exception e) {

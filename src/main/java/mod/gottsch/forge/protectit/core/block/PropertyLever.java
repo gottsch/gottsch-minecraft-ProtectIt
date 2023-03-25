@@ -172,16 +172,16 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 				ProtectIt.LOGGER.debug("found protections -> {}", list);
 				if (!list.isEmpty()) {				
 					List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
-//					ProtectIt.LOGGER.debug("properties -> {}", properties);
+					ProtectIt.LOGGER.debug("properties -> {}", properties);
 					// NOTE this list of properties may or may not contain the children properties
 					Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
-//					ProtectIt.LOGGER.debug("least sig -> {}", property);
+					ProtectIt.LOGGER.debug("least sig -> {}", property);
 					if (property.isPresent()) {
 						((PropertyLeverBlockEntity)blockEntity).setPropertyCoords(property.get().getBox().getMinCoords());
 						((PropertyLeverBlockEntity)blockEntity).setPropertyUuid(property.get().getUuid());
 						((PropertyLeverBlockEntity)blockEntity).setPropertyBox(property.get().getBox());
-//						ProtectIt.LOGGER.debug("setting lever props: coords -> {}, uuid -> {}, box -> {}", property.get().getBox().getMinCoords(),
-//								property.get().getUuid(), property.get().getBox());
+						ProtectIt.LOGGER.debug("setting lever props: coords -> {}, uuid -> {}, box -> {}", property.get().getBox().getMinCoords(),
+								property.get().getUuid(), property.get().getBox());
 					}
 				}
 			}

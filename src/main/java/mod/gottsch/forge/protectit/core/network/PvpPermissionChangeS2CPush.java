@@ -1,6 +1,8 @@
 /*
  * This file is part of  Protect It.
  * Copyright (c) 2023 Mark Gottschling (gottsch)
+ * 
+ * All rights reserved.
  *
  * Protect It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,28 +23,37 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.protectit.ProtectIt;
+import mod.gottsch.forge.protectit.core.command.CommandHelper;
+import mod.gottsch.forge.protectit.core.property.Property;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.NetworkUtil;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
 /**
  * 
- * @author Mark Gottschling Mar 22, 2023
+ * @author Mark Gottschling Mar 24, 2023
  *
  */
-public class PvpRemoveZoneS2CPush extends PvpZoneIdMessage {
-
-	public PvpRemoveZoneS2CPush(UUID uuid, ICoords coords) {
-		super(uuid, coords);
+public class PvpPermissionChangeS2CPush {
+	private UUID zone;
+	private Box box;
+	private int permission;
+	private boolean value;
+	
+	protected PvpPermissionChangeS2CPush() {}
+	
+	public PvpPermissionChangeS2CPush(UUID zone, Box box, int permission, boolean value) {
+		this.zone = zone;
+		this.box = box;
+		this.permission = permission;
+		this.value = value;
 	}
 	
 	/**
@@ -50,8 +61,11 @@ public class PvpRemoveZoneS2CPush extends PvpZoneIdMessage {
 	 * @param buf
 	 */
 	public void encode(FriendlyByteBuf buf) {
-		buf.writeUUID(getUuid());
-		NetworkUtil.writeCoords(getCoords(), buf);
+		buf.writeUUID(zone);
+		NetworkUtil.writeCoords(box.getMinCoords(), buf);
+		NetworkUtil.writeCoords(box.getMaxCoords(), buf);
+		buf.writeInt(permission);
+		buf.writeBoolean(value);
 	}
 	
 	/**
@@ -59,19 +73,20 @@ public class PvpRemoveZoneS2CPush extends PvpZoneIdMessage {
 	 * @param buf
 	 * @return
 	 */
-	public static PvpRemoveZoneS2CPush decode(FriendlyByteBuf buf) {
-		UUID uuid;
-		ICoords coords;
+	public static PvpPermissionChangeS2CPush decode(FriendlyByteBuf buf) {
+		PvpPermissionChangeS2CPush message = new PvpPermissionChangeS2CPush();
+		
 		try {
-			uuid = buf.readUUID();
-			coords = NetworkUtil.readCoords(buf);
-			PvpRemoveZoneS2CPush message = new PvpRemoveZoneS2CPush(uuid, coords);
-			return message;
-			
-		} catch(Exception e) {
-			ProtectIt.LOGGER.error("an error occurred attempting to read message: ", e);
-			return null;
+			message.zone = buf.readUUID();
+			message.box = new Box(NetworkUtil.readCoords(buf), NetworkUtil.readCoords(buf));
+			message.permission = buf.readInt();
+			message.value = buf.readBoolean();
 		}
+		catch(Exception e) {
+			ProtectIt.LOGGER.error("an error occurred attempting to read message: ", e);
+			return message;
+		}
+		return message;
 	}
 	
 	/**
@@ -79,40 +94,37 @@ public class PvpRemoveZoneS2CPush extends PvpZoneIdMessage {
 	 * @param message
 	 * @param ctxSupplier
 	 */
-	public static void handle(final PvpZoneIdMessage message, Supplier<NetworkEvent.Context> ctxSupplier) {
+	public static void handle(final PvpPermissionChangeS2CPush message, Supplier<NetworkEvent.Context> ctxSupplier) {
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		
 		if (ctx.getDirection().getReceptionSide() != LogicalSide.CLIENT) {
-			ProtectIt.LOGGER.warn("RemoveZoneS2CPush received on wrong side -> {}", ctx.getDirection().getReceptionSide());
+			ProtectIt.LOGGER.warn("PvpPermissionChangeS2CPush received on wrong side -> {}", ctx.getDirection().getReceptionSide());
 			return;
 		}
 
 		Optional<Level> client = LogicalSidedProvider.CLIENTWORLD.get(ctx.getDirection().getReceptionSide());
 		if (!client.isPresent()) {
-			ProtectIt.LOGGER.warn("RemoveZoneS2CPush context could not provide a ClientWorld.");
+			ProtectIt.LOGGER.warn("PvpPermissionChangeS2CPush context could not provide a ClientWorld.");
 			return;
 		}
 		
-		ctx.enqueueWork(() -> 
-		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage((ClientLevel) client.get(), message))
-				);
+		// this creates a new task which will be executed by the server during the next tick
+		ctx.enqueueWork(() -> processMessage((ClientLevel) client.get(), message));
+		// mark as handled
 		ctx.setPacketHandled(true);
 	}
-	
+
 	/**
 	 * 
-	 * @param clientLevel
 	 * @param message
-	 * @return
+	 * @param sendingPlayer
 	 */
-	private static Object processMessage(ClientLevel clientLevel, PvpZoneIdMessage message) {
+	static void processMessage(ClientLevel level, PvpPermissionChangeS2CPush message) {
 
 		try {
-			// load registry from interval list
-			ProtectionRegistries.pvp().removeZone(message.getUuid(), message.getCoords());
+			ProtectionRegistries.pvp().changePermission(message.zone, message.box, message.permission, message.value);
 		} catch (Exception e) {
-			ProtectIt.LOGGER.error("Unable to remove zone on client: ", e);
+			ProtectIt.LOGGER.error("Unable to update zone permission on client: ", e);
 		}
-		return null;
 	}
 }

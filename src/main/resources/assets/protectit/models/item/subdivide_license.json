@@ -1,6 +1,6 @@
 {
   "parent" : "item/generated",
   "textures" : {
-    "layer0" : "protectit:item/subdivide_license"
+    "layer0" : "protectit:item/fiefdom_deed"
   }
 }

@@ -35,6 +35,7 @@ public class ModBlockEntities {
 	public static final RegistryObject<BlockEntityType<RemoveClaimBlockEntity>> REMOVE_CLAIM_TYPE;
 	public static final RegistryObject<BlockEntityType<PropertyLeverBlockEntity>> PROPERTY_LEVER_TYPE;
 	public static final RegistryObject<BlockEntityType<UnclaimedStakeBlockEntity>> UNCLAIMED_TYPE;
+	public static final RegistryObject<BlockEntityType<FiefStakeEntity>> FIEF_TYPE;
 	
 	static {
 		CLAIM_TYPE = Registration.BLOCK_ENTITIES.register("claim_te", () -> BlockEntityType.Builder.of(ClaimBlockEntity::new, 
@@ -57,6 +58,10 @@ public class ModBlockEntities {
 		
 		UNCLAIMED_TYPE = Registration.BLOCK_ENTITIES.register("unclaimed", () -> BlockEntityType.Builder.of(UnclaimedStakeBlockEntity::new, 
 				ModBlocks.UNCLAIMED_STAKE.get()
+			).build(null));
+		
+		FIEF_TYPE = Registration.BLOCK_ENTITIES.register("fief", () -> BlockEntityType.Builder.of(FiefStakeEntity::new, 
+				ModBlocks.FIEF_STAKE.get()
 			).build(null));
 	}
 	

@@ -21,8 +21,8 @@ public class ItemModelsProvider extends ItemModelProvider {
 	protected void registerModels() {
 		// tabs
 		singleTexture(
-				"subdivide_license",
-				mcLoc("item/generated"), "layer0", modLoc("item/subdivide_license"));
+				"fiefdom_deed",
+				mcLoc("item/generated"), "layer0", modLoc("item/fiefdom_deed"));
 
 	}
 }

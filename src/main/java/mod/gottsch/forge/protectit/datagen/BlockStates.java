@@ -18,7 +18,7 @@ public class BlockStates extends BlockStateProvider {
 	
 	@Override
 	protected void registerStatesAndModels() {
-//		simpleBlock(ProtectItItems.SUBDIVIDE_LICENSE.get());
+//		simpleBlock(ProtectItItems.fiefdom_deed.get());
 	}
 
 }

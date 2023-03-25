@@ -17,6 +17,7 @@
  */
 package mod.gottsch.forge.protectit.core.block.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,10 +26,13 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.property.Property;
+import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.UuidUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -47,9 +51,13 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 	private static final int TICKS_PER_SECOND = 20;
 	protected static final int FIVE_SECONDS = 5 * TICKS_PER_SECOND;
 	
+	@Deprecated
 	private static final String PROPERTY_COORDS_TAG = "propertyCoords";
 	private static final String PROPERTY_UUID_TAG = "propertyUuid";
 	private static final String PROPERTY_BOX_TAG = "propertyBox";
+	private static final String PROPERTY_OWNER_TAG = "propertyOwner";
+	private static final String PROPERTY_LANDLORD_TAG = "propertyLandlord";
+	private static final String PROPERTY_WHITELIST_TAG = "propertyWhitelist";
 
 	@Deprecated
 	private ICoords propertyCoords;
@@ -61,6 +69,9 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 	 *   this can replace the propertyCoords as they are contained in the box.
 	 */
 	private Box propertyBox;
+	private UUID propertyOwner;
+	private UUID propertyLandlord;
+	private List<UUID> propertyWhitelist;
 	
 	public AbstractPropertyOutlinerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -94,6 +105,9 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 				setPropertyCoords(property.get().getBox().getMinCoords());
 				setPropertyUuid(property.get().getUuid());
 				setPropertyBox(property.get().getBox());
+				setPropertyOwner(property.get().getOwner().getUuid());
+				setPropertyWhitelist(property.get().getWhitelist().stream().map(p -> p.getUuid()).toList());
+				// TODO should pass owner and landlord here as well ?
 //				ProtectIt.LOGGER.debug("setting props: coords -> {}, uuid -> {}, box -> {}", property.get().getBox().getMinCoords(),
 //						property.get().getUuid(), property.get().getBox());
 			}
@@ -101,6 +115,7 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 				setPropertyCoords(Coords.EMPTY);
 				setPropertyUuid(UuidUtil.EMPTY_UUID);
 				setPropertyBox(Box.EMPTY);
+				setPropertyOwner(PlayerIdentity.EMPTY.getUuid());
 //				ProtectIt.LOGGER.debug("setting props: EMPTY");
 			}
 			
@@ -132,6 +147,21 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 			getPropertyBox().save(boxTag);
 			tag.put(PROPERTY_BOX_TAG, boxTag);
 		}
+		if (getPropertyOwner() != null) {
+			tag.putUUID(PROPERTY_OWNER_TAG, getPropertyOwner());
+		}
+		if (getPropertyLandlord() != null) {
+			tag.putUUID(PROPERTY_LANDLORD_TAG, getPropertyLandlord());
+		}
+		if (getPropertyWhitelist() != null) {
+			ListTag listTag = new ListTag();
+			getPropertyWhitelist().forEach(uuid -> {
+				CompoundTag whitelistTag = new CompoundTag();
+				whitelistTag.putUUID("uuid", uuid);
+				listTag.add(whitelistTag);
+			});
+			tag.put(PROPERTY_WHITELIST_TAG, listTag);
+		}
 	}
 	
 	/**
@@ -148,6 +178,18 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 		}
 		if (tag.contains(PROPERTY_BOX_TAG)) {
 			setPropertyBox(Box.load(tag.getCompound(PROPERTY_BOX_TAG)));
+		}
+		if (tag.contains(PROPERTY_OWNER_TAG)) {
+			setPropertyOwner(tag.getUUID(PROPERTY_OWNER_TAG));
+		}
+		if (tag.contains(PROPERTY_LANDLORD_TAG)) {
+			setPropertyLandlord(tag.getUUID(PROPERTY_LANDLORD_TAG));
+		}
+		if (tag.contains(PROPERTY_WHITELIST_TAG)) {
+			ListTag listTag = tag.getList(PROPERTY_WHITELIST_TAG, Tag.TAG_COMPOUND);
+			listTag.forEach(element -> {
+				getPropertyWhitelist().add(((CompoundTag)element).getUUID("uuid"));
+			});
 		}
 	}
 	
@@ -206,5 +248,32 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 
 	public void setPropertyBox(Box box) {
 		this.propertyBox = box;
+	}
+
+	public UUID getPropertyOwner() {
+		return propertyOwner;
+	}
+
+	public void setPropertyOwner(UUID propertyOwner) {
+		this.propertyOwner = propertyOwner;
+	}
+
+	public UUID getPropertyLandlord() {
+		return propertyLandlord;
+	}
+
+	public void setPropertyLandlord(UUID propertyLandlord) {
+		this.propertyLandlord = propertyLandlord;
+	}
+
+	public List<UUID> getPropertyWhitelist() {
+		if (propertyWhitelist == null) {
+			propertyWhitelist = new ArrayList<>();
+		}
+		return propertyWhitelist;
+	}
+
+	public void setPropertyWhitelist(List<UUID> propertyWhitelist) {
+		this.propertyWhitelist = propertyWhitelist;
 	}
 }

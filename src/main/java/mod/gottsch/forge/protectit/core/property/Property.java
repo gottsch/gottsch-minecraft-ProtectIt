@@ -129,6 +129,7 @@ public class Property {
 	public Property(UUID uuid, String name, @Deprecated ICoords coords, Box box, PlayerIdentity owner) {
 		this(coords, box);
 		setUuid(uuid);
+		setOwner(owner);
 		setNameByOwner(name);
 	}
 
@@ -168,6 +169,7 @@ public class Property {
 				CompoundTag nameTag = new CompoundTag();
 				nameTag.putUUID("key", key);
 				nameTag.putString("value", value);
+				ProtectIt.LOGGER.debug("saving name: key -> {}, value -> {}", key, value);
 				listTag.add(nameTag);
 			});
 			tag.put(NAMES_KEY, listTag);
@@ -234,6 +236,7 @@ public class Property {
 		if (tag.contains(NAMES_KEY)) {
 			ListTag namesTag = tag.getList(NAMES_KEY, Tag.TAG_COMPOUND);
 			namesTag.forEach(nameTag -> {
+				ProtectIt.LOGGER.debug("loading name: key -> {}, value -> {}", ((CompoundTag)nameTag).getUUID("key"), ((CompoundTag)nameTag).getString("value"));
 				getNames().put(((CompoundTag)nameTag).getUUID("key"), ((CompoundTag)nameTag).getString("value"));
 			});
 		}
@@ -297,9 +300,9 @@ public class Property {
 	 */
 	public boolean intersects(Box box2) {
 		Box box = this.getBox();
-		return box.getMinCoords().getX() <= box2.getMaxCoords().getX() && box.getMaxCoords().getX() >= box2.getMinCoords().getX() 
-				&& box.getMinCoords().getY() <= box2.getMaxCoords().getY() && box.getMaxCoords().getY() >= box2.getMinCoords().getY()
-				&& box.getMinCoords().getZ() <=  box2.getMaxCoords().getZ() && box.getMaxCoords().getZ() >= box2.getMinCoords().getZ();
+		return box.getMinCoords().getX() < box2.getMaxCoords().getX() && box.getMaxCoords().getX() > box2.getMinCoords().getX() 
+				&& box.getMinCoords().getY() < box2.getMaxCoords().getY() && box.getMaxCoords().getY() > box2.getMinCoords().getY()
+				&& box.getMinCoords().getZ() <  box2.getMaxCoords().getZ() && box.getMaxCoords().getZ() > box2.getMinCoords().getZ();
 	}
 
 	/**
@@ -361,12 +364,17 @@ public class Property {
 	}
 
 	public void setOwner(PlayerIdentity owner) {
-		if (this.owner != null) {
-			// remove name by old owner
-			String name = getNameByOwner();
-			getNames().remove(this.owner.getUuid());
-			// add name by new owner
-			setName(owner.getUuid(), name);
+		// NOTE this doesn't work on load is names are loaded before owners. find a better way
+//		if (this.owner != null) {
+//			// remove name by old owner
+//			String name = getNameByOwner();
+//			getNames().remove(this.owner.getUuid());
+//			// add name by new owner
+//			setName(owner.getUuid(), name);
+//		}
+		if (!getNames().containsKey(owner.getUuid())) {
+			// generate a name
+			setName(owner.getUuid(), owner.getName());
 		}
 		this.owner = owner;
 	}
@@ -441,11 +449,11 @@ public class Property {
 		setName(getOwner().getUuid(), name);
 	}
 
-	public String getNameByLandlord() {
+	public String getNameByLord() {
 		return getName(getLord().getUuid());
 	}
 
-	public void setNameByLandlord(String name) {
+	public void setNameByLord(String name) {
 		setName(getLord().getUuid(), name);
 	}
 

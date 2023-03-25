@@ -32,6 +32,7 @@ import java.util.UUID;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -144,6 +145,7 @@ public class PropertyRegistry implements IPropertyRegistry {
 		removeProperties(coords, coords);
 	}
 
+	@Override
 	public void removeProperty(Property property) {
 		// need to remove all children recursively of this property as well
 		List<Property> properties = PropertyUtil.getPropertyHierarchy(Arrays.asList(property));
@@ -462,18 +464,20 @@ public class PropertyRegistry implements IPropertyRegistry {
 	
 	@Override
 	public List<Property> getPropertiesByOwner(UUID owner) {
+		List<Property> result = new ArrayList<>();
 		if (PROPERTY_BY_OWNER.containsKey(owner)) {
-			return (List<Property>) PROPERTY_BY_OWNER.get(owner);
+			result.addAll(PROPERTY_BY_OWNER.get(owner));
 		}
-		return new ArrayList<>();
+		return result;
 	}
 
 	@Override
-	public List<Property> getPropertiesByLord(UUID landlord) {
-		if (PROPERTY_BY_LORD.containsKey(landlord)) {
-			return (List<Property>) PROPERTY_BY_LORD.get(landlord);
+	public List<Property> getPropertiesByLord(UUID lord) {
+		List<Property> result = new ArrayList<>();
+		if (PROPERTY_BY_LORD.containsKey(lord)) {
+			result.addAll(PROPERTY_BY_LORD.get(lord));
 		}
-		return new ArrayList<>();
+		return result;
 	}
 
 	@Override
@@ -489,7 +493,6 @@ public class PropertyRegistry implements IPropertyRegistry {
 
 		GsonBuilder gsonBuilder = new GsonBuilder();		
 		try {
-			Type typeOfSrc = new TypeToken<ArrayListMultimap<ICoords, Property>>(){}.getType();
 			Type listType = new TypeToken<List<Property>>() {}.getType();
 			Gson gson = gsonBuilder.setPrettyPrinting().create();
 			
@@ -498,12 +501,21 @@ public class PropertyRegistry implements IPropertyRegistry {
 			PROPERTY_BY_COORDS.forEach((coords, property) -> {
 				list.add(property);
 			});
-//			String byCoords = gson.toJson(PROPERTY_BY_COORDS, typeOfSrc);
+
 			String json = gson.toJson(list, listType);
 			FileWriter fw = new FileWriter(path.resolve("protection-registries.json").toAbsolutePath().toString());
-//			fw.write(byCoords);
 			fw.write(json);
 			fw.close();
+//			
+//			list.clear();
+//			Multimaps.asMap(PROPERTY_BY_OWNER).forEach((coords, col) -> {
+//				col.forEach(p -> {
+//					list.add(p);
+//				});
+//			});
+//			FileWriter fw2 = new FileWriter(path.resolve("protection-registries-owner.json").toAbsolutePath().toString());
+//			fw2.write(json);
+//			fw2.close();
 
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("error writing protection registry to file -> ", e);

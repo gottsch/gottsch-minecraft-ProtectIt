@@ -46,15 +46,14 @@ public class ModItems {
 	public static RegistryObject<Item> MEDIUM_CLAIM = fromClaimBlock(ModBlocks.MEDIUM_CLAIM, ITEM_PROPS_SUPPLIER);
 	public static RegistryObject<Item> LARGE_CLAIM = fromClaimBlock(ModBlocks.LARGE_CLAIM, ITEM_PROPS_SUPPLIER);
 	public static RegistryObject<Item> CUSTOM_CLAIM = fromCustomClaimBlock(ModBlocks.CUSTOM_CLAIM, ITEM_PROPS_SUPPLIER);
-	
 	public static RegistryObject<Item> REMOVE_CLAIM = Registration.ITEMS.register("remove_claim", () -> new RemoveClaimBlockItem(ModBlocks.REMOVE_CLAIM.get(), ITEM_PROPS_SUPPLIER.get()));
-
 	public static RegistryObject<Item> PROPERTY_LEVER = Registration.ITEMS.register("property_lever", () -> new PropertyLeverBlockItem(ModBlocks.PROPERTY_LEVER.get(), ITEM_PROPS_SUPPLIER.get()));
 
-	public static RegistryObject<Item> FIEFDOM_GRANT = Registration.ITEMS.register("subdivide_license", () -> new FiefdomGrant(ITEM_PROPS_SUPPLIER.get()));
 	public static RegistryObject<Item> UNCLAIMED_STAKE = Registration.ITEMS.register("unclaimed_stake", () -> new UnclaimedStakeBlockItem(ModBlocks.UNCLAIMED_STAKE.get(), ITEM_PROPS_SUPPLIER.get()));
 	public static RegistryObject<Item> PROPERTY_DEED = Registration.ITEMS.register("property_deed", () -> new Deed(ITEM_PROPS_SUPPLIER.get()));
-	public static RegistryObject<Item> PROPERTY_LEASE = Registration.ITEMS.register("property_lease", () -> new PropertyLease(ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> FIEFDOM_DEED = Registration.ITEMS.register("fiefdom_deed", () -> new FiefdomDeed(ITEM_PROPS_SUPPLIER.get()));
+	public static RegistryObject<Item> FIEF_DEED = Registration.ITEMS.register("fief_deed", () -> new FiefDeed(ITEM_PROPS_SUPPLIER.get()));
+	
 
 	/**
 	 * 

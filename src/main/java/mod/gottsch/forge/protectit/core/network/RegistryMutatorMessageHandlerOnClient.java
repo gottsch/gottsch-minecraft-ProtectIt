@@ -31,7 +31,9 @@ import mod.gottsch.forge.protectit.core.registry.IPropertyRegistry;
 import mod.gottsch.forge.protectit.core.registry.PlayerIdentity;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -49,6 +51,7 @@ public class RegistryMutatorMessageHandlerOnClient {
 	}
 
 	public static void onMessageReceived(final RegistryMutatorMessageToClient message, Supplier<NetworkEvent.Context> ctxSupplier) {
+		ProtectIt.LOGGER.debug("received registry mutator message -> {}", message);
 		NetworkEvent.Context ctx = ctxSupplier.get();
 		LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
 		ctx.setPacketHandled(true);
@@ -71,10 +74,11 @@ public class RegistryMutatorMessageHandlerOnClient {
 			ProtectIt.LOGGER.warn("RegistryMutatorMessageToClient context could not provide a ClientWorld.");
 			return;
 		}
-
-		// This code creates a new task which will be executed by the client during the next tick
-		//  In this case, the task is to call messageHandlerOnClient.processMessage(worldclient, message)
-		ctx.enqueueWork(() -> processMessage(clientWorld.get(), message));
+		
+		ctx.enqueueWork(() -> 
+		DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> processMessage(clientWorld.get(), message))
+				);
+		ctx.setPacketHandled(true);		
 	}
 
 	/**
@@ -98,8 +102,11 @@ public class RegistryMutatorMessageHandlerOnClient {
 			
 			if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.ADD_ACTION)) {
 				PlayerIdentity data = new PlayerIdentity(UUID.fromString(message.getUuid()), message.getPlayerName());
+				// TODO creating a new property here without providing the original UUID will cause problems, as the property cannot be found
+				// using the uuid
 				Property property = new Property(message.getCoords(), new Box(message.getCoords1(), message.getCoords2()), data, message.getName());
 				registry.addProperty(property);
+				ProtectIt.LOGGER.debug("added property on client -> {}", property.getUuid());
 			}
 			else if (message.getAction().equalsIgnoreCase(RegistryMutatorMessageToClient.REMOVE_ACTION)) {
 				if (!message.getCoords1().equals(RegistryMutatorMessageToClient.EMPTY_COORDS)) {

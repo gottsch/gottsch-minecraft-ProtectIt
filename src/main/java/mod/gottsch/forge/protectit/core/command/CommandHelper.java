@@ -22,6 +22,7 @@ package mod.gottsch.forge.protectit.core.command;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,7 +73,8 @@ public class CommandHelper {
 	public static final String TARGETS = "targets";
 	public static final String UUID = "uuid";
 	public static final String PROPERTY_NAME = "property_name";
-
+	public static final String PERMISSIONS = "permissions";
+	
 	public static final String ZONE_NAME = "zone_name";
 	
 	public static final String GIVE = "give";
@@ -113,6 +115,19 @@ public class CommandHelper {
 		List<String> names = properties.stream().map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
+	
+	// NEEDS to get ALL the properties that you are owner or lord of.
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_PLAYER_PROPERTY_NAMES = (source, builder) -> {
+		ServerPlayer player = source.getSource().getPlayerOrException();
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
+		ProtectionRegistries.property().getPropertiesByLord(player.getUUID()).stream().forEach(p -> {
+			if (!properties.contains(p)) {
+				properties.add(p);
+			}
+		});
+		List<String> names = properties.stream().map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
 
 	//	static final SuggestionProvider<CommandSourceStack> SUGGEST_NESTED_PROPERTY_NAMES = (source, builder) -> {
 	//		List<Property> properties = ProtectionRegistries.block().getProtections(source.getSource().getPlayerOrException().getStringUUID());
@@ -132,6 +147,12 @@ public class CommandHelper {
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_FIEF_NAMES = (source, builder) -> {
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByLord(source.getSource().getPlayerOrException().getUUID());
+		List<String> names = properties.stream().filter(p -> !p.isDomain()).map(p -> p.getNameByLord()).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
+	
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_ZONE_NAMES = (source, builder) -> {
 		List<Zone> zones = ProtectionRegistries.pvp().getAll();
 		List<String> names = zones.stream().map(p -> p.getName()).collect(Collectors.toList());
@@ -166,12 +187,13 @@ public class CommandHelper {
 			source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
 			return 1;
 		}
-		// TODO need to get the whole heirarchy and then filter from there
 		List<Property> owners = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
-		List<Property> namedClaims = owners.stream().filter(p -> p.getNameByOwner().equals(oldName)).toList();
+		ProtectIt.LOGGER.debug("owner props -> {}", owners);
+		List<Property> namedClaims = owners.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(oldName)).toList();
 		if (namedClaims.isEmpty()) {
-			List<Property> landlords = ProtectionRegistries.property().getPropertiesByLord(player.getUUID());
-			namedClaims = landlords.stream().filter(p -> p.getNameByLandlord().equals(oldName)).toList();
+			List<Property> lords = ProtectionRegistries.property().getPropertiesByLord(player.getUUID());
+			ProtectIt.LOGGER.debug("lord props -> {}",lords);
+			namedClaims = lords.stream().filter(p -> p.getNameByLord().equalsIgnoreCase(oldName)).toList();
 		}
 
 		//		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
@@ -181,7 +203,8 @@ public class CommandHelper {
 					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 			return 1;
 		}
-		namedClaims.get(0).setNameByOwner(newName.toUpperCase());
+		ProtectIt.LOGGER.debug("named claim -> {}", namedClaims.get(0));
+		namedClaims.get(0).setName(player.getUUID(), newName.toUpperCase());
 
 		source.sendSuccess(Component.translatable(LangUtil.message("property.rename.success"))
 				.append(Component.translatable(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), false);
@@ -229,7 +252,7 @@ public class CommandHelper {
 			GameProfileCache cache = source.getLevel().getServer().getProfileCache();
 			Optional<GameProfile> profile = cache.get(player.toLowerCase());
 			if (profile.isPresent()) {
-//				ProtectIt.LOGGER.debug("profile -> {}", profile.get().getId());
+				ProtectIt.LOGGER.debug("profile -> {}", profile.get().getId());
 				List<Component> components = PropertyUtil.listProperties(profile.get());
 				components.forEach(component -> {
 					source.sendSuccess(component, false);
@@ -340,6 +363,17 @@ public class CommandHelper {
 		return Optional.ofNullable(namedProperties.get(0));
 	}
 
+	public static Optional<Property> getPropertyByLord(UUID lord, String propertyName) {
+		// get the lord's properties
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByLord(lord);
+		// get the named property
+		List<Property> namedProperties = properties.stream().filter(p -> p.getNameByLord().equalsIgnoreCase(propertyName)).collect(Collectors.toList());
+		if (namedProperties.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(namedProperties.get(0));
+	}
+	
 	/**
 	 * 
 	 * @param c1

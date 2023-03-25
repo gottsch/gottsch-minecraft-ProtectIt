@@ -25,9 +25,9 @@ import net.minecraft.world.level.Level;
  * @author Mark Gottschling Mar 2, 2023
  *
  */
-public class PropertyLease extends Deed {
+public class FiefDeed extends Deed {
 
-	public PropertyLease(Properties properties) {
+	public FiefDeed(Properties properties) {
 		super(properties);
 	}
 

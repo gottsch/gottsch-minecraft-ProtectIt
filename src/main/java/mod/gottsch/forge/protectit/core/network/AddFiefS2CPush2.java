@@ -145,7 +145,7 @@ public class AddFiefS2CPush2 implements ICoordsHandler {
 						"NAME_DOESNT_MATTER_ON_CLIENT");
 				property.setParent(target.get().getUuid());
 				property.setLord(new PlayerIdentity(message.owner, message.owner.toString()));
-				property.setNameByLandlord("NAME_DOESNT_MATTER_ON_CLIENT");
+				property.setNameByLord("NAME_DOESNT_MATTER_ON_CLIENT");
 				
 				ProtectionRegistries.property().addFief(target.get(), property);
 			}
