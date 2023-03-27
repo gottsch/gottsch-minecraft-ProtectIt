@@ -44,11 +44,9 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 public class PlayerEvents {
 
 	@SubscribeEvent
-	public void onPlayerHurt(LivingHurtEvent event) {
-		//		if (WorldInfo.isClientSide(event.getEntity().level)) {
-		//			return;
-		//		}
+	public static void onPlayerHurt(LivingHurtEvent event) {
 
+		
 		if (event.getEntity() instanceof Player) {
 			Player player = (ServerPlayer) event.getEntity();
 			
@@ -58,14 +56,10 @@ public class PlayerEvents {
 				//				return;
 				//			}
 
-
 				// prevent mob from hurting player
 				if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(player.blockPosition()), ZonePermission.MOB_PVP_PERMISSION.value)) {
 					event.setCanceled(true);
-					ProtectIt.LOGGER.debug("denied mob attack -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(player.blockPosition()).toShortString());
-//					if (!event.getEntity().level.isClientSide()) {
-//						sendProtectedMessage(event.getEntity().getLevel(), (Player) event.getEntity());
-//					}
+//					ProtectIt.LOGGER.debug("denied mob attack -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(player.blockPosition()).toShortString());
 				}
 			}
 			// player on player hurt
@@ -73,26 +67,15 @@ public class PlayerEvents {
 				// prevent player from hurting player
 				if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(player.blockPosition()), ZonePermission.PLAYER_PVP_PERMISSION.value)) {
 					event.setCanceled(true);
-					ProtectIt.LOGGER.debug("denied player attack -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(player.blockPosition()).toShortString());
-//					if (!event.getEntity().level.isClientSide()) {
-//						sendProtectedMessage(event.getEntity().getLevel(), (Player) event.getEntity());
-//					}
+//					ProtectIt.LOGGER.debug("denied player attack -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(player.blockPosition()).toShortString());
 				}
 			}
 		}
-
-
-		// TODO check if in a protected zone
-
-		//		else if (event.getSource().getEntity() instanceof Player) {
-		//			player = (ServerPlayer) event.getSource().getEntity();
-		//		}
-
 	}
 
 	@SubscribeEvent
 	public void onPlayerHurt(LivingSpawnEvent.CheckSpawn event) {
-		if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(event.getEntity().blockPosition()), ZonePermission.MOB_PVP_PERMISSION.value)) {
+		if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(event.getEntity().blockPosition()), ZonePermission.MOB_SPAWN_PERMISSION.value)) {
 			event.setResult(Result.DENY);
 			ProtectIt.LOGGER.debug("denied mob spawn -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getEntity().blockPosition()).toShortString());
 		}
