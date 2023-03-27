@@ -64,7 +64,7 @@ public class UnclaimedStakeBlockItem extends BlockItem {
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
 		// prevent use if not the owner
 		Coords coords = new Coords(context.getClickedPos());
-		List<Box> list = ProtectionRegistries.property().getProtections(coords, coords.add(1, 1,1), false, false);
+		List<Box> list = ProtectionRegistries.property().getProtections(coords, coords, false, true);
 		if (!list.isEmpty()) {				
 //			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
 			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();

@@ -111,7 +111,7 @@ public class RemoveClaimBlock extends ClaimBlock implements EntityBlock {
 			// get the claim for this position
 //			ProtectIt.LOGGER.debug("current protections -> {}", ProtectionRegistries.block().toStringList());
 			ProtectIt.LOGGER.debug("search for property @ -> {}", new Coords(pos).toShortString());
-			List<Box> list = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos), false, false);
+			List<Box> list = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos), false, true);
 			if (!list.isEmpty()) {				
 //				List<Property> properties = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
 				List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();

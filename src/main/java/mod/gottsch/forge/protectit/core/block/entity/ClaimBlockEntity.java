@@ -62,7 +62,7 @@ public class ClaimBlockEntity extends AbstractClaimBlockEntity {
 		if (getLevel().getGameTime() % FIVE_SECONDS == 0) {
 			ClaimBlock block = (ClaimBlock)getLevel().getBlockState(getBlockPos()).getBlock();
 			Box box = block.getBox(getLevel(), getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, true);
 			getOverlaps().clear();
 			if (!overlaps.isEmpty()) {
 				getOverlaps().addAll(overlaps);

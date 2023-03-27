@@ -87,9 +87,9 @@ public abstract class AbstractPropertyOutlinerBlockEntity extends BlockEntity {
 			UUID previousUuid = getPropertyUuid();
 			
 			ICoords c1 = new Coords(getBlockPos());
-			Box box = new Box(c1);
+			Box box = new Box(c1, c1);
 			// need to find ALL the protections
-			List<Box> protections = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> protections = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, true);
 //			ProtectIt.LOGGER.debug("found protections -> {}", protections);
 			
 			Optional<Property> property = Optional.empty();

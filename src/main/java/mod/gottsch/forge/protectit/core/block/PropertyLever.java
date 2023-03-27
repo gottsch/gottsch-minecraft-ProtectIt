@@ -168,7 +168,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 			BlockEntity blockEntity = worldIn.getBlockEntity(pos);
 			if (blockEntity instanceof PropertyLeverBlockEntity) {
 				// get the claim for this position
-				List<Box> list = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+				List<Box> list = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos), false, true);
 				ProtectIt.LOGGER.debug("found protections -> {}", list);
 				if (!list.isEmpty()) {				
 					List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
@@ -200,6 +200,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
 			if (property.isPresent() && !player.getUUID().equals(property.get().getOwner().getUuid()) &&
 					property.get().getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getUUID()))) {
+				ProtectIt.LOGGER.debug("no access, property owner -> {}, player -> {}", property.get().getOwner().getUuid(), player.getUUID());
 				return InteractionResult.FAIL;
 			}
 

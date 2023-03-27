@@ -54,7 +54,8 @@ public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<Un
 	public void render(UnclaimedStakeBlockEntity blockEntity, float partialTicks, PoseStack matrixStack,
 			MultiBufferSource renderTypeBuffer, int combinedLight, int combinedOverlay) {
 
-		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY)) {
+		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY) ||
+				blockEntity.getPropertyBox().getMinCoords().getY() == -255) { // TEMP check until GottschCore is updated
 			return;
 		}
 		
@@ -63,8 +64,8 @@ public class UnclaimedStakeBlockEntityRenderer implements BlockEntityRenderer<Un
 		// get blue and transform it to 0.0 - 1.0
 		float blue = Color.WHITE.getBlue() / 255.0f;
 		
+		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords()).add(1, 1, 1);
 		// render the claim
-		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords());
 		renderProperty(blockEntity, matrixStack, builder, size, 0, 0, blue, 1.0f);	
 		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}

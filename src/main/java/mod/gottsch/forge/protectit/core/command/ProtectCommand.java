@@ -43,6 +43,7 @@ import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.item.ModItems;
 import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.PermissionChangeS2CPush;
+import mod.gottsch.forge.protectit.core.network.PropertyTransferS2CPush;
 import mod.gottsch.forge.protectit.core.network.AddFiefS2CPush2;
 import mod.gottsch.forge.protectit.core.network.WhitelistAddS2CPush;
 import mod.gottsch.forge.protectit.core.network.WhitelistClearS2CPush;
@@ -143,29 +144,16 @@ public class ProtectCommand {
 												.executes(source -> {
 													return annexFief(source.getSource(), StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
 												})
-												) )
-								)
-
-
-						///// GENERATE LEASE
-						.then(Commands.literal("lease")
-								.then(Commands.literal("generate")
-										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-												// TODO property names must provide all owned properties AND vacant landlord properties
-												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
-												.executes(source -> {
-													return generateLease(source.getSource(),
-															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
-												})
-												)
+												) 
 										)
+								///// transfer
 								.then(Commands.literal("transfer")
 
 										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
 												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
 												.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
 														.executes(source -> {
-															return transferLease(source.getSource(),
+															return transferFief(source.getSource(),
 																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
 																	EntityArgument.getPlayer(source, CommandHelper.TARGET));
 														})																
@@ -173,7 +161,21 @@ public class ProtectCommand {
 												)
 
 										)
+								///// GENERATE FIEF DEED
+								.then(Commands.literal("deed")
+//										.then(Commands.literal("generate")
+												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+														// TODO property names must provide all owned properties AND vacant landlord properties
+														.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+														.executes(source -> {
+															return generateFiefDeed(source.getSource(),
+																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+														})
+														)
+												)
+//										)
 								)
+
 						///// GENERATE DEED
 						.then(Commands.literal("deed")
 								.then(Commands.literal("generate")
@@ -186,20 +188,19 @@ public class ProtectCommand {
 												})
 												)
 										)
-								// DEED TRANSFER
-								.then(Commands.literal("transfer")
-										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-												.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
-												.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
-														.executes(source -> {
-															return transferDeed(source.getSource(),
-																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
-																	EntityArgument.getPlayer(source, CommandHelper.TARGET));
-														})																
-														)
+								)
+						// POPERTY TRANSFER
+						.then(Commands.literal("transfer")
+								.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+										.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
+										.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+												.executes(source -> {
+													return transferDeed(source.getSource(),
+															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
+															EntityArgument.getPlayer(source, CommandHelper.TARGET));
+												})																
 												)
 										)
-
 								)
 						///// PERMISSION
 						.then(Commands.literal("permission")
@@ -341,17 +342,17 @@ public class ProtectCommand {
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-			
+
 			Optional<Property> parent = ProtectionRegistries.property().getPropertyByUuid(property.get().getParent());
 			if (parent.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.fief.no_parent"))
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
-						
+
 			// remove child from registry
 			ProtectionRegistries.property().removeProperty(property.get());
-			
+
 			// remove child from parent
 			parent.get().getChildren().remove(property.get().getUuid());
 		} catch(Exception e) {
@@ -359,10 +360,10 @@ public class ProtectCommand {
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
 					.withStyle(ChatFormatting.RED));
 		}
-		
+
 		source.sendSuccess(Component.translatable(LangUtil.message("property.fief.annex_success"))
 				.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
-		
+
 		return 1;
 	}
 
@@ -373,7 +374,7 @@ public class ProtectCommand {
 	 * @param player
 	 * @return
 	 */
-	private static int transferLease(CommandSourceStack source, String propertyName, ServerPlayer player) {
+	private static int transferFief(CommandSourceStack source, String propertyName, ServerPlayer player) {
 		UUID propertyUuid = null;
 		try {
 			ServerPlayer landlord = source.getPlayerOrException();
@@ -399,6 +400,19 @@ public class ProtectCommand {
 			// transfer ownership
 			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 
+			// send message to transfer property
+			if(source.getLevel().getServer().isDedicatedServer()) {
+				PropertyTransferS2CPush message = new PropertyTransferS2CPush(
+						property.get().getUuid(),
+						player.getUUID()
+						);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+			}
+			
+			// success message
+			source.sendSuccess(Component.translatable(LangUtil.message("property.fief.transfer_success"))
+					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
+			
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
@@ -413,7 +427,7 @@ public class ProtectCommand {
 	 * @param propertyName
 	 * @return
 	 */
-	private static int generateLease(CommandSourceStack source, String propertyName) {
+	private static int generateFiefDeed(CommandSourceStack source, String propertyName) {
 		ServerPlayer player = source.getPlayer();		
 		try {
 			//			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
@@ -487,6 +501,19 @@ public class ProtectCommand {
 			// transfer ownership
 			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 
+			// send message to transfer property
+			if(source.getLevel().getServer().isDedicatedServer()) {
+				PropertyTransferS2CPush message = new PropertyTransferS2CPush(
+						property.get().getUuid(),
+						owner.getUUID()
+						);
+				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
+			}
+			
+			// success message
+			source.sendSuccess(Component.translatable(LangUtil.message("property.transfer_success"))
+					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
+			
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
@@ -666,7 +693,7 @@ public class ProtectCommand {
 			source.sendSuccess(Component.translatable(LangUtil.message("property.fief.success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
 
-			// send message to subdivide protection on all clients
+			// send message to add fief on all clients
 			if(source.getLevel().getServer().isDedicatedServer()) {
 				AddFiefS2CPush2 message = new AddFiefS2CPush2(
 						target.getUuid(),

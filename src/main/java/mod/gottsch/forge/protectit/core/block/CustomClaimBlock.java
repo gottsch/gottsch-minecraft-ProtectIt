@@ -79,7 +79,7 @@ public class CustomClaimBlock extends ClaimBlock {
 			
 			// save any overlaps to the BlockEntity
 			Box box = getBox(level, blockEntity.getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, true);
 			ProtectIt.LOGGER.debug("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
 				((CustomClaimBlockEntity)blockEntity).getOverlaps().addAll(overlaps);

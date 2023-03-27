@@ -236,7 +236,6 @@ public class PropertyRegistry implements IPropertyRegistry {
 	 */
 	@Override
 	public boolean isProtectedAgainst(ICoords coords1, UUID uuid, int permission) {
-		// TODO should includeBorders = true
 		// check for top-level protections
 		List<Interval> protections = tree.getOverlapping(tree.getRoot(), new Interval(coords1, coords1), false, true);
 		if (protections.isEmpty()) {

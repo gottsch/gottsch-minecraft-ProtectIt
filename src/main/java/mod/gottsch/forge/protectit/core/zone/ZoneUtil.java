@@ -17,10 +17,15 @@
  */
 package mod.gottsch.forge.protectit.core.zone;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
+import mod.gottsch.forge.protectit.core.util.LangUtil;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 
 /**
  * 
@@ -29,6 +34,11 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
  */
 public class ZoneUtil {
 
+	/**
+	 * 
+	 * @param zones
+	 * @return
+	 */
 	public static Optional<Zone> getLeastSignificant(List<Zone> zones) {
 		/*
 		 * NOTE this list of zones may or may not contain any nested zones, or only some (ie middle).
@@ -47,8 +57,50 @@ public class ZoneUtil {
 		return Optional.ofNullable(selected);
 	}
 	
+	/**
+	 * 
+	 * @param zone
+	 * @return
+	 */
 	public static int sizeOf(Zone zone) {
-		ICoords size = zone.getBox().getSize();
+		ICoords size = zone.getBox().getSize().add(1, 1, 1);
 		return size.getX() * size.getY() * size.getZ();
+	}
+
+	public static List<Component> listZones() {
+		List<Component> messages = new ArrayList<>();
+		messages.add(Component.literal(""));
+		messages.add(Component.translatable(LangUtil.message("zone.list")).withStyle(ChatFormatting.UNDERLINE, ChatFormatting.BOLD, ChatFormatting.WHITE));
+		messages.add(Component.literal(""));
+
+		// get top-level properties only by player
+		List<Zone> zones = ProtectionRegistries.pvp().getAll();
+		List<Component> components = formatList(messages, zones);
+		return components;
+	}
+	
+	static List<Component> formatList(List<Component> messages, List<Zone> list) {
+
+		if (list.isEmpty()) {
+			messages.add(Component.translatable(LangUtil.message("property.list.empty")).withStyle(ChatFormatting.AQUA));
+		}
+		else {			
+			list.forEach(zone -> {
+				messages.add(Component.translatable(zone.getName().toUpperCase() + ": ").withStyle(ChatFormatting.AQUA)
+						.append(Component.translatable(String.format("(%s) to (%s)", 
+								formatCoords(zone.getBox().getMinCoords()), 
+								formatCoords(zone.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
+								)
+						.append(Component.translatable(", size: (" + formatCoords(zone.getBox().getSize().add(1, 1, 1)) + ")").withStyle(ChatFormatting.WHITE))
+						);
+
+				//				[STYLE].withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tp @s " + blockpos.getX() + " " + s1 + " " + blockpos.getZ())).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.coordinates.tooltip"))
+			});
+		}
+		return messages;
+	}
+
+	public static String formatCoords(ICoords coords) {
+		return String.format("%s, %s, %s", coords.getX(), coords.getY(), coords.getZ());
 	}
 }

@@ -64,7 +64,8 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 			return;
 		}
 
-		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY)) {
+		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY) ||
+		blockEntity.getPropertyBox().getMinCoords().getY() == -255) { // TEMP check until GottschCore is updated
 			return;
 		}
 		
@@ -112,8 +113,9 @@ public class PropertyLeverBlockEntityRenderer implements BlockEntityRenderer<Pro
 
 		// TODO merge the Color strategies between the render methods
 		
+		// calculate the size. add 1 to dimensions because it is inclusive ex. 0 <--> 3 = size 4.
+		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords()).add(1, 1, 1);
 		// render the claim
-		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords());
 		renderProperty(blockEntity, matrixStack, builder, size, 0, green, 0, 1.0f);	
 		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}

@@ -309,6 +309,7 @@ public class ProtectedIntervalTree {
 			return false;
 		}
 
+		// TODO should really have a 3-value min/max ie minX, minY, minZ etc
 		// short-circuit
         if(testInterval.getStart() > interval.getMax() || testInterval.getEnd() < interval.getMin()) {
         	return false;

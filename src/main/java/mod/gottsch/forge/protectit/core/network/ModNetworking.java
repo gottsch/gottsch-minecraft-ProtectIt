@@ -55,6 +55,8 @@ public class ModNetworking {
 	public static final int ZONE_CLEAR_ID = 29;
 	public static final int PVP_PERMISSION_CHANGE_ID = 30;
 	
+	public static final int PROPERTY_TRANSFER_ID = 31;
+	
 	public static final ResourceLocation CHANNEL_NAME = new ResourceLocation(ProtectIt.MODID, "protectit_channel");
 
 	public static SimpleChannel channel;    // used to transmit your network messages
@@ -141,6 +143,12 @@ public class ModNetworking {
 				PvpPermissionChangeS2CPush::encode, PvpPermissionChangeS2CPush::decode,
 				PvpPermissionChangeS2CPush::handle,
 				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+		
+		channel.registerMessage(PROPERTY_TRANSFER_ID, PropertyTransferS2CPush.class,
+				PropertyTransferS2CPush::encode, PropertyTransferS2CPush::decode,
+				PropertyTransferS2CPush::handle,
+				Optional.of(NetworkDirection.PLAY_TO_CLIENT));
 	}
+
 
 }

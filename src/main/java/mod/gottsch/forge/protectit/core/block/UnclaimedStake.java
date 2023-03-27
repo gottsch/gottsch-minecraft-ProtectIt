@@ -106,7 +106,7 @@ public class UnclaimedStake extends ClaimBlock implements EntityBlock {
 		if (blockEntity instanceof UnclaimedStakeBlockEntity) {
 			//			Box box = getBox(level, blockEntity.getBlockPos());
 			// need to find ALL the protections
-			List<Box> protections = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos).add(1, 1, 1), false, false);
+			List<Box> protections = ProtectionRegistries.property().getProtections(new Coords(pos), new Coords(pos), false, true);
 			if (!protections.isEmpty()) {
 				// get the property
 				List<Property> properties = protections.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();

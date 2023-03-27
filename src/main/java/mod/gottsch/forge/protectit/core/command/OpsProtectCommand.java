@@ -186,32 +186,45 @@ public class OpsProtectCommand {
 												)	
 										)
 								)
-						// TODO rename to fiefdom-deed
-						///// GENERATE LICENSE /////
-						.then(Commands.literal("generate-fiefdom-deed")
-								///// BY PLAYER (ONLINE) /////
-								.then(Commands.literal("player")
-										.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
-												.executes(source -> {
-													return generateFiefdomDeed(source.getSource(), 
-															EntityArgument.getPlayer(source, CommandHelper.TARGET));
-												})
-												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-														.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
-														.executes(source -> {
-															return generateFiefdomDeed(source.getSource(),
-																	EntityArgument.getPlayer(source, CommandHelper.TARGET),
-																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
-														})
-														)
+						///// GENERATE FIEF DEED
+						.then(Commands.literal("generate")
+								.then(Commands.literal("fief-deed")
+										// TODO ad player selection
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+//												.executes(source -> {
+//													return generateLease(source.getSource(),
+//															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+//												})
 												)
 										)
-								///// SEARCH (EXISTING LAND OWNERS) /////
-								.then(Commands.literal("search"))
-								.executes(source -> {
-									return CommandHelper.unavailable(source.getSource());
-								})
+								///// GENERATE LICENSE /////
+								.then(Commands.literal("fiefdom-deed")
+										///// BY PLAYER (ONLINE) /////
+										.then(Commands.literal("player")
+												.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+														.executes(source -> {
+															return generateFiefdomDeed(source.getSource(), 
+																	EntityArgument.getPlayer(source, CommandHelper.TARGET));
+														})
+														.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+																.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+																.executes(source -> {
+																	return generateFiefdomDeed(source.getSource(),
+																			EntityArgument.getPlayer(source, CommandHelper.TARGET),
+																			StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+																})
+																)
+														)
+												)
+										///// SEARCH (EXISTING LAND OWNERS) /////
+										.then(Commands.literal("search"))
+										.executes(source -> {
+											return CommandHelper.unavailable(source.getSource());
+										})
+										)
 								)
+
 						)
 
 				///// LIST OPTION /////
@@ -283,7 +296,11 @@ public class OpsProtectCommand {
 								})
 								)
 						///// LIST
-
+						.then(Commands.literal(CommandHelper.LIST)
+									.executes(source -> {
+										return CommandHelper.listZones(source.getSource());
+									})
+								)
 						///// RENAME
 						.then(Commands.literal(CommandHelper.RENAME)
 								.executes(source -> {
@@ -437,7 +454,7 @@ public class OpsProtectCommand {
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
 
-			// TODO success message
+			// success message
 			source.sendSuccess(Component.translatable(LangUtil.message("zone.successfully_removed"))
 					.append(Component.translatable(zoneName).withStyle(ChatFormatting.AQUA)), false);
 		}

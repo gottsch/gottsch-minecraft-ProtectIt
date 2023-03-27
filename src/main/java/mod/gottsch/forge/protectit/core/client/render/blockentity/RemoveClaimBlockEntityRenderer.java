@@ -60,7 +60,8 @@ public class RemoveClaimBlockEntityRenderer implements BlockEntityRenderer<Remov
 			return;
 		}
 		
-		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY)) {
+		if (blockEntity.getPropertyBox() == null || blockEntity.getPropertyBox().equals(Box.EMPTY) ||
+				blockEntity.getPropertyBox().getMinCoords().getY() == -255) { // TEMP check until GottschCore is updated
 			return;
 		}
 		
@@ -75,9 +76,10 @@ public class RemoveClaimBlockEntityRenderer implements BlockEntityRenderer<Remov
 
 		VertexConsumer builder = renderTypeBuffer.getBuffer(RenderType.lines());
 
-		// render the claim
+
 //		ICoords size = property.get().getBox().getMaxCoords().delta(property.get().getBox().getMinCoords());
-		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords());
+		ICoords size = blockEntity.getPropertyBox().getMaxCoords().delta(blockEntity.getPropertyBox().getMinCoords()).add(1, 1, 1);
+		// render the claim
 		renderProperty(blockEntity, matrixStack, builder, size, 0, 0, 0, 1.0f);	
 		renderHighlight(blockEntity, partialTicks, matrixStack, renderTypeBuffer, size, combinedLight, combinedOverlay);
 	}

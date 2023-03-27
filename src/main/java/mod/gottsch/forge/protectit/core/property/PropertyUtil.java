@@ -87,7 +87,7 @@ public class PropertyUtil {
 								formatCoords(p.getBox().getMinCoords()), 
 								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
 								)
-						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
+						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize().add(1, 1, 1)) + ")").withStyle(ChatFormatting.WHITE))
 						);
 			});
 			lords.forEach(p -> {
@@ -97,7 +97,7 @@ public class PropertyUtil {
 								formatCoords(p.getBox().getMinCoords()), 
 								formatCoords(p.getBox().getMaxCoords()))).withStyle(ChatFormatting.GREEN)
 								)
-						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize()) + ")").withStyle(ChatFormatting.WHITE))
+						.append(Component.translatable(", size: (" + formatCoords(p.getBox().getSize().add(1, 1, 1)) + ")").withStyle(ChatFormatting.WHITE))
 						);
 			});
 		}

@@ -49,6 +49,7 @@
 	"message.protectit.property.fief.success": "Successfully created a fief in property ",
 	"message.protectit.property.fief.no_parent": "That property is not a fief or has not parent.",
 	"message.protectit.property.fief.annex_success": "Successfully annexed property ",
+	"message.protectit.property.fief.transfer.success": "Successfully transfered ownership of fief  ",
 	
 	"message.protectit.property.transfer.owners_not_same": "The deed's owner does not match the property owner.",
 	"message.protectit.property.transfer.properties_not_same": "The deed's property does not match the property.",
@@ -60,6 +61,7 @@
 	
 	"message.protectit.zone.unknown_name": "Unable to locate zone named ",
 	"message.protectit.zone.successfully_removed": "The pvp zone has been removed.",
+	"message.protectit.zone.list": "PVP Protected Zones ",
 	
 	"message.protectit.zone.permission.list":"Permissions of zone ",
 	"message.protectit.zone.permission.change_success": "The permission was successfully changed for zone ",

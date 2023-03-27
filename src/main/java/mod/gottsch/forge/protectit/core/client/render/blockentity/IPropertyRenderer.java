@@ -157,7 +157,7 @@ public interface IPropertyRenderer {
 		// calculate render pos -> delta of b & pos
 		ICoords offsetCoords = overlapBox.getMinCoords().delta(blockEntity.getBlockPos());
 		// calculate size of b
-		ICoords size = overlapBox.getSize();
+		ICoords size = overlapBox.getSize().add(1, 1, 1);
 
 		matrixStack.pushPose(); 
 		updateTranslation(matrixStack, offsetCoords);
@@ -186,7 +186,7 @@ public interface IPropertyRenderer {
 		// calculate render pos -> delta of b & pos
 		ICoords offsetCoords = overlapBox.getMinCoords().delta(blockEntity.getBlockPos());
 		// calculate size of b
-		ICoords size = overlapBox.getSize();
+		ICoords size = overlapBox.getSize().add(1, 1, 1);
 		
 		// push the current transformation matrix + normals matrix
 		matrixStack.pushPose();

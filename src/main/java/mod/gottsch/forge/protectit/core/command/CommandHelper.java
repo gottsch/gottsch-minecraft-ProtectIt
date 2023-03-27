@@ -41,6 +41,7 @@ import mod.gottsch.forge.protectit.core.property.PropertyUtil;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import mod.gottsch.forge.protectit.core.zone.Zone;
+import mod.gottsch.forge.protectit.core.zone.ZoneUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -266,6 +267,19 @@ public class CommandHelper {
 		return 1;
 	}
 
+	/**
+	 * 
+	 * @param source
+	 * @return
+	 */
+	public static int listZones(CommandSourceStack source) {
+			List<Component> components = ZoneUtil.listZones();
+			components.forEach(component -> {
+				source.sendSuccess(component, false);
+			});
+		return 1;
+	}
+	
 	/**
 	 * 
 	 * @param source

@@ -142,7 +142,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 			((ClaimBlockEntity) blockEntity).setOwnerUuid(placer.getStringUUID());
 			// save any overlaps to the TileEntity
 			Box box = getBox(level, blockEntity.getBlockPos());
-			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, false);
+			List<Box> overlaps = ProtectionRegistries.property().getProtections(box.getMinCoords(), box.getMaxCoords(), false, true);
 			ProtectIt.LOGGER.debug("num of overlaps @ {} <--> {} -> {}", box.getMinCoords().toShortString(), box.getMaxCoords().toShortString(), overlaps.size());
 			if (!overlaps.isEmpty()) {
 				((ClaimBlockEntity)blockEntity).getOverlaps().addAll(overlaps);
@@ -180,7 +180,7 @@ public class ClaimBlock extends Block implements EntityBlock {
 			final Box box = getBox(level, pos);
 
 			// add area to protections registry if this is a dedicated server
-			if (!ProtectionRegistries.property().isProtected(box.getMinCoords(), box.getMaxCoords(), false)) {
+			if (!ProtectionRegistries.property().isProtected(box.getMinCoords(), box.getMaxCoords(), true)) {
 				ProtectIt.LOGGER.debug("not protected");
 				// check if player already owns protections
 //				List<Claim> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
@@ -292,8 +292,8 @@ public class ClaimBlock extends Block implements EntityBlock {
 	 * @return
 	 */
 	public Box getBox(Level level, BlockPos pos) {
-		BlockPos p1 = pos.offset(0, -(claimSize.getY()/2), 0);
-		BlockPos p2 = p1.offset(claimSize.getX(), claimSize.getY(), claimSize.getZ());		
+		BlockPos p1 = pos.offset(0, -(claimSize.getY() / 2), 0);
+		BlockPos p2 = p1.offset(claimSize.getX() - 1, claimSize.getY() - 1, claimSize.getZ() - 1);		
 		return getBox(new Coords(p1), new Coords(p2), claimSize);
 	}
 
@@ -306,10 +306,10 @@ public class ClaimBlock extends Block implements EntityBlock {
 	public Box getBox(ICoords c1, ICoords c2, ICoords claimSize) {
 		if (c1.getY() < WorldInfo.BOTTOM_HEIGHT) {
 			c1 = c1.withY(WorldInfo.BOTTOM_HEIGHT);
-			c2 = c1.offset(claimSize);
+			c2 = c1.offset(claimSize.add(-1, -1, -1));
 		}
 		else if (c2.getY() > WorldInfo.MAX_HEIGHT) {
-			c1 = new Coords(c1.getX(), WorldInfo.MAX_HEIGHT - claimSize.getY(), c1.getZ());
+			c1 = new Coords(c1.getX(), WorldInfo.MAX_HEIGHT - claimSize.getY() - 1, c1.getZ());
 			c2 = new Coords(c2.getX(), WorldInfo.MAX_HEIGHT, c2.getZ());
 		}
 		return new Box(c1, c2);

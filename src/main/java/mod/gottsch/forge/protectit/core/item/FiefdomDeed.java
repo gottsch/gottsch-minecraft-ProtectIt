@@ -114,7 +114,7 @@ public class FiefdomDeed extends Item {
 			if (itemOwnerUuid != null) {
 				ICoords coords = new Coords(player.blockPosition());
 				// get all properties by coords and uuid
-				List<Box> protections = ProtectionRegistries.property().getProtections(coords, coords, false, false);
+				List<Box> protections = ProtectionRegistries.property().getProtections(coords, coords, false, true);
 				if (protections.isEmpty()) {
 					player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected")));
 					return InteractionResultHolder.pass(itemStack);
