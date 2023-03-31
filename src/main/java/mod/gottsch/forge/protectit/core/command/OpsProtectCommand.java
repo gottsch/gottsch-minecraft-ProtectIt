@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
@@ -80,7 +81,9 @@ import net.minecraftforge.network.PacketDistributor;
  */
 public class OpsProtectCommand {
 	private static final String PROTECT = "protect-ops";
-
+	private static final String CURRENT_NAME = "current_name";
+	private static final String NEW_NAME = "new_name";
+	
 	private static final SuggestionProvider<CommandSourceStack> ZONE_PERMISSIONS = (source, builder) -> {
 		return SharedSuggestionProvider.suggest(ZonePermission.getNames(), builder);
 	};
@@ -303,10 +306,18 @@ public class OpsProtectCommand {
 								)
 						///// RENAME
 						.then(Commands.literal(CommandHelper.RENAME)
-								.executes(source -> {
-									return CommandHelper.unavailable(source.getSource());
-								})
+								.then(Commands.argument(CURRENT_NAME, StringArgumentType.string())
+										.suggests(CommandHelper.SUGGEST_ZONE_NAMES)
+										.then(Commands.argument(NEW_NAME, StringArgumentType.string())
+												.executes(source -> {
+													return rename(source.getSource(), 
+															StringArgumentType.getString(source, CURRENT_NAME),
+															StringArgumentType.getString(source, NEW_NAME));
+												})
+												)
+										)
 								)
+
 						///// PERMISSION
 						.then(Commands.literal("permission")
 								///// PERMISSION CHANGE
@@ -351,6 +362,32 @@ public class OpsProtectCommand {
 						));
 	}
 
+	/**
+	 * 
+	 * @param source
+	 * @param oldName
+	 * @param newName
+	 * @return
+	 */
+	public static int rename(CommandSourceStack source, String oldName, String newName) {
+
+		List<Zone> namedZones = ProtectionRegistries.pvp().getAll().stream().filter(p -> p.getName().equalsIgnoreCase(oldName)).toList();
+		if (namedZones.isEmpty()) {
+			source.sendFailure(Component.translatable(LangUtil.message("zone.unknown_name"))
+					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+			return 1;
+		}
+		ProtectIt.LOGGER.debug("named zone -> {}", namedZones.get(0));
+		namedZones.get(0).setName(newName.toUpperCase());
+
+		source.sendSuccess(Component.translatable(LangUtil.message("zone.rename.success"))
+				.append(Component.translatable(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), false);
+
+		CommandHelper.saveData(source.getLevel());
+
+		return 1;
+	}
+	
 	/**
 	 * 
 	 * @param source

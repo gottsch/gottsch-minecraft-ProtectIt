@@ -93,6 +93,9 @@ public class RegistryLoadMessageHandlerOnClient {
 			}
 			ProtectIt.LOGGER.debug("using registry -> {}", registry);
 			
+			// clear the registry first
+			registry.clear();
+			
 			// load registry from interval list
 			for(Property property : message.getProperties()) {
 				ProtectIt.LOGGER.debug("adding property to registry -> {}", property);

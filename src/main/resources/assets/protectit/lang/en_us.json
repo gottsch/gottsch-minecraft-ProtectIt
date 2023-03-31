@@ -56,12 +56,14 @@
 	"message.protectit.property.transfer.criteria_not_met": "Property does not meet transfer criteria.",
 	"message.protectit.property.transfer.success": "Successfully transfered ownership of property  ",
 	
+	"message.protectit.property.deed.not_domain_not_owner": "The property is a fief or you are not the owner.",
 	"message.protectit.property.deed.exceeded_limit": "The number of concurrent Deeds for this property has already been met.",
-	"message.protectit.property.fief_deed.exceeded_limit": "The number of concurrent Leases for this property has already been met.",
+	"message.protectit.property.fief_deed.exceeded_limit": "The number of concurrent Fief Deeds for this property has already been met.",
 	
 	"message.protectit.zone.unknown_name": "Unable to locate zone named ",
 	"message.protectit.zone.successfully_removed": "The pvp zone has been removed.",
 	"message.protectit.zone.list": "PVP Protected Zones ",
+	"message.protectit.zone.rename_success": "The zone was successfully renamed to ",
 	
 	"message.protectit.zone.permission.list":"Permissions of zone ",
 	"message.protectit.zone.permission.change_success": "The permission was successfully changed for zone ",
@@ -85,10 +87,10 @@
 	"tooltip.protectit.deed.property_name": "Property Name: %s",
 	"tooltip.protectit.deed.property_location": "Property Location: %s",
 	
-	"tooltip.protectit.lease.howto": "Use lease when within the property region to transfer ownership.",
-	"tooltip.protectit.lease.title": "Lease To Landlord's Property",
-	"tooltip.protectit.lease.owner_name": "Landlord: %s",
-	"tooltip.protectit.lease.property_name": "Lease Name: %s",
-	"tooltip.protectit.lease.property_location": "Lease Location: %s",
+	"tooltip.protectit.lease.howto": "Use Fief Deed when within the property region to transfer ownership.",
+	"tooltip.protectit.lease.title": "Fief Deed To Lord's Property",
+	"tooltip.protectit.lease.owner_name": "Lord: %s",
+	"tooltip.protectit.lease.property_name": "Property Name: %s",
+	"tooltip.protectit.lease.property_location": "Property ocation: %s",
 	"tooltip.protectit.lease.any_property": "[Any]"
 }

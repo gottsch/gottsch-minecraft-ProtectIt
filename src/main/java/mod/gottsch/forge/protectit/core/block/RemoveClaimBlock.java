@@ -150,7 +150,7 @@ public class RemoveClaimBlock extends ClaimBlock implements EntityBlock {
 			// prevent use if not the owner
 			List<Property> properties = ProtectionRegistries.property().getPropertyByCoords(((RemoveClaimBlockEntity)blockEntity).getPropertyCoords());
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
-			if (property.isEmpty() || !player.getUUID().equals(property.get().getOwner().getUuid())) {
+			if (property.isEmpty() || !player.getUUID().equals(property.get().getOwner().getUuid()) || !property.get().isDomain()) {
 				player.sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_protected_or_owner")));
 				return InteractionResult.SUCCESS;
 			}

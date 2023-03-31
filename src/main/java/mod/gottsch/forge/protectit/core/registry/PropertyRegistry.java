@@ -265,7 +265,7 @@ public class PropertyRegistry implements IPropertyRegistry {
 			// get the property
 			//				Property property = PROPERTY_BY_COORDS.get(p.getCoords1());
 			// TODO being the owner of any property should short-circuit
-//			ProtectIt.LOGGER.debug("isProtectedAgainst.propertiesByCoords -> {}, property -> {}", property.getCoords(), property);
+			ProtectIt.LOGGER.debug("permission -> {}, property.permission-> {}, permissions -> {}", permission, property.getPermission(permission), property .getPermissions());
 
 			// short circuit on permission
 			if (property.hasPermission(permission)) {
@@ -307,17 +307,19 @@ public class PropertyRegistry implements IPropertyRegistry {
 				PROPERTY_BY_OWNER.remove(property.getOwner().getUuid(), p);
 			}
 
-			// update owner
-			if (p.getOwner().equals(property.getOwner())) {
-				p.setOwner(newOwner);
-			}
 			// update lord
-			if (p.getLord() != null && p.getLord().equals(property.getOwner())) {
+			if (p.getLord() != null && property.isDomain()) {
 				// remove from lord list
 				PROPERTY_BY_LORD.remove(p.getLord().getUuid(), p);
 				p.setLord(newOwner);
 				PROPERTY_BY_LORD.put(newOwner.getUuid(), p);
 			}
+			
+			// update owner
+			if (p.getOwner().equals(property.getOwner())) {
+				p.setOwner(newOwner);
+			}
+
 			// update whitelist
 			if (p.getWhitelist() != null) {
 				p.getWhitelist().clear();

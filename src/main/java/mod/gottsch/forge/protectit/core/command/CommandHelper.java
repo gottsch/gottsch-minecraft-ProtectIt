@@ -117,6 +117,20 @@ public class CommandHelper {
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_DEED_PROPERTY_NAMES = (source, builder) -> {
+		ServerPlayer player = source.getSource().getPlayerOrException();
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<String> names = properties.stream().filter(p -> p.isDomain()).map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
+	
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_FIEF_PROPERTY_NAMES = (source, builder) -> {
+		ServerPlayer player = source.getSource().getPlayerOrException();
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
+		List<String> names = properties.stream().filter(p -> !p.isDomain()).map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
+	
 	// NEEDS to get ALL the properties that you are owner or lord of.
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_PLAYER_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();

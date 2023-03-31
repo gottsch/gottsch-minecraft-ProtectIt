@@ -74,7 +74,7 @@ public class PlayerEvents {
 	}
 
 	@SubscribeEvent
-	public void onPlayerHurt(LivingSpawnEvent.CheckSpawn event) {
+	public static void onSpawnEntity(LivingSpawnEvent.CheckSpawn event) {
 		if (ProtectionRegistries.pvp().isProtectedAgainst(new Coords(event.getEntity().blockPosition()), ZonePermission.MOB_SPAWN_PERMISSION.value)) {
 			event.setResult(Result.DENY);
 			ProtectIt.LOGGER.debug("denied mob spawn -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getEntity().blockPosition()).toShortString());

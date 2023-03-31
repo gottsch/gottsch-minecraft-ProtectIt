@@ -36,18 +36,22 @@ import mod.gottsch.forge.protectit.core.property.Permission;
 import mod.gottsch.forge.protectit.core.registry.ProtectionRegistries;
 import mod.gottsch.forge.protectit.core.registry.TransactionRegistry;
 import mod.gottsch.forge.protectit.core.setup.CommonSetup;
+import mod.gottsch.forge.protectit.core.tags.ModTags;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDestroyBlockEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
@@ -172,8 +176,15 @@ public class ProtectIt {
 		}
 	}
 
+	/**
+	 * Block placement is server side only. Protecting this method only will allow brief Client-Server mismatch, and will decrement itemStack size.
+	 * Need to also protect PlayerInteractEvent.RightClickBlock event to prevent this.
+	 * @param event
+	 */
 	@SubscribeEvent
 	public void onBlockPlace(final EntityPlaceEvent event) {
+		LOGGER.debug("attempt to place block by player -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+
 		if (!Config.PROTECTION.enableEntityPlaceEvent.get()
 				|| event.getEntity().hasPermissions(Config.GENERAL.opsPermissionLevel.get()) ) {
 			return;
@@ -183,7 +194,7 @@ public class ProtectIt {
 		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
 				event.setCanceled(true);
-				LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+				LOGGER.debug("denied place block -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 				if (!event.getLevel().isClientSide()) {
 					sendProtectedMessage(event.getLevel(), (Player) event.getEntity());
 				}
@@ -231,6 +242,10 @@ public class ProtectIt {
 		}
 	}
 
+	/**
+	 * Use this to prevent items being used - stops block placement as well because the item use is cancelled.
+	 * @param event
+	 */
 	@SubscribeEvent
 	public void onPlayerInteract(final PlayerInteractEvent.RightClickBlock event) {
 		if (!Config.PROTECTION.enableRightClickBlockEvent.get()
@@ -240,12 +255,17 @@ public class ProtectIt {
 
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
 		if (event.getEntity() instanceof Player) {
+			LOGGER.debug("player -> {} attempting to use block or item on block -> {}", event.getEntity().getDisplayName().getString(), event.getLevel().getBlockState(event.getPos()).getBlock().getName().getString());
 
 			// get the item in the player's hand
 			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INTERACT_PERMISSION.value)) {
+				LOGGER.debug("protected against interact with block");
 
-				Block block = event.getLevel().getBlockState(event.getPos()).getBlock();
-				if ((block instanceof DoorBlock || block instanceof TrapDoorBlock) && 
+				// TODO have tags of allowable blocks to interact with because this would get very long here
+				BlockState state = event.getLevel().getBlockState(event.getPos());
+				Block block = state.getBlock();
+//				if ((block instanceof DoorBlock || block instanceof TrapDoorBlock) && 
+				if (state.is(ModTags.Blocks.DOOR_PERMISSION) &&
 						!ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.DOOR_INTERACT_PERMISSION.value)) {
 					return;
 				}
@@ -255,11 +275,31 @@ public class ProtectIt {
 				}
 				
 				event.setCanceled(true);
-//				LOGGER.debug("denied right click -> {} @ {} w/ hand -> {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
+				LOGGER.debug("denied right click -> {} @ {} w/ hand -> {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString(), event.getHand().toString());
 				// reduces to only 1 message per action
 				if (event.getHand() == InteractionHand.MAIN_HAND) { 
 					if (!event.getLevel().isClientSide()) {
 						sendProtectedMessage(event.getLevel(), (Player) event.getEntity());
+					}
+				}
+			} else {
+				/*
+				 *  not protected against interaction
+				 *  need to check if using a block item, if you have block protection
+				 *  and check against allowable use-blocks ex. chest, furnace, etc.
+				 */				
+				// get held item
+				ItemStack heldStack = event.getEntity().getItemInHand(InteractionHand.MAIN_HAND);
+				if (heldStack.getItem()  instanceof BlockItem) {
+					if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
+						// TODO why doesn't this WORK!!!
+						if (!event.getLevel().getBlockState(event.getPos()).is(ModTags.Blocks.INTERACT_PERMISSION)) {
+							event.setCanceled(true);
+							LOGGER.debug("denied using block -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+							if (!event.getLevel().isClientSide()) {
+								sendProtectedMessage(event.getLevel(), (Player) event.getEntity());
+							}
+						}
 					}
 				}
 			}

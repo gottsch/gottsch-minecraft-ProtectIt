@@ -79,7 +79,6 @@ import net.minecraftforge.network.PacketDistributor;
  */
 public class ProtectCommand {
 	private static final String PROTECT = "protect";
-	private static final String RENAME = "rename";
 	private static final String CURRENT_NAME = "current_name";
 	private static final String NEW_NAME = "new_name";
 
@@ -163,25 +162,24 @@ public class ProtectCommand {
 										)
 								///// GENERATE FIEF DEED
 								.then(Commands.literal("deed")
-//										.then(Commands.literal("generate")
-												.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-														// TODO property names must provide all owned properties AND vacant landlord properties
-														.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
-														.executes(source -> {
-															return generateFiefDeed(source.getSource(),
-																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
-														})
-														)
+										//										.then(Commands.literal("generate")
+										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
+												// TODO property names must provide all owned properties AND vacant landlord properties
+												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+												.executes(source -> {
+													return generateFiefDeed(source.getSource(),
+															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
+												})
 												)
-//										)
+										)
+								//										)
 								)
 
 						///// GENERATE DEED
 						.then(Commands.literal("deed")
 								.then(Commands.literal("generate")
-										// TODO don't need TARGET
 										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-												.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
+												.suggests(CommandHelper.SUGGEST_DEED_PROPERTY_NAMES)
 												.executes(source -> {
 													return generateDeed(source.getSource(),
 															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
@@ -189,7 +187,7 @@ public class ProtectCommand {
 												)
 										)
 								)
-						// POPERTY TRANSFER
+						// PROPERTY TRANSFER
 						.then(Commands.literal("transfer")
 								.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
 										.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
@@ -408,11 +406,11 @@ public class ProtectCommand {
 						);
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
-			
+
 			// success message
 			source.sendSuccess(Component.translatable(LangUtil.message("property.fief.transfer_success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
-			
+
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
@@ -498,6 +496,20 @@ public class ProtectCommand {
 				return 1;
 			}
 
+			// ensure that the property is a domain property and you are the owner
+			if (!property.get().isDomain() || !property.get().getOwner().getUuid().equals(player.getUUID())) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.deed.not_domain_not_owner"))
+						.withStyle(ChatFormatting.RED));
+				return 1;
+			}
+			
+			// test against the TransactionRegistry to ensure a deed isn't already created
+			if (TransactionRegistry.getDeedsCount(property.get().getUuid()) > 0) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.deed.exceeded_limit"))
+						.withStyle(ChatFormatting.RED));
+				return 1;
+			}
+			
 			// transfer ownership
 			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
 
@@ -509,11 +521,11 @@ public class ProtectCommand {
 						);
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
-			
+
 			// success message
-			source.sendSuccess(Component.translatable(LangUtil.message("property.transfer_success"))
+			source.sendSuccess(Component.translatable(LangUtil.message("property.transfer.success"))
 					.append(Component.translatable(propertyName).withStyle(ChatFormatting.AQUA)), false);
-			
+
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute transferDeed() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
@@ -535,7 +547,15 @@ public class ProtectCommand {
 
 			Optional<Property> property = CommandHelper.getPropertyByName(player.getUUID(), propertyName);
 			if (!property.isPresent()) {
-				// TODO error
+				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
+						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+				return 1;
+			}
+
+			// ensure that the property is a domain property and you are the owner
+			if (!property.get().isDomain() || !property.get().getOwner().getUuid().equals(player.getUUID())) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.deed.not_domain_not_owner"))
+						.withStyle(ChatFormatting.RED));
 				return 1;
 			}
 

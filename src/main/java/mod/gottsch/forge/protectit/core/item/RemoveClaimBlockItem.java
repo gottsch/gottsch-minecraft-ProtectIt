@@ -60,15 +60,15 @@ public class RemoveClaimBlockItem extends BlockItem {
 	 */
 	@Override
 	protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
-		// prevent use if not the owner
+		// prevent use if not the owner or it is a fief
 		Coords coords = new Coords(context.getClickedPos());
 		List<Box> list = ProtectionRegistries.property().getProtections(coords, coords, false, true);
 		if (!list.isEmpty()) {				
-//			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
+			//			Property property = ProtectionRegistries.block().getPropertyByCoords(list.get(0).getMinCoords());
 			List<Property> properties = list.stream().flatMap(p -> ProtectionRegistries.property().getPropertyByCoords(p.getMinCoords()).stream()).toList();
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
-			
-			if (property.isPresent() && !context.getPlayer().getUUID().equals(property.get().getOwner().getUuid())) {
+
+			if (property.isEmpty() || !context.getPlayer().getUUID().equals(property.get().getOwner().getUuid()) || !property.get().isDomain()) {
 				context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.message("block_region.not_owner")));
 				return false;
 			}
