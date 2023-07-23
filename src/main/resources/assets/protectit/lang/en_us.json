@@ -28,6 +28,7 @@
 	"message.protectit.property.list.empty": "[Empty]",
 	"message.protectit.property.rename.success": "The property was successfully renamed to ",
 	"message.protectit.property.name.unknown": "Player does not own a property named ",
+	"message.protectit.property.name.conflict": "The new name already exists - ",
 	
 	"message.protectit.whitelist.property.list": "Whitelist for property ",
 	"message.protectit.whitelist.add.success": "The player was successfully added to ",

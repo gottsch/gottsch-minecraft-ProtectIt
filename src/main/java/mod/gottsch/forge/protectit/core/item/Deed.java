@@ -145,6 +145,12 @@ public class Deed extends Item {
 					return InteractionResultHolder.pass(itemStack);
 				}
 
+				// TODO this is not working with a fief deed
+				/* TODO this will not work with fiefs because you could have a nested fief within a fief of exact same size.
+				 * by only selecting the first found, you may never select the correct property and thus not able to use
+				 * the deed. need to cycle through all the nested properties and test the ownership criteria against each.
+				 */
+
 				// select the property to execute on
 				Optional<Property> selectedProperty = selectProperty(player, property.get());
 				if (selectedProperty.isEmpty()) {
@@ -170,7 +176,7 @@ public class Deed extends Item {
 					return InteractionResultHolder.consume(itemStack);
 				}
 				else {
-					player.sendSystemMessage(Component.translatable(LangUtil.message("property.transfer.owners_not_match"))
+					player.sendSystemMessage(Component.translatable(LangUtil.message("property.transfer.owners_not_same"))
 							.withStyle(ChatFormatting.RED));
 				}
 			}

@@ -22,13 +22,13 @@ package mod.gottsch.forge.protectit.core.command;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -41,10 +41,10 @@ import mod.gottsch.forge.protectit.ProtectIt;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.item.ModItems;
+import mod.gottsch.forge.protectit.core.network.AddFiefS2CPush2;
 import mod.gottsch.forge.protectit.core.network.ModNetworking;
 import mod.gottsch.forge.protectit.core.network.PermissionChangeS2CPush;
 import mod.gottsch.forge.protectit.core.network.PropertyTransferS2CPush;
-import mod.gottsch.forge.protectit.core.network.AddFiefS2CPush2;
 import mod.gottsch.forge.protectit.core.network.WhitelistAddS2CPush;
 import mod.gottsch.forge.protectit.core.network.WhitelistClearS2CPush;
 import mod.gottsch.forge.protectit.core.network.WhitelistRemoveS2CPush;
@@ -60,13 +60,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -93,9 +93,9 @@ public class ProtectCommand {
 		return SharedSuggestionProvider.suggest(Permission.getNames(), builder);
 	};
 
-
-	/*
-	 * protect [block | pvp] [give | list | rename | whitelist [add | remove | clear | list]]
+	/**
+	 * 
+	 * @param dispatcher
 	 */
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher
@@ -125,13 +125,14 @@ public class ProtectCommand {
 																			BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
 																			new PlayerIdentity());
 																})
-																.then(Commands.argument("owner", EntityArgument.player())
+																.then(Commands.argument("owner", StringArgumentType.string())
+																		.suggests(CommandHelper.SUGGEST_PLAYER_NAMES)
 																		.executes(source -> {
 																			return createFief(source.getSource(),
 																					StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
 																					BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS),
 																					BlockPosArgument.getLoadedBlockPos(source, CommandHelper.POS2),
-																					EntityArgument.getPlayer(source, "owner"));
+																					StringArgumentType.getString(source, "owner"));
 																		})
 																		)))										
 												)
@@ -139,22 +140,22 @@ public class ProtectCommand {
 								///// FIEF REMOVE /////
 								.then(Commands.literal("remove")
 										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-												.suggests(CommandHelper.SUGGEST_FIEF_NAMES)
+												.suggests(CommandHelper.SUGGEST_FIEF_NAMES_BY_LANDLORD)
 												.executes(source -> {
 													return annexFief(source.getSource(), StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
 												})
 												) 
 										)
-								///// transfer
+								///// transfer fief
 								.then(Commands.literal("transfer")
-
 										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
-												.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+												.suggests(CommandHelper.SUGGEST_FIEF_NAMES_BY_OWNER)
+												.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
+														.suggests(CommandHelper.SUGGEST_PLAYER_NAMES)
 														.executes(source -> {
 															return transferFief(source.getSource(),
 																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
-																	EntityArgument.getPlayer(source, CommandHelper.TARGET));
+																	StringArgumentType.getString(source, CommandHelper.TARGET));
 														})																
 														)
 												)
@@ -164,8 +165,7 @@ public class ProtectCommand {
 								.then(Commands.literal("deed")
 										//										.then(Commands.literal("generate")
 										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-												// TODO property names must provide all owned properties AND vacant landlord properties
-												.suggests(CommandHelper.SUGGEST_ALL_NESTED_PROPERTY_NAMES)
+												.suggests(CommandHelper.SUGGEST_PLAYER_PROPERTY_NAMES) // was NESTED_PROPETIES
 												.executes(source -> {
 													return generateFiefDeed(source.getSource(),
 															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME));
@@ -190,12 +190,13 @@ public class ProtectCommand {
 						// PROPERTY TRANSFER
 						.then(Commands.literal("transfer")
 								.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
-										.suggests(CommandHelper.SUGGEST_TARGET_PROPERTY_NAMES)
-										.then(Commands.argument(CommandHelper.TARGET, EntityArgument.player())
+										.suggests(CommandHelper.SUGGEST_DEED_PROPERTY_NAMES)
+										.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
+												.suggests(CommandHelper.SUGGEST_PLAYER_NAMES)
 												.executes(source -> {
 													return transferDeed(source.getSource(),
 															StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME),
-															EntityArgument.getPlayer(source, CommandHelper.TARGET));
+															StringArgumentType.getString(source, CommandHelper.TARGET));
 												})																
 												)
 										)
@@ -239,7 +240,7 @@ public class ProtectCommand {
 						///// RENAME OPTION
 						.then(Commands.literal(CommandHelper.RENAME)
 								.then(Commands.argument(CURRENT_NAME, StringArgumentType.string())
-										.suggests(CommandHelper.SUGGEST_PLAYER_PROPERTY_NAMES) //SUGGEST_PROPERTY_NAMES)
+										.suggests(CommandHelper.SUGGEST_PLAYER_PROPERTY_NAMES)
 										.then(Commands.argument(NEW_NAME, StringArgumentType.string())
 												.executes(source -> {
 													return CommandHelper.rename(source.getSource(), 
@@ -271,10 +272,11 @@ public class ProtectCommand {
 								.then(Commands.literal(CommandHelper.ADD)
 										.then(Commands.argument(CommandHelper.PROPERTY_NAME, StringArgumentType.string())
 												.suggests(CommandHelper.SUGGEST_PROPERTY_NAMES)
-												.then(Commands.argument(CommandHelper.TARGET,EntityArgument.player())
+												.then(Commands.argument(CommandHelper.TARGET, StringArgumentType.string())
+														.suggests(CommandHelper.SUGGEST_PLAYER_NAMES)
 														.executes(source -> {
 															return whitelistAddPlayer(source.getSource(), 
-																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME), EntityArgument.getPlayer(source, CommandHelper.TARGET));
+																	StringArgumentType.getString(source, CommandHelper.PROPERTY_NAME), StringArgumentType.getString(source, CommandHelper.TARGET));
 														})
 														)
 												)
@@ -328,9 +330,9 @@ public class ProtectCommand {
 	private static int annexFief(CommandSourceStack source, String propertyName) {
 		try {
 			// get the owner
-			ServerPlayer owner = source.getPlayerOrException();
+			ServerPlayer lord = source.getPlayerOrException();
 
-			Optional<Property> property = CommandHelper.getPropertyByLord(owner.getUUID(), propertyName);
+			Optional<Property> property = CommandHelper.getPropertyByLord(lord.getUUID(), propertyName);
 			if (property.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
@@ -366,43 +368,63 @@ public class ProtectCommand {
 	}
 
 	/**
-	 * 
+	 * TODO
 	 * @param source
 	 * @param propertyName
-	 * @param player
+	 * @param transferTo
 	 * @return
 	 */
-	private static int transferFief(CommandSourceStack source, String propertyName, ServerPlayer player) {
-		UUID propertyUuid = null;
+	private static int transferFief(CommandSourceStack source, String propertyName, String transferTo) {
+//		UUID propertyUuid = null;
 		try {
-			ServerPlayer landlord = source.getPlayerOrException();
+			GameProfileCache cache = source.getLevel().getServer().getProfileCache();
+			Optional<GameProfile> profile = cache.get(transferTo.toLowerCase());
+			if (profile.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
+			}
+						
+			ServerPlayer owner = source.getPlayerOrException();
 			// get owned properties
 			//			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-			List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
+			List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(profile.get().getId());
 			// get the entire hierarchy of properties
-			properties = PropertyUtil.getPropertyHierarchy(properties);
-			// filter by landowner and owner == null and propertyname
-			Optional<Property> property = properties.stream().filter(p -> p.getOwner().equals(PlayerIdentity.EMPTY) && p.getLord().getUuid().equals(landlord.getUUID())
-					&& p.getName().equalsIgnoreCase(propertyName)).findFirst();
+//			properties = PropertyUtil.getPropertyHierarchy(properties);
+			// filter by ((lord and owner == null) || owner) and propertyname
+			Optional<Property> property = properties.stream().filter(
+					p -> 
+//					((p.getOwner().equals(PlayerIdentity.EMPTY) && p.getLord().getUuid().equals(owner.getUUID()))
+//							|| 
+//							p.getOwner().getUuid().equals(owner.getUUID()) )
+//					&& 
+					p.isFief() && 
+					p.getName().equalsIgnoreCase(propertyName)).findFirst();
 
 			//			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
-			if (property.isPresent()) {
-				propertyUuid = property.get().getUuid();
-			}
-			else {
+//			if (property.isPresent()) {
+//				propertyUuid = property.get().getUuid();
+//			}
+//			else {
+			if (property.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 
+			// check against the transaction registry
+			if (TransactionRegistry.getLeasesCount(property.get().getUuid()) > 0) {
+				source.sendFailure(Component.translatable(LangUtil.message("property.deed.exceeded_limit"))
+						.withStyle(ChatFormatting.RED));
+				return 1;
+			}
+			
 			// transfer ownership
-			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
+			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(profile.get().getId(), profile.get().getName()));
 
 			// send message to transfer property
 			if(source.getLevel().getServer().isDedicatedServer()) {
 				PropertyTransferS2CPush message = new PropertyTransferS2CPush(
 						property.get().getUuid(),
-						player.getUUID()
+						profile.get().getId()
 						);
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}
@@ -420,21 +442,35 @@ public class ProtectCommand {
 	}
 
 	/**
+	 * The purpose of this method is to be able to create a deed that is good for
+	 * a) a specified fief owned by the player or
+	 * b) any fief that belongs to a domain owned by the player
+	 * 
 	 * NOTE all these generate license/lease/deed generate the items the same way. create a method for them
 	 * @param source
 	 * @param propertyName
 	 * @return
 	 */
 	private static int generateFiefDeed(CommandSourceStack source, String propertyName) {
-		ServerPlayer player = source.getPlayer();		
+		ServerPlayer owner = source.getPlayer();		
 		try {
 			//			List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
-			List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
+			List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(owner.getUUID());
+			ProtectionRegistries.property().getPropertiesByLord(owner.getUUID()).stream().forEach(p -> {
+				if (!properties.contains(p)) {
+					properties.add(p);
+				}
+			});
 			// TODO probably can make a method like CommandHelper.getPropertyByName
-			properties = PropertyUtil.getPropertyHierarchy(properties);
+//			properties = PropertyUtil.getPropertyHierarchy(properties);
+			
+			// TODO don't like this, as it allows a deed to be created for an unclaimed property.
+			// TODO should only be able to deed properties that are owned
 			Optional<Property> property = properties.stream()
-					.filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName) || (p.getOwner().equals(PlayerIdentity.EMPTY) &&
-							p.getNameByLord().equalsIgnoreCase(propertyName)))
+					.filter(p -> p.getNameByOwner().equalsIgnoreCase(propertyName)
+//							|| (p.getOwner().equals(PlayerIdentity.EMPTY) &&
+//							p.getNameByLord().equalsIgnoreCase(propertyName))
+							)
 					.findFirst();
 			if (!property.isPresent()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
@@ -442,13 +478,23 @@ public class ProtectCommand {
 				return 1;
 			}
 
+			// if propety is a owned fief
+			if (property.get().isFief() && !property.get().getOwner().equals(PlayerIdentity.EMPTY)) {
+				// check against the transaction registry
+				if (TransactionRegistry.getLeasesCount(property.get().getUuid()) > 0) {
+					source.sendFailure(Component.translatable(LangUtil.message("property.deed.exceeded_limit"))
+							.withStyle(ChatFormatting.RED));
+					return 1;
+				}
+			}
+			
 			// create item stack
 			ItemStack itemStack = new ItemStack(ModItems.FIEF_DEED.get());
 
 			// set tag properties of stack
 			CompoundTag tag = itemStack.getOrCreateTag();
-			tag.putUUID(Deed.OWNER_ID_KEY, player.getUUID());
-			tag.putString(Deed.OWNER_NAME_KEY, player.getName().getString());
+			tag.putUUID(Deed.OWNER_ID_KEY, owner.getUUID());
+			tag.putString(Deed.OWNER_NAME_KEY, owner.getName().getString());
 			tag.putUUID(Deed.PROPERTY_ID_KEY, property.get().getUuid());
 			tag.putString(Deed.PROPERTY_NAME_KEY, propertyName);
 			CompoundTag boxTag = new CompoundTag();
@@ -465,6 +511,11 @@ public class ProtectCommand {
 				}
 			}
 
+			// if propety is a owned fief
+			if (property.get().isFief() && !property.get().getOwner().equals(PlayerIdentity.EMPTY)) {
+				TransactionRegistry.sellLease(property.get().getUuid());
+			}
+			
 		} catch (Exception e) {
 			ProtectIt.LOGGER.error("Unable to execute generateLease() command:", e);
 			source.sendFailure(Component.translatable(LangUtil.message("unexcepted_error"))
@@ -478,26 +529,33 @@ public class ProtectCommand {
 	 * @param source
 	 * @param owner
 	 * @param string
-	 * @param player
+	 * @param transferTo
 	 * @return
 	 */
-	private static int transferDeed(CommandSourceStack source, String propertyName, ServerPlayer player) {
+	private static int transferDeed(CommandSourceStack source, String propertyName, String transferTo) {
 
-		UUID propertyUuid = null;
 		try {
+			GameProfileCache cache = source.getLevel().getServer().getProfileCache();
+			Optional<GameProfile> profile = cache.get(transferTo.toLowerCase());
+			ProtectIt.LOGGER.debug("profile -> {}", profile);
+			if (profile.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
+			}
+			
 			ServerPlayer owner = source.getPlayerOrException();
 			Optional<Property> property = CommandHelper.getPropertyByName(owner.getUUID(), propertyName);
-			if (property.isPresent()) {
-				propertyUuid = property.get().getUuid();
-			}
-			else {
+
+			if (property.isEmpty()) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown")).withStyle(ChatFormatting.RED)
 						.append(Component.translatable(propertyName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
 				return 1;
 			}
 
 			// ensure that the property is a domain property and you are the owner
-			if (!property.get().isDomain() || !property.get().getOwner().getUuid().equals(player.getUUID())) {
+			ProtectIt.LOGGER.debug("is domain -> {}", property.get().isDomain());
+			ProtectIt.LOGGER.debug("is owner uuid -> {}", property.get().getOwner().getUuid().toString());
+			ProtectIt.LOGGER.debug("is profile uuid -> {}", profile.get().getId());
+			if (!property.get().isDomain() || !property.get().getOwner().getUuid().equals(owner.getUUID())) {
 				source.sendFailure(Component.translatable(LangUtil.message("property.deed.not_domain_not_owner"))
 						.withStyle(ChatFormatting.RED));
 				return 1;
@@ -511,7 +569,7 @@ public class ProtectCommand {
 			}
 			
 			// transfer ownership
-			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(player.getUUID(), player.getName().getString()));
+			ProtectionRegistries.property().updateOwner(property.get(), new PlayerIdentity(profile.get().getId(), profile.get().getName()));
 
 			// send message to transfer property
 			if(source.getLevel().getServer().isDedicatedServer()) {
@@ -609,10 +667,16 @@ public class ProtectCommand {
 	 * @param targetOwner
 	 * @return
 	 */
-	private static int createFief(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, ServerPlayer targetOwner) {
-		return createFief(source, propertyName, pos, pos2, new PlayerIdentity(targetOwner.getUUID(), targetOwner.getName().getString()));
-	}
+//	private static int createFief(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, ServerPlayer targetOwner) {
+//		return createFief(source, propertyName, pos, pos2, new PlayerIdentity(targetOwner.getUUID(), targetOwner.getName().getString()));
+//	}
 
+	private static int createFief(CommandSourceStack source, String propertyName, BlockPos pos, BlockPos pos2, String ownerName) {
+		GameProfileCache cache = source.getLevel().getServer().getProfileCache();
+		Optional<GameProfile> profile = cache.get(ownerName.toLowerCase());	
+		return createFief(source, propertyName, pos, pos2, new PlayerIdentity(profile.get().getId(), profile.get().getName()));
+	}
+	
 	/**
 	 * 
 	 * @param source
@@ -850,10 +914,16 @@ public class ProtectCommand {
 	 * @param player
 	 * @return
 	 */
-	public static int whitelistAddPlayer(CommandSourceStack source, String propertyName, @Nullable ServerPlayer player) {
+	public static int whitelistAddPlayer(CommandSourceStack source, String propertyName, @Nullable String player) {
 		ProtectIt.LOGGER.debug("executing whitelist.add() command...");
 
 		try {
+			GameProfileCache cache = source.getLevel().getServer().getProfileCache();
+			Optional<GameProfile> profile = cache.get(player.toLowerCase());
+			if (profile.isEmpty()) {
+				source.sendFailure(Component.translatable(LangUtil.message("unable_locate_player")));
+			}
+			
 			// get the owner
 			ServerPlayer owner = source.getPlayerOrException();
 			// TODO replace with CommmandHelper call
@@ -868,8 +938,8 @@ public class ProtectCommand {
 			}
 			Property property = namedProperties.get(0);
 			// update property whitelist with player
-			if (property.getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(player.getDisplayName().getString()))) {
-				property.getWhitelist().add(new PlayerIdentity(player.getUUID(), player.getDisplayName().getString()));
+			if (property.getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(profile.get().getName()))) {
+				property.getWhitelist().add(new PlayerIdentity(profile.get().getId(), profile.get().getName()));
 				CommandHelper.saveData(source.getLevel());
 			}
 			//send update to client
@@ -877,8 +947,8 @@ public class ProtectCommand {
 				WhitelistAddS2CPush message = new WhitelistAddS2CPush(
 						owner.getUUID(),
 						property.getUuid(),
-						player.getName().getString(),
-						player.getUUID()
+						profile.get().getName(),
+						profile.get().getId()
 						);
 				ModNetworking.channel.send(PacketDistributor.ALL.noArg(), message);
 			}

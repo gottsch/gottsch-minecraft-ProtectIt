@@ -17,12 +17,23 @@
  */
 package mod.gottsch.forge.protectit.core.registry;
 
+import java.io.FileWriter;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import mod.gottsch.forge.protectit.ProtectIt;
+import mod.gottsch.forge.protectit.core.property.Property;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 
@@ -184,6 +195,36 @@ public class TransactionRegistry {
 					LEASES_COUNT.put(leaseTag.getUUID("uuid"), leaseTag.getInt("count"));
 				}
 			});
+		}
+	}
+	
+	public static void dump() {
+		Path path = Paths.get("config", ProtectIt.MODID, "dumps").toAbsolutePath();
+		if (Files.notExists(path)) { 
+			try {
+				Files.createDirectories(path);
+			} catch (Exception e) {
+				ProtectIt.LOGGER.error("unable to create dump file: ", e);
+			}
+		}
+
+		GsonBuilder gsonBuilder = new GsonBuilder();		
+		try {
+			Type listType = new TypeToken<Map<UUID, Integer>>() {}.getType();
+			Gson gson = gsonBuilder.setPrettyPrinting().create();
+
+			String json = gson.toJson(DEEDS_COUNT, listType);
+			FileWriter fw = new FileWriter(path.resolve("domain-transaction-registry.json").toAbsolutePath().toString());
+			fw.write(json);
+			fw.close();
+
+			json = gson.toJson(LEASES_COUNT, listType);
+			fw = new FileWriter(path.resolve("fief-transaction-registry.json").toAbsolutePath().toString());
+			fw.write(json);
+			fw.close();
+			
+		} catch (Exception e) {
+			ProtectIt.LOGGER.error("error writing protection registry to file -> ", e);
 		}
 	}
 }

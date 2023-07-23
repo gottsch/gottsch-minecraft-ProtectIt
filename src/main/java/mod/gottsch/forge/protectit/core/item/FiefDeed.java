@@ -106,8 +106,10 @@ public class FiefDeed extends Deed {
 //		return Optional.ofNullable(selectedProperty);
 		List<Property> properties = PropertyUtil.getPropertyHierarchy(property);
 		
-		// TODO determine the property - how to flag a property that is available for lease?
-		return properties.stream().filter(p -> p.isFiefAvailable() && p.intersects(box)).findFirst();
+		// TODO determine the property - how to flag a property that is available for fief?
+//		return properties.stream().filter(p -> p.isFiefAvailable() && p.intersects(box)).findFirst();
+		// TODO how to know which fief property to select and compare to
+		return properties.stream().filter(p -> p.isFief() && p.intersects(box)).findFirst();
 	}
 	
 	@Override

@@ -159,7 +159,7 @@ public class ProtectIt {
 	// permission events
 	@SubscribeEvent
 	public void onBlockBreak(final BlockEvent.BreakEvent event) {
-		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+//		LOGGER.debug("attempt to break block by player -> {} @ {}", event.getPlayer().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 		// prevent protected blocks from breaking
 		if (!Config.PROTECTION.enableBlockBreakEvent.get()
 				|| event.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
@@ -183,7 +183,7 @@ public class ProtectIt {
 	 */
 	@SubscribeEvent
 	public void onBlockPlace(final EntityPlaceEvent event) {
-		LOGGER.debug("attempt to place block by player -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+		LOGGER.debug("attempt to PLACE block by player -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 
 		if (!Config.PROTECTION.enableEntityPlaceEvent.get()
 				|| event.getEntity().hasPermissions(Config.GENERAL.opsPermissionLevel.get()) ) {
@@ -194,7 +194,7 @@ public class ProtectIt {
 		if (event.getEntity() instanceof Player) {
 			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.BLOCK_PLACE_PERMISSION.value)) {
 				event.setCanceled(true);
-				LOGGER.debug("denied place block -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
+				LOGGER.debug("denied PLACE block -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 				if (!event.getLevel().isClientSide()) {
 					sendProtectedMessage(event.getLevel(), (Player) event.getEntity());
 				}
@@ -255,11 +255,11 @@ public class ProtectIt {
 
 		// ensure to check entity, because mobs like Enderman can pickup/place blocks
 		if (event.getEntity() instanceof Player) {
-			LOGGER.debug("player -> {} attempting to use block or item on block -> {}", event.getEntity().getDisplayName().getString(), event.getLevel().getBlockState(event.getPos()).getBlock().getName().getString());
+			LOGGER.debug("player -> {} attempting to INTERACT with block or item -> {} on block", event.getEntity().getDisplayName().getString(), event.getLevel().getBlockState(event.getPos()).getBlock().getName().getString());
 
 			// get the item in the player's hand
 			if (ProtectionRegistries.property().isProtectedAgainst(new Coords(event.getPos()), event.getEntity().getUUID(), Permission.INTERACT_PERMISSION.value)) {
-				LOGGER.debug("protected against interact with block");
+				LOGGER.debug("protected against INTERACT with block");
 
 				// TODO have tags of allowable blocks to interact with because this would get very long here
 				BlockState state = event.getLevel().getBlockState(event.getPos());

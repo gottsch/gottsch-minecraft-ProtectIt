@@ -111,7 +111,6 @@ public class CommandHelper {
 
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_TARGET_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
-//		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
 		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 		List<String> names = properties.stream().map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
@@ -124,13 +123,20 @@ public class CommandHelper {
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
-	static final SuggestionProvider<CommandSourceStack> SUGGEST_FIEF_PROPERTY_NAMES = (source, builder) -> {
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_FIEF_NAMES_BY_OWNER = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
 		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 		List<String> names = properties.stream().filter(p -> !p.isDomain()).map(p -> p.getName(player.getUUID())).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
+	static final SuggestionProvider<CommandSourceStack> SUGGEST_FIEF_NAMES_BY_LANDLORD = (source, builder) -> {
+		List<Property> properties = ProtectionRegistries.property().getPropertiesByLord(source.getSource().getPlayerOrException().getUUID());
+		List<String> names = properties.stream().filter(p -> !p.isDomain()).map(p -> p.getNameByLord()).collect(Collectors.toList());
+		return SharedSuggestionProvider.suggest(names, builder);
+	};
+	
+	// REVIEW
 	// NEEDS to get ALL the properties that you are owner or lord of.
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_PLAYER_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
@@ -154,17 +160,12 @@ public class CommandHelper {
 	//		return SharedSuggestionProvider.suggest(names, builder);
 	//	};
 
+	@Deprecated
 	static final SuggestionProvider<CommandSourceStack> SUGGEST_ALL_NESTED_PROPERTY_NAMES = (source, builder) -> {
 		ServerPlayer player = source.getSource().getPlayerOrException();
 //		List<Property> properties = ProtectionRegistries.block().getProtections(player.getStringUUID());
 		List<Property> properties = ProtectionRegistries.property().getPropertiesByOwner(source.getSource().getPlayerOrException().getUUID());
 		List<String> names = PropertyUtil.getPropertyHierarchyNames(properties, player);
-		return SharedSuggestionProvider.suggest(names, builder);
-	};
-
-	static final SuggestionProvider<CommandSourceStack> SUGGEST_FIEF_NAMES = (source, builder) -> {
-		List<Property> properties = ProtectionRegistries.property().getPropertiesByLord(source.getSource().getPlayerOrException().getUUID());
-		List<String> names = properties.stream().filter(p -> !p.isDomain()).map(p -> p.getNameByLord()).collect(Collectors.toList());
 		return SharedSuggestionProvider.suggest(names, builder);
 	};
 	
@@ -204,22 +205,36 @@ public class CommandHelper {
 		}
 		List<Property> owners = ProtectionRegistries.property().getPropertiesByOwner(player.getUUID());
 		ProtectIt.LOGGER.debug("owner props -> {}", owners);
-		List<Property> namedClaims = owners.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(oldName)).toList();
-		if (namedClaims.isEmpty()) {
+		List<Property> namedProperties = owners.stream().filter(p -> p.getNameByOwner().equalsIgnoreCase(oldName)).toList();
+		if (namedProperties.isEmpty()) {
 			List<Property> lords = ProtectionRegistries.property().getPropertiesByLord(player.getUUID());
-			ProtectIt.LOGGER.debug("lord props -> {}",lords);
-			namedClaims = lords.stream().filter(p -> p.getNameByLord().equalsIgnoreCase(oldName)).toList();
+			ProtectIt.LOGGER.debug("lord props -> {}", lords);
+			namedProperties = lords.stream().filter(p -> p.getNameByLord().equalsIgnoreCase(oldName)).toList();
 		}
 
 		//		List<Property> claims = ProtectionRegistries.block().getProtections(player.getStringUUID());
 		//		List<Property> namedClaims = claims.stream().filter(claim -> claim.getNameByOwner().equalsIgnoreCase(oldName)).collect(Collectors.toList());
-		if (namedClaims.isEmpty()) {
+		if (namedProperties.isEmpty()) {
 			source.sendFailure(Component.translatable(LangUtil.message("property.name.unknown"))
-					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.AQUA)));
+					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.RED)));
 			return 1;
 		}
-		ProtectIt.LOGGER.debug("named claim -> {}", namedClaims.get(0));
-		namedClaims.get(0).setName(player.getUUID(), newName.toUpperCase());
+		
+		ProtectIt.LOGGER.debug("named claim -> {}", namedProperties.get(0));
+		// checked against existing names
+		boolean alreadyExists = false;
+		for (Property p : namedProperties) {
+			if (p.getNameByOwner().equalsIgnoreCase(newName) || p.getNameByLord().equalsIgnoreCase(newName)) {
+				alreadyExists = true;
+			}
+		}
+		if (alreadyExists) {
+			source.sendFailure(Component.translatable(LangUtil.message("property.name.conflict"))
+					.append(Component.translatable(oldName.toUpperCase()).withStyle(ChatFormatting.RED)));
+			return 1;
+		}
+		
+		namedProperties.get(0).setName(player.getUUID(), newName.toUpperCase());
 
 		source.sendSuccess(Component.translatable(LangUtil.message("property.rename.success"))
 				.append(Component.translatable(newName.toUpperCase()).withStyle(ChatFormatting.AQUA)), false);

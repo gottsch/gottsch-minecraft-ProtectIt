@@ -115,7 +115,7 @@ public class PlayerIdentity {
 		if (getClass() != obj.getClass())
 			return false;
 		PlayerIdentity other = (PlayerIdentity) obj;
-		return Objects.equals(name, other.name) && Objects.equals(uuid, other.uuid);
+		return Objects.equals(uuid, other.uuid);
 	}
 
 	@Override

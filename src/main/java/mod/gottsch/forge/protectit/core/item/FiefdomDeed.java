@@ -158,7 +158,7 @@ public class FiefdomDeed extends Item {
 					}
 				}
 				else {
-					player.sendSystemMessage(Component.translatable(LangUtil.message("property.subdivide.propertiess_not_same"))
+					player.sendSystemMessage(Component.translatable(LangUtil.message("property.fiefdom.properties_not_same"))
 							.withStyle(ChatFormatting.WHITE));
 				}
 

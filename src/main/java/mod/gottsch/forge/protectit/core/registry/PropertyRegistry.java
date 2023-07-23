@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,7 +78,7 @@ public class PropertyRegistry implements IPropertyRegistry {
 	/*
 	 * a map of properties by property uuid.
 	 */
-	private final Map<UUID, Property> PROPERTY_BY_UUID = Maps.newHashMap();
+	private final Map<UUID, Property> PROPERTY_BY_UUID = new HashMap<>();
 
 	/*
 	 * an interval binary search tree (interval-bst) for fast lookups for property access/mutation actions.

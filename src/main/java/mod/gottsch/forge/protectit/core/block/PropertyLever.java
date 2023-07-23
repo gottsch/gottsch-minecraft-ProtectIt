@@ -193,11 +193,18 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 	 * 
 	 */
 	public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		ProtectIt.LOGGER.debug("using lever at -> {} by player -> {}", pos.toShortString(), player.getName().getString());
 		BlockEntity blockEntity = world.getBlockEntity(pos);
 		// prevent use if not the owner
 		if (blockEntity instanceof PropertyLeverBlockEntity) {
 			List<Property> properties = ProtectionRegistries.property().getPropertyByCoords(((PropertyLeverBlockEntity)blockEntity).getPropertyCoords());
 			Optional<Property> property = PropertyUtil.getLeastSignificant(properties);
+			// TEMP debug condition
+			if (property.isPresent()) {
+			ProtectIt.LOGGER.debug("using level on property -> {}", property.get());
+			ProtectIt.LOGGER.debug("player uuid -> {}", player.getUUID());
+			ProtectIt.LOGGER.debug("property owner -> {}", property.get().getOwner().getUuid());
+			}
 			if (property.isPresent() && !player.getUUID().equals(property.get().getOwner().getUuid()) &&
 					property.get().getWhitelist().stream().noneMatch(p -> p.getUuid().equals(player.getUUID()))) {
 				ProtectIt.LOGGER.debug("no access, property owner -> {}, player -> {}", property.get().getOwner().getUuid(), player.getUUID());
@@ -211,6 +218,7 @@ public class PropertyLever extends LeverBlock implements EntityBlock {
 				}
 				return InteractionResult.SUCCESS;
 			} else {
+				ProtectIt.LOGGER.debug("lever SHOULD be flipping");
 				BlockState blockState = this.pull(state, world, pos);
 				float f = blockState.getValue(POWERED) ? 0.6F : 0.5F;
 				world.playSound((Player)null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, f);

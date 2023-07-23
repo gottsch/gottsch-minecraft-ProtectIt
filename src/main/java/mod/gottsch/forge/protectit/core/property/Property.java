@@ -20,10 +20,14 @@
 package mod.gottsch.forge.protectit.core.property;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.UUID;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.Maps;
 
@@ -374,7 +378,8 @@ public class Property {
 //		}
 		if (!getNames().containsKey(owner.getUuid())) {
 			// generate a name
-			setName(owner.getUuid(), owner.getName());
+			Random random = new Random();
+			setName(owner.getUuid(), owner.getName() + "." + StringUtils.leftPad(String.valueOf(random.nextInt(1000)), 3, "0"));
 		}
 		this.owner = owner;
 	}
@@ -470,7 +475,7 @@ public class Property {
 
 	public Map<UUID, String> getNames() {
 		if (names == null) {
-			names = Maps.newHashMap();
+			names = new HashMap<>();
 		}
 		return names;
 	}
