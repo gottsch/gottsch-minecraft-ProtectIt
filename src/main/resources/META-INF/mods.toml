@@ -2,10 +2,10 @@
 modLoader="javafml" #mandatory
 
 # A version range to match for said mod loader - for regular FML @Mod it will be the forge version
-loaderVersion="[43,)" #mandatory
+loaderVersion="${loader_version_range}"
 
 # License
-license="GNU LGPLv3"
+license="GNU GPLv3"
 
 # A URL to refer people to when problems occur with this mod
 issueTrackerURL="https://github.com/gottsch/gottsch-minecraft-ProtectIt/issues" #optional
@@ -17,50 +17,53 @@ issueTrackerURL="https://github.com/gottsch/gottsch-minecraft-ProtectIt/issues" 
 modId="protectit" #mandatory
 
 # The version number of the mod - there's a few well known ${} variables useable here or just hardcode it
-version="2.5.0" #mandatory
+version="${mod_version}" #mandatory
 
- # A display name for the mod
+# A display name for the mod
 displayName="Protect It" #mandatory
 
 # A URL to query for updates for this mod. See the JSON update specification <here>
-updateJSONURL="https://raw.githubusercontent.com/gottsch/gottsch-minecraft-ProtectIt/1.19.2-main/update.json" #optional
+updateJSONURL="https://raw.githubusercontent.com/gottsch/gottsch-minecraft-ProtectIt/1.20.1-main/update.json" #optional
 
 # A URL for the "homepage" for this mod, displayed in the mod UI
-displayURL="https://www.curseforge.com/minecraft/mc-mods/protectit" #optional
+displayURL="https://www.curseforge.com/minecraft/mc-mods/protect-it" #optional
 
 # A file name (in the root of the mod JAR) containing a logo for display
-logoFile="" #optional
+#logoFile="" #optional
 
 # A text field displayed in the mod UI
-credits="Authored by gottsch" #optional
+#credits="" #optional
 
 # A text field displayed in the mod UI
 authors="gottsch" #optional
 
 # The description text for the mod (multi line!) (#mandatory)
-description="A small land claim mod to protect specified areas."
+description=""
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.protectit]] #optional
-    # the modid of the dependency
-    modId="forge" #mandatory
-    # Does this dependency have to exist - if not, ordering below must be specified
-    mandatory=true #mandatory
-    # The version range of the dependency
-    versionRange="[43,)" #mandatory
-    # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
-    ordering="NONE"
-    # Side this dependency is applied on - BOTH, CLIENT or SERVER
-    side="BOTH"
+# the modid of the dependency
+modId="forge" #mandatory
+# Does this dependency have to exist - if not, ordering below must be specified
+mandatory=true #mandatory
+# The version range of the dependency
+versionRange="${forge_version_range}" #mandatory
+# An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
+ordering="NONE"
+# Side this dependency is applied on - BOTH, CLIENT or SERVER
+side="BOTH"
+# Here's another dependency
 [[dependencies.protectit]]
-    modId="minecraft"
-    mandatory=true
-    versionRange="[1.19.2,1.20)"
-    ordering="NONE"
-    side="BOTH"
- [[dependencies.protectit]]
-    modId="gottschcore"
-    mandatory=true
-    versionRange="[2.0.0,)"
-    ordering="BEFORE"
-    side="BOTH"    
+modId="minecraft"
+mandatory=true
+# This version range declares a minimum of the current minecraft version up to but not including the next major version
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+[[dependencies.protectit]]
+modId="gottschcore"
+mandatory=true
+# This version range declares a minimum of the current minecraft version up to but not including the next major version
+versionRange="[2.1.0,)"
+ordering="BEFORE"
+side="BOTH"
