@@ -10,7 +10,9 @@ import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
 import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
+import mod.gottsch.forge.protectit.core.parcel.ParcelUtil;
 import mod.gottsch.forge.protectit.core.parcel.PersonalParcel;
+import mod.gottsch.forge.protectit.core.persistence.PersistedData;
 import mod.gottsch.forge.protectit.core.registry.ParcelRegistry;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
 import net.minecraft.ChatFormatting;
@@ -19,6 +21,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -33,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.UUID;
 
 /**
@@ -59,26 +63,11 @@ public abstract class Deed extends Item {
             return true;
         }
 
-        // TODO move out to useOn - regardless if clicking on foundation stone
-        // or placing stone, need to check if max is met and prevent action.
-
-        /*
-         * check if the player has reached there max parcels already
-         */
-        // gather the number of parcels the player has
-        List<Parcel> parcels = ParcelRegistry.findByOwner(context.getPlayer().getUUID());
-
-        if (parcels.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
-            // TODO colorize
-            // TODO create a class ChatHelper that has premade color formatters
-            context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
-            return false;
-        }
-
         // get the target position
         BlockPos targetPos = context.getClickedPos();
         BlockContext blockContext = new BlockContext(context.getLevel(), targetPos);
         if (blockContext.isAir() || blockContext.isReplaceable()) {
+            // TODO make method getSize(ItemStack)
             CompoundTag tag = context.getItemInHand().getOrCreateTag();
             // get the size
             Box size = Box.EMPTY;
@@ -167,8 +156,29 @@ public abstract class Deed extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        // TODO need to check if existing parcel and update it with new value ie owner
-        Parcel parcel = createParcel(context.getClickedPos(), context.getItemInHand());
+        /*
+         * check if the player has reached there max parcels already
+         */
+        // gather the number of parcels the player has
+        List<Parcel> parcels = ParcelRegistry.findByOwner(context.getPlayer().getUUID());
+
+        if (parcels.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
+            // TODO colorize
+            // TODO create a class ChatHelper that has premade color formatters
+            context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
+            return InteractionResult.FAIL;
+        }
+
+        // wrapped BlockPos
+        ICoords clickedCoords = new Coords(context.getClickedPos());
+
+        // create a parcel object from the deed itemstack and context info
+        Parcel parcel = createParcel(context.getItemInHand(), context.getClickedPos(), context.getPlayer());
+
+        // check if parcel has a owner id and if its the player - if not, exit as they can't use it
+        if (parcel.getOwnerId() != null && !parcel.getOwnerId().equals(context.getPlayer().getUUID())) {
+            return InteractionResult.FAIL;
+        }
 
         // if using the deed on a foundation stone
         if (context.getLevel().getBlockState(context.getClickedPos()).is(ProtectItBlocks.FOUNDATION_STONE.get())) {
@@ -176,21 +186,42 @@ public abstract class Deed extends Item {
              * accept location as parcel
              */
 
-            // TODO ensure the block entity has no overlaps (or just check registry again)
-
             // validate
             BlockEntity blockEntity = context.getLevel().getBlockEntity(context.getClickedPos());
             if (blockEntity instanceof FoundationStoneBlockEntity foundationStoneBlockEntity) {
 
+//            Optional<Parcel> parcelOptional = ParcelUtil.findLeastSignificant(ParcelRegistry.find(new Coords(context.getClickedPos())));
+                Box parcelBox = foundationStoneBlockEntity.getBox(clickedCoords);
+                // TEMP for now use findBoxes() - may upgrade to find()
+                if (!ParcelRegistry.findBoxes(parcelBox).isEmpty()) {
+                    return InteractionResult.FAIL;
+                }
+
+                // validate the parcel data itself
                 boolean isValid = validateParcel(foundationStoneBlockEntity, parcel);
 
                 if (isValid) {
-                    // TODO need to check if there is an existing parcel and update it else add it
-                    // add to the registry
-                    ParcelRegistry.add(parcel);
+                    // check if there is an existing parcel and update it else add it
+                    Optional<Parcel> registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
+                    if (registryParcel.isPresent()) {
+                        registryParcel.get().setOwnerId(parcel.getOwnerId());
+                    } else {
+                        // add to the registry
+                        ParcelRegistry.add(parcel);
+                    }
+
+                    PersistedData savedData = PersistedData.get(context.getLevel());
+                    // mark data as dirty
+                    if (savedData != null) {
+                        savedData.setDirty();
+                    }
 
                     // consume item
                     context.getItemInHand().shrink(1);
+
+                    // remove the foundation stone
+                    blockEntity.getLevel().setBlock(context.getClickedPos(), Blocks.AIR.defaultBlockState(), 3);
+
                     return InteractionResult.CONSUME;
                 }
             }
@@ -200,31 +231,48 @@ public abstract class Deed extends Item {
              * place foundation stone
              */
 
-            // TODO ******************* !!!!!!!!!!
             // test if a parcel already exists for the parcel id
-            Optional<Parcel> registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
+            boolean canPlace = false;
+            Optional<Parcel> registryParcel = ParcelUtil.findLeastSignificant(ParcelRegistry.find(clickedCoords));
+            /*
+             * not inside any parcel.
+             */
             if (registryParcel.isEmpty()) {
-                // TODO can place
+                /*
+                 * check if a parcel exists.
+                 * if a parcel does not exist then the deed is used to place a foundation stone
+                 * in this position for the first time.
+                 */
+                registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
+                if (registryParcel.isEmpty()) {
+                    canPlace = true;
+                }
             } else {
-                // TODO determine if where attempting to place foundation stone is in parcel boundaries
+                /*
+                 * inside a parcel - is it the parcel associated with this deed ?
+                 * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
+                 * and therefor can only be placed within the same parcel it is associated with.
+                 */
+                // TODO change this to checkAccess()
+                if (validateParcel(registryParcel.get(), parcel)) {
+                    canPlace = true;
+                }
             }
 
-            // TODO using the above results, run below or not.
-            boolean result = this.placeBlock(new BlockPlaceContext(context), ProtectItBlocks.FOUNDATION_STONE.get().defaultBlockState());
+            boolean result = canPlace && this.placeBlock(new BlockPlaceContext(context), ProtectItBlocks.FOUNDATION_STONE.get().defaultBlockState());
             return result ? InteractionResult.SUCCESS : InteractionResult.FAIL;
-
         }
 
         return super.useOn(context);
     }
 
     public abstract boolean validateParcel(FoundationStoneBlockEntity blockEntity, Parcel parcel);
-
-    public abstract Parcel createParcel(BlockPos pos, ItemStack stack);
+    public abstract boolean validateParcel(Parcel parcel, Parcel parcel2);
+    public abstract Parcel createParcel(ItemStack stack, BlockPos pos, Player player);
 
     @Override
     public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, world, tooltip, flag);
-        tooltip.add(Component.translatable(LangUtil.tooltip("claim.howto")).withStyle(ChatFormatting.GREEN));
+        tooltip.add(Component.translatable(LangUtil.tooltip("parcel.howto")).withStyle(ChatFormatting.GREEN));
     }
 }

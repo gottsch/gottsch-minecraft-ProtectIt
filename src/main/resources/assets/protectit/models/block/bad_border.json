@@ -1,0 +1,7 @@
+{
+	"parent": "protectit:block/border_block",
+	"textures": {
+		"0": "protectit:block/red",
+		"particle": "protectit:block/red"
+	}
+}

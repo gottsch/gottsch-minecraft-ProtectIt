@@ -20,7 +20,9 @@ public class BlockStates extends BlockStateProvider {
 	
 	@Override
 	protected void registerStatesAndModels() {
+
 		simpleBlock(ProtectItBlocks.FOUNDATION_STONE.get());
+//		simpleBlock(ProtectItBlocks.GOOD_BORDER.get());
 	}
 
 }

@@ -22,8 +22,12 @@ package mod.gottsch.forge.protectit.core.block;
 import mod.gottsch.forge.protectit.core.setup.Registration;
 
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.TallGrassBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
@@ -35,6 +39,15 @@ public class ProtectItBlocks {
 
 	public static final RegistryObject<Block> FOUNDATION_STONE = Registration.BLOCKS.register("foundation_stone",
 			() -> new FoundationStoneBlock(Properties.of().mapColor(MapColor.WOOD).strength(3F)));
+
+	public static final RegistryObject<Block> GOOD_BORDER = Registration.BLOCKS.register("good_border",
+			() -> new BorderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).replaceable().noCollission().instabreak().pushReaction(PushReaction.IGNORE)));
+
+	public static final RegistryObject<Block> WARN_BORDER = Registration.BLOCKS.register("warn_border",
+			() -> new BorderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).replaceable().noCollission().instabreak().pushReaction(PushReaction.IGNORE)));
+
+	public static final RegistryObject<Block> BAD_BORDER = Registration.BLOCKS.register("bad_border",
+			() -> new BorderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).replaceable().noCollission().instabreak().pushReaction(PushReaction.IGNORE)));
 
 	/**
 	 * 

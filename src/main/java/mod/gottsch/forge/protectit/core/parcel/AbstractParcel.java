@@ -25,6 +25,8 @@ import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.ProtectIt;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.UUID;
 
@@ -56,10 +58,21 @@ public abstract class AbstractParcel implements Parcel {
     public void save(CompoundTag tag) {
         ProtectIt.LOGGER.debug("saving parcel -> {}", this);
 
-        tag.putUUID(ID_KEY, getId());
-        tag.putString(NAME_KEY, getName());
-        tag.putUUID(OWNER_KEY, getOwnerId());
-        tag.putUUID(DEED_KEY, getDeedId());
+        if (ObjectUtils.isNotEmpty(getId())) {
+            tag.putUUID(ID_KEY, getId());
+        } else {
+            // TODO warn and skip save
+        }
+        if (StringUtils.isNotBlank(getName())) {
+            tag.putString(NAME_KEY, getName());
+        }
+        if (ObjectUtils.isNotEmpty(getOwnerId())) {
+            tag.putUUID(OWNER_KEY, getOwnerId());
+        }
+        if (ObjectUtils.isNotEmpty(getDeedId())) {
+            tag.putUUID(DEED_KEY, getDeedId());
+        }
+
         CompoundTag coordsTag = new CompoundTag();
         getCoords().save(coordsTag);
         tag.put(COORDS_KEY, coordsTag);
@@ -93,7 +106,7 @@ public abstract class AbstractParcel implements Parcel {
             setOwnerId(tag.getUUID(OWNER_KEY));
         }
         if (tag.contains(DEED_KEY)) {
-            setId(tag.getUUID(DEED_KEY));
+            setDeedId(tag.getUUID(DEED_KEY));
         }
         if (tag.contains(COORDS_KEY)) {
             setCoords(Coords.EMPTY.load(tag.getCompound(COORDS_KEY)));

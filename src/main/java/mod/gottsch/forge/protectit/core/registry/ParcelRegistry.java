@@ -30,6 +30,7 @@ import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -93,24 +94,26 @@ public class ParcelRegistry {
         if (tag.contains(PARCELS_KEY)) {
             ListTag list = tag.getList(PARCELS_KEY, Tag.TAG_COMPOUND);
             list.forEach(element -> {
-                Optional<Parcel> parcel = ParcelFactory.create(tag);
+                Optional<Parcel> parcel = ParcelFactory.create((CompoundTag)element);
                 parcel.ifPresent(action -> {
                     // load the parcel
                     action.load((CompoundTag) element);
                     ProtectIt.LOGGER.debug("loaded parcel -> {}", action);
 
                     // add to byCoords map
-                    PARCELS_BY_COORDS.put(action.getCoords(), action);
+                    PARCELS_BY_COORDS.put(action.getMinCoords(), action);
 
                     // add to byOwner map
-                    List<Parcel> parcelsByOwner;
-                    if (!PARCELS_BY_OWNER.containsKey(action.getOwnerId())) {
-                        // create new list entry
-                        parcelsByOwner = PARCELS_BY_OWNER.put(action.getOwnerId(), new ArrayList<>());
-                    } else {
-                        parcelsByOwner =  PARCELS_BY_OWNER.get(action.getOwnerId());
+                    if (ObjectUtils.isNotEmpty(action.getOwnerId())) {
+                        List<Parcel> parcelsByOwner = new ArrayList<>();
+                        if (!PARCELS_BY_OWNER.containsKey(action.getOwnerId())) {
+                            // create new list entry
+                            PARCELS_BY_OWNER.put(action.getOwnerId(), parcelsByOwner);
+                        } else {
+                            parcelsByOwner = PARCELS_BY_OWNER.get(action.getOwnerId());
+                        }
+                        parcelsByOwner.add(action);
                     }
-                    parcelsByOwner.add(action);
 
                     // add to tree
                     TREE.insert(new CoordsInterval(action.getMinCoords(), action.getMaxCoords(), action.getOwnerId()));
@@ -138,7 +141,7 @@ public class ParcelRegistry {
         parcels.add(parcel);
 
         // add to parcels by coords
-        PARCELS_BY_COORDS.put(parcel.getCoords(), parcel);
+        PARCELS_BY_COORDS.put(parcel.getMinCoords(), parcel);
 
         // add to BST
         IInterval<UUID> interval = TREE.insert(new CoordsInterval<UUID>(parcel.getMinCoords(), parcel.getMaxCoords(), parcel.getId()));
@@ -188,6 +191,10 @@ public class ParcelRegistry {
         return find(coords, coords);
     }
 
+    public static List<Parcel> find(Box box) {
+        return find(box.getMinCoords(), box.getMaxCoords());
+    }
+
     public static List<Parcel> find(ICoords coords1, ICoords coords2) {
         return find(coords1, coords2, false);
     }
@@ -210,9 +217,12 @@ public class ParcelRegistry {
     }
     ///////////////////////////////
 
-
     public static List<Box> findBoxes(ICoords coords) {
         return findBoxes(coords, coords);
+    }
+
+    public static List<Box> findBoxes(Box box) {
+        return findBoxes(box.getMinCoords(), box.getMaxCoords());
     }
 
     public static List<Box> findBoxes(ICoords coords1, ICoords coords2) {

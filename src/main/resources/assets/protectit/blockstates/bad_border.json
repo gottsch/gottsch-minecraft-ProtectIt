@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "protectit:block/bad_border"
+    }
+  }
+}
