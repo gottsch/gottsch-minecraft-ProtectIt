@@ -1,20 +1,10 @@
 package mod.gottsch.forge.protectit.core.block;
 
-import mod.gottsch.forge.gottschcore.spatial.Box;
-import mod.gottsch.forge.gottschcore.spatial.Coords;
-import mod.gottsch.forge.gottschcore.world.WorldInfo;
 import mod.gottsch.forge.protectit.core.ProtectIt;
 import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
-import mod.gottsch.forge.protectit.core.config.Config;
-import mod.gottsch.forge.protectit.core.parcel.Parcel;
-import mod.gottsch.forge.protectit.core.parcel.ParcelUtil;
-import mod.gottsch.forge.protectit.core.registry.ParcelRegistry;
-import mod.gottsch.forge.protectit.core.util.LangUtil;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -146,7 +136,7 @@ public class FoundationStoneBlock extends Block implements EntityBlock {
             FoundationStoneBlockEntity blockEntity = (FoundationStoneBlockEntity) level.getBlockEntity(pos);
             if (blockEntity != null) {
                 /*
-                 * NOTE the stone and border will be remove, but if the stone is caused by
+                 * NOTE the stone and border will be removed, but if the stone is caused by
                  * onDestroyedByPlayer(), then the owning Deed will still contain the
                  * pos of this block. Checks must be added to the Deed to ensure that the old
                  * stone exists before attempting to remove it. This is because the Deed

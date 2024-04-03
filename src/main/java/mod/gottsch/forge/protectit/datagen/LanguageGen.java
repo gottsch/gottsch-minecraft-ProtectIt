@@ -55,9 +55,37 @@ public class LanguageGen extends LanguageProvider {
         /*
          * Util.chats
          */
+        // exceptions / errors
+        add(LangUtil.chat("unable_locate_player"), "Unable to locate the player -> %s");
+        add(LangUtil.chat("unexpected_error"), "An unexpected error occurred.");
+
+        // parcels
         add(LangUtil.chat("parcel.block_protected"),"Block is protected.");
         add(LangUtil.chat("parcel.outside_world_boundaries"), "The parcel extends beyond the world boundaries.");
         add(LangUtil.chat("parcel.max_reached"), "You have already reached your max. number of parcels.");
+
+        add(LangUtil.chat("parcel.list"), "%s's Parcels");
+        add(LangUtil.chat("parcel.list.empty"), "[Empty]");
+
+        add(LangUtil.chat("parcel.add.success"), "The parcel has been added.");
+        add(LangUtil.chat("parcel.add.failure"), "Unable to add the parcel.");
+
+        add(LangUtil.chat("parcel.remove.success"), "The parcel has been removed.");
+        add(LangUtil.chat("parcel.remove.failure"), "Unable to remove the parcel.");
+
+        add(LangUtil.chat("parcel.rename.success"), "The parcel has been renamed.");
+        add(LangUtil.chat("parcel.rename.failure"), "Unable to rename the parcel.");
+
+        add(LangUtil.chat("parcel.transfer.success"), "The parcel has been transferred.");
+        add(LangUtil.chat("parcel.transfer.failure"), "Unable to transfer the parcel.");
+
+        add(LangUtil.chat("parcel.whitelist.add.success"), "A player was added to the whitelist.");
+        add(LangUtil.chat("parcel.whitelist.add.failure"), "Unable to player to the whitelist.");
+        add(LangUtil.chat("parcel.whitelist.list"), "Whitelist for property ");
+
+        // deeds
+        add(LangUtil.chat("deed.generate.failure"), "Unable to generate deed.");
+
         /*
          *  Util.tooltips
          */

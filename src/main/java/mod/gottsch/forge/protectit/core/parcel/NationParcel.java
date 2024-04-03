@@ -19,7 +19,13 @@
  */
 package mod.gottsch.forge.protectit.core.parcel;
 
+import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
+import mod.gottsch.forge.protectit.core.config.Config;
 import net.minecraft.nbt.CompoundTag;
+import org.apache.commons.lang3.ObjectUtils;
+
+import java.util.UUID;
 
 /**
  *
@@ -27,17 +33,80 @@ import net.minecraft.nbt.CompoundTag;
  *
  */
 public class NationParcel extends AbstractParcel {
+    private static final String NATION_KEY = "nation";
+
+    private UUID nationId;
+
+    public NationParcel() {
+        setType(ParcelType.NATION);
+    }
+
+    @Override
+    public int getBufferSize() {
+        return Config.GENERAL.nationParcelBufferRadius.get();
+    }
+
+    @Override
+    public boolean validateData(Parcel parcel) {
+        if (parcel.getId().equals(getId())
+                && parcel.getDeedId().equals(getDeedId())
+        ) {
+            return parcel.getOwnerId() == null || parcel.getOwnerId().equals(getOwnerId());
+        }
+        return false;
+    }
+
+    @Override
+    public boolean validateData(FoundationStoneBlockEntity blockEntity) {
+        if (getId().equals(blockEntity.getParcelId())
+                && getDeedId().equals(blockEntity.getDeedId())
+        ) {
+            return blockEntity.getOwnerId() == null || blockEntity.getOwnerId().equals(getOwnerId());
+        }
+        return false;
+
+    }
+
+    @Override
+    public void populateBlockEntity(FoundationStoneBlockEntity entity) {
+        super.populateBlockEntity(entity);
+        entity.setNationId(getNationId());
+        entity.setParcelType(ParcelType.NATION.name());
+        // NOTE nope, don't need to do this - maybe
+        // override coords to be at place of block entity
+//        entity.setCoords(new Coords(entity.getBlockPos()));
+    }
 
     @Override
     public void save(CompoundTag tag) {
         super.save(tag);
         tag.putString(TYPE, "nation");
+        if (ObjectUtils.isNotEmpty(getNationId())) {
+            tag.putUUID(NATION_KEY, getDeedId());
+        }
     }
 
     @Override
     public Parcel load(CompoundTag tag) {
         super.load(tag);
-        // TODO load specific
+        if (tag.contains(NATION_KEY)) {
+            setNationId(tag.getUUID(NATION_KEY));
+        }
         return this;
+    }
+
+    public UUID getNationId() {
+        return nationId;
+    }
+
+    public void setNationId(UUID nationId) {
+        this.nationId = nationId;
+    }
+
+    @Override
+    public String toString() {
+        return "NationParcel{" +
+                "nationId=" + nationId +
+                "} " + super.toString();
     }
 }

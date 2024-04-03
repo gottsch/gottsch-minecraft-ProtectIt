@@ -113,7 +113,7 @@ public class LangUtil {
 		return name(ProtectIt.MODID, "chat", suffix);
 	}
 	
-	public static String message(String suffix) {
-		return name(ProtectIt.MODID, "message", suffix);
-	}
+//	public static String message(String suffix) {
+//		return name(ProtectIt.MODID, "message", suffix);
+//	}
 }

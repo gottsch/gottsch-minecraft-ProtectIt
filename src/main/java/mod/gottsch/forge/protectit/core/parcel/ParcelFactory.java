@@ -21,7 +21,9 @@ package mod.gottsch.forge.protectit.core.parcel;
 
 import net.minecraft.nbt.CompoundTag;
 
+import javax.swing.text.html.Option;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  *
@@ -44,5 +46,26 @@ public class ParcelFactory {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     *
+     * @param type
+     * @return
+     */
+    public static Optional<Parcel> create(ParcelType type) {
+        return switch (type) {
+            case PERSONAL -> Optional.of(createPersonalParcel());
+            case NATION -> null;
+            case CITIZEN -> null;
+            default -> Optional.empty();
+        };
+    }
+
+    private static Parcel createPersonalParcel() {
+        Parcel parcel = new PersonalParcel();
+        parcel.setId(UUID.randomUUID());
+        parcel.setName(parcel.randomName());
+        return parcel;
     }
 }

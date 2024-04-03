@@ -71,13 +71,13 @@ public class Config extends AbstractConfig {
 	 * 
 	 */
 	public static class Gui {
-		public BooleanValue enableProtectionMessage;
+		public BooleanValue enableProtectionChatMessages;
 		
 		public Gui(final ForgeConfigSpec.Builder builder) {
 			builder.comment(CATEGORY_DIV, " Client GUI properties for Protect It  mod.", CATEGORY_DIV).push("GUI");
-			enableProtectionMessage = builder
-					.comment(" Enables protection message in chat. If enabled, when protection is triggered, a message will display in the chat.")
-					.define("Protection messages in chat:", false);
+			enableProtectionChatMessages = builder
+					.comment(" Enables protection messages in chat. If enabled, when protection is triggered, a message will display in the chat.")
+					.define("enableProtectionChatMessages:", false);
 			builder.pop();
 		}		
 	}
@@ -89,24 +89,39 @@ public class Config extends AbstractConfig {
 	 */
 	public static class General {
 		public IntValue giveCommandLevel;
-		public IntValue propertiesPerPlayer;
+		public IntValue parcelsPerPlayer;
 		public IntValue opsPermissionLevel;
+		public IntValue parcelBufferRadius;
+		public IntValue nationParcelBufferRadius;
 		
 		General(final ForgeConfigSpec.Builder builder) {
 			builder.comment(CATEGORY_DIV, " General properties for Protect It  mod.", CATEGORY_DIV).push(GENERAL_CATEGORY);
 			
 			giveCommandLevel = builder
 					.comment("The access level required for the 'give' command.")
-					.defineInRange("'give' command level:", 2, 0, 4);
-			propertiesPerPlayer = builder
+					.defineInRange("giveCommandLevel", 2, 0, 4);
+			parcelsPerPlayer = builder
 					.comment(" The number of properties each player can own per world.")
-					.defineInRange("Number of properties per player:", 5, 1, 100);
+					.defineInRange("parcelsPerPlayer", 5, 1, 100);
 			opsPermissionLevel = builder
 					.comment(" The permission level required to be Ops within Protect It.","This is not the op-permission-level that is set in the server.propeties.",
-							"This allows players who are not server-level ops, to have Protect It Ops permissions. ie protections don't protect against Ops.",
-							"Ex. server-level ops = 4, but Protect It ops = 3 - a player with permission 3 would be considered an Ops within Protect It.")
-					.defineInRange("Ops permission level:", 4, 0, 4);
-			
+							" This allows players who are not server-level ops, to have Protect It Ops permissions. ie protections don't protect against Ops.",
+							" Ex. server-level ops = 4, but Protect It ops = 3 - a player with permission 3 would be considered an Ops within Protect It.")
+					.defineInRange("opsPermissionLevel", 4, 0, 4);
+
+			parcelBufferRadius = builder
+					.comment(" A buffer between parcels. Another parcel cannot be built within this area.",
+							" This is a radius beyond (or in addition to) the parcel border.",
+							" Ex. parcel size = 10x10x10, with a buffer radius = 3. The total size = 13x13x13",
+							" that another parcel cannot build within.",
+							" Note that the buffer is between parcel borders, not other buffers, meaning if 2 parcels",
+							" both have a buffer = 3, there is a buffer of 3 between the parcels, not 6.")
+							.defineInRange("parcelBufferRadius", 3, 1, 10);
+
+			nationParcelBufferRadius = builder
+					.comment(" Like 'parcelBufferRadius', but for Nation parcels.")
+							.defineInRange("nationParcelBufferRadius", 10, 1, 50);
+
 			builder.pop();
 		}
 		
@@ -134,35 +149,35 @@ public class Config extends AbstractConfig {
 			
 			enableBlockBreakEvent = builder
 					.comment(" Enables block break protection. If enabled, blocks in property are protected from being broken by others.")
-					.define("Block break proctection:", true);
+					.define("enableBlockBreakProtection", true);
 			
 			enableEntityPlaceEvent = builder
 					.comment(" Enables block placement protection. If enabled, blocks are not allowed to be placed in the property by others.")
-					.define("Block placement proctection:", true);
+					.define("enableBlockPlacementProtection", true);
 			
 			enableEntityMultiPlaceEvent = builder
 					.comment(" Enables multi-block placement protection. If enabled, multi-blocks are not allowed to be placed in the property by others.")
-					.define("Multi-block placement proctection:", true);
+					.define("enableMultiBlockPlacementProtection", true);
 
 			enableBlockToolInteractEvent = builder					
 					.comment(" Enables block tool interaction protection. If enabled, blocks in the property will not change state when right-clicked with tool. Ex. axe will not strip a log.")
-					.define("Block tool interact proctection:", true);
+					.define("enableBlockToolInteractProtection", true);
 			
 			enableRightClickBlockEvent = builder					
 					.comment(" Enables right click protection. If enabled, blocks in the property will not perform any action if right-clicked. Ex. chests will not open for others.")
-					.define("Right-click block proctection:", true);
+					.define("enableRightClickProtection", true);
 
 			enableLivingDestroyBlockEvent = builder
 					.comment(" Enables block break protection from living entities. If enabled, blocks in the property  are protected from being broken for living entities (mobs).")
-					.define("Living destory block proctection:", true);
+					.define("enableLivingDestroyBlockProtection", true);
 			
 			enablePistionEvent = builder
 					.comment(" Enables piston movement protection. If enabled, pistons outside the property will not fire if their movement would move protected blocks.")
-					.define("Piston movement proctection:", true);
+					.define("enablePistonMovementProtection", true);
 			
 			enableExplosionDetonateEvent = builder
 					.comment(" Enables explosion protection. If enabled, explosions will not destory protected blocks.")
-					.define("Explosion proctection:", true);
+					.define("enableExplosionProtection", true);
 			
 			builder.pop();
 		}

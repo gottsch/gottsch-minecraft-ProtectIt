@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "intersects=good": {
+      "model": "protectit:block/good_nation_border"
+    },
+    "intersects=bad": {
+      "model": "protectit:block/bad_border"
+    }
+  }
+}

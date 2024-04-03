@@ -23,20 +23,21 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.ProtectIt;
-import mod.gottsch.forge.protectit.core.block.FoundationStoneBlock;
-import mod.gottsch.forge.protectit.core.block.IBorderBlock;
-import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
+import mod.gottsch.forge.protectit.core.block.*;
+import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.item.Deed;
+import mod.gottsch.forge.protectit.core.parcel.NationParcel;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
-import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
-import mod.gottsch.forge.protectit.core.parcel.ParcelUtil;
+import mod.gottsch.forge.protectit.core.parcel.ParcelType;
 import mod.gottsch.forge.protectit.core.registry.ParcelRegistry;
+import mod.gottsch.forge.protectit.core.util.ModUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -44,25 +45,40 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.codehaus.plexus.util.StringUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class FoundationStoneBlockEntity extends BlockEntity {
     private static final String PARCEL_ID = "parcel_id";
     private static final String OWNER_ID = "owner_id";
     private static final String DEED_ID = "deed_id";
+    private static final String NATION_ID = "nation_id";
+    private static final String PARCEL_TYPE = "parcel_type";
+    private static final String COORDS = "coords";
     private static final String SIZE = "size";
     private static final String OVERLAPS = "overlaps";
     private static final String EXPIRE_TIME = "expire_time";
+    private static final String HAS_PARCEL = "has_parcel";
 
     private static final int TICKS_PER_SECOND = 20;
     private static final int FIVE_SECONDS = 5 * TICKS_PER_SECOND;
     private static final int ONE_MINUTE = 60 * TICKS_PER_SECOND;
     private static final int FIVE_MINUTES = 5 * ONE_MINUTE;
+
+    private static final Map<OUTLINE, Pair<Block, Block>> OUTLINES = new HashMap<>();
+    private enum OUTLINE { GOOD, BAD, GOOD_NATION;}
+
+    // TODO replace/add state to Border Block -> PERSONAL, NATION, CITIZEN
+    static {
+        OUTLINES.put(OUTLINE.GOOD, Pair.of(ProtectItBlocks.PERSONAL_BORDER.get(), ProtectItBlocks.BUFFER.get()));
+//        OUTLINES.put(OUTLINE.BAD, Pair.of(ProtectItBlocks.BAD_BORDER.get(), ProtectItBlocks.BAD_BARRIER.get()));
+        OUTLINES.put(OUTLINE.GOOD_NATION, Pair.of(ProtectItBlocks.NATION_BORDER.get(), ProtectItBlocks.BUFFER.get()));
+
+    }
 
     /*
      * relative sizing coords around (0, 0, 0)
@@ -77,10 +93,16 @@ public class FoundationStoneBlockEntity extends BlockEntity {
     private UUID ownerId;
 
     private UUID deedId;
+    private UUID nationId;
+
+    private String parcelType;
+    private ICoords coords;
 
     private List<Box> overlaps;
 
     private long expireTime;
+
+    private boolean hasParcel;
 
     public FoundationStoneBlockEntity(BlockPos pos, BlockState state) {
         super(ProtectItBlockEntities.FOUNDATION_STONE.get(), pos, state);
@@ -110,13 +132,12 @@ public class FoundationStoneBlockEntity extends BlockEntity {
         // and game time has exceeded the expire time, then remove borders and foundation stone.
         if (getExpireTime() != 0 && getLevel().getGameTime() > getExpireTime()) {
             removeParcelBorder();
-            getLevel().setBlock(getBlockPos(), Blocks.AIR.defaultBlockState(), 3);
+            getLevel().setBlock(getBlockPos(), Blocks.AIR.defaultBlockState(), getBufferSize());
         }
     }
 
     /**
-     * TODO size is wrong. it needs to be absolute. only the command and deed
-     * need the negative. when calculating box. need to take absoluted.
+     *
      * @return
      */
     public Box getBox(ICoords coords) {
@@ -124,25 +145,51 @@ public class FoundationStoneBlockEntity extends BlockEntity {
                 coords.add(getSize().getMaxCoords()));
     }
 
+    public Box getDisplayBox(ICoords coords) {
+
+        ParcelType parcelType = getParcelType() != null ? ParcelType.valueOf(getParcelType()) : ParcelType.PERSONAL;
+
+        Box box;
+        // check for nation block and make the box only +/-10 in height
+        if (parcelType == ParcelType.NATION) {
+            box = new Box(coords.add(getSize().getMinCoords().withY(-10)),
+                    coords.add(getSize().getMaxCoords().withY(9))); // 10-1
+        }
+        else {
+            box = new Box(coords.add(getSize().getMinCoords()),
+                    coords.add(getSize().getMaxCoords()));
+        }
+        return box;
+    }
+
+    public int getBufferSize() {
+        ParcelType parcelType = getParcelType() != null ? ParcelType.valueOf(getParcelType()) : ParcelType.PERSONAL;
+        return switch (parcelType) {
+            case PERSONAL -> Config.GENERAL.parcelBufferRadius.get();
+            case NATION -> Config.GENERAL.nationParcelBufferRadius.get();
+            case CITIZEN -> 0;
+        };
+
+    }
     /**
      *
      */
     public void updateParcelBorder() {
-        // find the parcel this belongs to
-        // this list should contain at most 2 parcel (nation and citizen). find the least significant (smallest).
-        List<Parcel> list = ParcelRegistry.find(new Coords(getBlockPos()), new Coords(getBlockPos()), false, true);
-        ProtectIt.LOGGER.debug("found parcels -> {}", list);
-        Optional<Parcel> parcelOptional = ParcelUtil.findLeastSignificant(list);
+        // find the parcel this belongs to. this list should contain at most 2 parcel (nation and citizen).
+        // find the least significant (smallest).
+        Optional<Parcel> parcelOptional = ParcelRegistry.findLeastSignificant(new Coords(getBlockPos()));
         if (parcelOptional.isPresent()) {
+            ProtectIt.LOGGER.debug("least significant parcel -> {}", parcelOptional.get());
             Parcel parcel = parcelOptional.get();
-            setParcelId(parcel.getId());
-            setDeedId(parcel.getDeedId());
-            setOwnerId(parcel.getOwnerId());
-            setSize(parcel.getSize());
+            parcel.populateBlockEntity(this);
             setExpireTime(0);
-
+            setHasParcel(true);
         } else {
-            if (getExpireTime() == 0) {
+            if (hasParcel()) {
+                removeParcelBorder(getCoords());
+                setHasParcel(false);
+            }
+            else if (getExpireTime() == 0) {
                 setExpireTime(getLevel().getGameTime() + FIVE_MINUTES);
             }
         }
@@ -151,114 +198,143 @@ public class FoundationStoneBlockEntity extends BlockEntity {
         placeParcelBorder();
     }
 
-    public void placeGoodParcelBorder() {
-        placeParcelBorder(ProtectItBlocks.GOOD_BORDER.get().defaultBlockState());
-    }
-
     public void placeParcelBorder() {
-        // TODO make own method
-        // determine what type of border to place, ie good, warn, bad
-        Block borderBlock = ProtectItBlocks.GOOD_BORDER.get();
-        Box box = getBox(new Coords(getBlockPos()));
-        List<Parcel> overlaps = ParcelRegistry.find(box);// get the be box)
-        if (!overlaps.isEmpty()) {
-            // interrogate each parcel and determine if it is owned by me
-            for (Parcel parcel : overlaps) {
-                if (!parcel.getOwnerId().equals(getOwnerId())) {
-                    borderBlock = ProtectItBlocks.BAD_BORDER.get();
-                    break;
-                }
+        Level level = getLevel();
+        Optional<Parcel> parcel = ParcelRegistry.findByParcelId(getParcelId());
+
+        ICoords coords;
+        int bufferRadius = 1;
+        if (parcel.isPresent()) {
+            ProtectIt.LOGGER.debug("place parcel border, parcel by id -> {}", parcel.get());
+            coords = parcel.get().getCoords();
+            if (parcel.get() instanceof NationParcel) {
+                coords = coords.withY(getBlockPos().getY());
             }
+            bufferRadius = parcel.get().getBufferSize();
+        } else {
+            coords = new Coords(this.getBlockPos());
+            bufferRadius = getBufferSize();
         }
-        // TODO add WARN condition
+        ProtectIt.LOGGER.debug("using coords for outlines -> {}", coords);
+        //        Pair<Block, Block> outlines = getOutlineBlocks();
+        // add the border
+        Box box = getDisplayBox(coords);
+        BlockState borderState = getBorderBlockState(box);
+        placeParcelBorder(box, borderState);
 
-        placeParcelBorder(borderBlock.defaultBlockState());
+        // inflate the box
+        box = ModUtil.inflate(box, bufferRadius);
+        BlockState bufferState = getBufferBlockState(box);
+        placeParcelBorder(box, bufferState);
     }
 
-    public void placeParcelBorder(BlockState state) {
+    public void placeParcelBorder(Box box, BlockState state) {
         // TODO AIR should be a tag and can replace air, water, and BorderBlocks
-        addParcelBorder(this, Blocks.AIR, state);
-    }
-
-    public void removeGoodParcelBorder() {
-        removeParcelBorder(ProtectItBlocks.GOOD_BORDER.get(), Blocks.AIR.defaultBlockState());
+        addParcelBorder(box, Blocks.AIR, state);
     }
 
     public void removeParcelBorder() {
-        // determine what type of border to place, ie good, warn, bad
-        Block borderBlock = ProtectItBlocks.GOOD_BORDER.get();
-        Box box = getBox(new Coords(getBlockPos()));
-        List<Parcel> overlaps = ParcelRegistry.find(box);// get the be box)
-        if (!overlaps.isEmpty()) {
-            // interrogate each parcel and determine if it is owned by me
-            for (Parcel parcel : overlaps) {
-                if (!parcel.getOwnerId().equals(getOwnerId())) {
-                    borderBlock = ProtectItBlocks.BAD_BORDER.get();
-                    break;
-                }
+        Level level = getLevel();
+        Optional<Parcel> parcel = ParcelRegistry.findByParcelId(getParcelId());
+        ICoords coords = new Coords(this.getBlockPos());
+        if (parcel.isPresent()) {
+            coords = new Coords(parcel.get().getCoords());
+            if (parcel.get() instanceof NationParcel) {
+                coords = coords.withY(getBlockPos().getY());
             }
         }
-        // TODO add WARN condition
-
-        removeParcelBorder(borderBlock, Blocks.AIR.defaultBlockState());
+        removeParcelBorder(coords);
     }
 
-    public void removeParcelBorder(Block block, BlockState state) {
-        addParcelBorder(this, block, state);
+    public void removeParcelBorder(ICoords coords) {
+//        Pair<Block, Block> outlines = getOutlineBlocks();
+        Box box = getDisplayBox(coords);
+        BlockState borderState = getBorderBlockState(box);
+
+        addParcelBorder(box, borderState.getBlock(), Blocks.AIR.defaultBlockState());
+        box = ModUtil.inflate(box, getBufferSize());
+//        BlockState bufferState = getBufferBlockState(box);
+        addParcelBorder(box, ProtectItBlocks.BUFFER.get(), Blocks.AIR.defaultBlockState());
     }
 
-    private void addParcelBorder(FoundationStoneBlockEntity blockEntity, Block removeBlock, BlockState blockState) {
-        Level level = blockEntity.getLevel();
-        Optional<Parcel> parcel = ParcelRegistry.findByParcelId(blockEntity.parcelId);
+    /**
+     *
+     * @param removeBlock
+     * @param blockState
+     */
+    private void addParcelBorder(Block removeBlock, BlockState blockState) {
+        Level level = getLevel();
+        // TODO this portion doesn't work in the case where this stone had a parcel
+        // but then the parcel is removed.  the findByParcelId will return null
+        // and the wrong coords will be used to remove the border.
+        Optional<Parcel> parcel = ParcelRegistry.findByParcelId(getParcelId());
         ICoords coords = new Coords(this.getBlockPos());
         if (parcel.isPresent()) {
             coords = new Coords(parcel.get().getCoords());
         }
-        Box box = blockEntity.getBox(coords);
+        // add the border
+        Box box = getDisplayBox(coords);
+        addParcelBorder(box, removeBlock, blockState);
+    }
 
+    /**
+     *
+     * @param box
+     * @param removeBlock
+     * @param blockState
+     */
+    private void addParcelBorder(Box box, Block removeBlock, BlockState blockState) {
+//        Box box = getBox(coords);
+
+        /* NOTE the for loops.
+         * for x is "<=" because the Box was reduced by 1 during creation to ensure
+         * it is the right size when including the origin.
+         * thus y & z are "<" because we are iterating 2 less (1 on each side) because
+         * the border is already generated by the x for loop.
+         */
         // only iterate over the outline coords
-        for (int x = 0; x < blockEntity.getSize().getSize().getX(); x++) {
+        for (int x = 0; x < ModUtil.getSize(box).getX(); x++) {
             BlockPos pos = box.getMinCoords().toPos().offset(x, 0, 0);
             BlockState borderState = level.getBlockState(pos);
             replaceParcelBorderBlock(level, pos, removeBlock, blockState);
 
-            BlockPos pos2 = pos.offset(0, blockEntity.getSize().getSize().getY()-1, 0);
+            BlockPos pos2 = pos.offset(0, ModUtil.getSize(box).getY()-1, 0);
             replaceParcelBorderBlock(level, pos2, removeBlock, blockState);
 
-            BlockPos pos3 = pos.offset(0, 0, blockEntity.getSize().getSize().getZ()-1);
+            BlockPos pos3 = pos.offset(0, 0, ModUtil.getSize(box).getZ()-1);
             replaceParcelBorderBlock(level, pos3, removeBlock, blockState);
 
-            BlockPos pos4 = pos.offset(0, blockEntity.getSize().getSize().getY()-1, blockEntity.getSize().getSize().getZ()-1);
+            BlockPos pos4 = pos.offset(0, ModUtil.getSize(box).getY()-1, ModUtil.getSize(box).getZ()-1);
             replaceParcelBorderBlock(level, pos4, removeBlock, blockState);
         }
 
-        for (int z = 1; z < blockEntity.getSize().getSize().getZ()-1; z++) {
+        for (int z = 1; z < ModUtil.getSize(box).getZ(); z++) {
             BlockPos pos = box.getMinCoords().toPos().offset(0, 0, z);
             BlockState borderState = level.getBlockState(pos);
             replaceParcelBorderBlock(level, pos, removeBlock, blockState);
 
-            BlockPos pos2 = pos.offset(0, blockEntity.getSize().getSize().getY()-1, 0);
+            BlockPos pos2 = pos.offset(0, ModUtil.getSize(box).getY()-1, 0);
             replaceParcelBorderBlock(level, pos2, removeBlock, blockState);
 
-            BlockPos pos3 = pos.offset(blockEntity.getSize().getSize().getX()-1, 0, 0);
+            BlockPos pos3 = pos.offset(ModUtil.getSize(box).getX()-1, 0, 0);
             replaceParcelBorderBlock(level, pos3, removeBlock, blockState);
 
-            BlockPos pos4 = pos.offset(blockEntity.getSize().getSize().getX()-1, blockEntity.getSize().getSize().getY()-1, 0);
+            BlockPos pos4 = pos.offset(ModUtil.getSize(box).getX()-1, ModUtil.getSize(box).getY()-1, 0);
             replaceParcelBorderBlock(level, pos4, removeBlock, blockState);
         }
 
-        for (int y = 1; y < blockEntity.getSize().getSize().getY()-1; y++) {
+        for (int y = 1; y < ModUtil.getSize(box).getY(); y++) {
             BlockPos pos = box.getMinCoords().toPos().offset(0, y, 0);
             BlockState borderState = level.getBlockState(pos);
             replaceParcelBorderBlock(level, pos, removeBlock, blockState);
 
-            BlockPos pos2 = pos.offset(blockEntity.getSize().getSize().getX()-1, 0, 0);
+            BlockPos pos2 = pos.offset(ModUtil.getSize(box).getX()-1, 0, 0);
             replaceParcelBorderBlock(level, pos2, removeBlock, blockState);
 
-            BlockPos pos3 = pos.offset(0, 0, blockEntity.getSize().getSize().getZ()-1);
+            BlockPos pos3 = pos.offset(0, 0, ModUtil.getSize(box).getZ()-1);
             replaceParcelBorderBlock(level, pos3, removeBlock, blockState);
 
-            BlockPos pos4 = pos.offset(blockEntity.getSize().getSize().getX()-1, 0, blockEntity.getSize().getSize().getZ()-1);
+            BlockPos pos4 = pos.offset(ModUtil.getSize(box).getX()-1, 0, ModUtil.getSize(box).getZ()-1);
             replaceParcelBorderBlock(level, pos4, removeBlock, blockState);
         }
     }
@@ -269,6 +345,127 @@ public class FoundationStoneBlockEntity extends BlockEntity {
             level.setBlockAndUpdate(pos, blockState);
         }
     }
+
+    /**
+     *
+     * @return
+     */
+    protected BlockState getBorderBlockState(Box box) {
+        // determine parcel type
+        ParcelType parcelType = getParcelType() != null ? ParcelType.valueOf(getParcelType()) : ParcelType.PERSONAL;
+        BlockState blockState = switch(parcelType) {
+            case PERSONAL -> ProtectItBlocks.PERSONAL_BORDER.get().defaultBlockState();
+            case CITIZEN -> ProtectItBlocks.CITIZEN_BORDER.get().defaultBlockState();
+            case NATION -> ProtectItBlocks.NATION_BORDER.get().defaultBlockState();
+        };
+
+        /*
+         * determine if there are overlaps with the buffered parcels
+         */
+        // compare against the buffer registry
+        List<Parcel> overlaps = ParcelRegistry.findBuffer(box).stream().filter(p -> !p.getId().equals(getParcelId())).toList();
+        // TODO turn this check into a method
+        if (!overlaps.isEmpty()) {
+            // interrogate each parcel and determine if it is the same parcel ie placing a foundation stone within a parcel
+            for (Parcel parcel : overlaps) {
+                if (parcel.getOwnerId().equals(getOwnerId())) {
+                    // the parcels are owned by the same person. they can be closer or touching,
+                    // ie. ignore buffers, only the parcels themselves can't overlap
+                    List<Parcel> ownedOverlaps = ParcelRegistry.find(box).stream().filter(p -> !p.getId().equals(getParcelId())).toList();
+                    if (!ownedOverlaps.isEmpty()) {
+                        blockState = blockState.setValue(BorderBlock.INTERSECTS, BorderStatus.BAD);
+                    }
+                } else {
+                    blockState = blockState.setValue(BorderBlock.INTERSECTS, BorderStatus.BAD);
+                }
+                break;
+//                }
+            }
+        }
+        return blockState;
+    }
+
+    protected BlockState getBufferBlockState(Box box) {
+        // there is only 1 kind of buffer block currently
+        BlockState blockState = ProtectItBlocks.BUFFER.get().defaultBlockState();
+
+        /*
+         * determine if the buffer overlaps with the parcels
+         */
+
+        // compare against the registry
+        List<Parcel> overlaps = ParcelRegistry.find(box).stream().filter(p -> !p.getId().equals(getParcelId())).toList();
+        // TODO turn this check into a method
+        if (!overlaps.isEmpty()) {
+            // interrogate each parcel and determine if it is the same parcel ie placing a foundation stone within a parcel
+            for (Parcel parcel : overlaps) {
+                // the parcels are owned by the same person. they can be closer or touching,
+                // ie. ignore buffers, only the parcels themselves can't overlap
+                if (!parcel.getOwnerId().equals(getOwnerId())) {
+                    blockState = blockState.setValue(BufferBlock.INTERSECTS, BorderStatus.BAD);
+                }
+                break;
+            }
+        }
+        return blockState;
+    }
+
+//    @Deprecated
+//    protected Block getBorderBlock() {
+//        Block borderBlock = ProtectItBlocks.PERSONAL_BORDER.get();
+//        Box box = getBox(new Coords(getBlockPos()));
+//        List<Parcel> overlaps = ParcelRegistry.find(box);// get the be box)
+//        if (!overlaps.isEmpty()) {
+//            // interrogate each parcel and determine if it is the same parcel
+//            for (Parcel parcel : overlaps) {
+//                if (!parcel.getId().equals(getParcelId())) {
+//                    borderBlock = ProtectItBlocks.PERSONAL_BORDER.get();
+//                    break;
+//                }
+//            }
+////            borderBlock = ProtectItBlocks.BAD_BORDER.get();
+//        }
+//        return borderBlock;
+//    }
+//
+//    /**
+//     * TODO may redo this with new blocks ie placedBorder, placedBarrier, ownedBorder, ownedBarrier.
+//     * @return
+//     */
+//    @Deprecated
+//    protected Pair<Block, Block> getOutlineBlocks() {
+//        MutablePair<Block, Block> outlines = MutablePair.of(OUTLINES.get(OUTLINE.GOOD).getLeft(), OUTLINES.get(OUTLINE.GOOD).getRight());
+//
+//        Box box = getBox(new Coords(getCoords()));
+//        ProtectIt.LOGGER.debug("box from coords -> {}", box);
+//        Box inflatedBox = ModUtil.inflate(box, getBufferSize());
+//
+//        List<Parcel> overlaps = ParcelRegistry.find(box);
+//        if (!overlaps.isEmpty()) {
+//            // interrogate each parcel and determine if it is the same parcel
+//            for (Parcel parcel : overlaps) {
+//                if (!parcel.getId().equals(getParcelId())) {
+//                    outlines.setLeft(OUTLINES.get(OUTLINE.BAD).getLeft());
+//                    break;
+//                }
+//            }
+//        }
+//
+//        overlaps = ParcelRegistry.find(inflatedBox);
+//        if (!overlaps.isEmpty()) {
+//            // interrogate each parcel and determine if it is the same parcel
+//            for (Parcel parcel : overlaps) {
+//                if (!parcel.getId().equals(getParcelId())) {
+////                    borderBlock = ProtectItBlocks.BAD_BORDER.get();
+//                    outlines.setRight(OUTLINES.get(OUTLINE.BAD).getRight());
+//                    break;
+//                }
+//            }
+//
+//        }
+//        return outlines;
+////        return !overlaps.isEmpty() ? OUTLINES.get(OUTLINE.BAD) : OUTLINES.get(OUTLINE.GOOD);
+//    }
 
     @Override
     public void saveAdditional(CompoundTag tag) {
@@ -292,6 +489,20 @@ public class FoundationStoneBlockEntity extends BlockEntity {
             tag.putUUID(DEED_ID, getDeedId());
         }
 
+        if (ObjectUtils.isNotEmpty(getNationId())) {
+            tag.putUUID(NATION_ID, getNationId());
+        }
+
+        if (StringUtils.isNotBlank(getParcelType())) {
+            tag.putString(PARCEL_TYPE, getParcelType());
+        }
+
+        if (ObjectUtils.isNotEmpty(getCoords())) {
+            CompoundTag coordsTag = new CompoundTag();
+            getCoords().save(coordsTag);
+            tag.put(COORDS, coordsTag);
+        }
+
         ListTag list = new ListTag();
         getOverlaps().forEach(box -> {
             CompoundTag element = new CompoundTag();
@@ -301,6 +512,8 @@ public class FoundationStoneBlockEntity extends BlockEntity {
         tag.put(OVERLAPS, list);
 
         tag.putLong(EXPIRE_TIME, getExpireTime());
+
+        tag.putBoolean(HAS_PARCEL, hasParcel());
     }
 
     @Override
@@ -323,6 +536,15 @@ public class FoundationStoneBlockEntity extends BlockEntity {
         if (tag.contains(DEED_ID)) {
             setDeedId(tag.getUUID(DEED_ID));
         }
+        if (tag.contains(NATION_ID)) {
+            setNationId(tag.getUUID(NATION_ID));
+        }
+        if (tag.contains(PARCEL_TYPE)) {
+            setParcelType(tag.getString(PARCEL_TYPE));
+        }
+        if (tag.contains(COORDS)) {
+            setCoords(Coords.EMPTY.load((CompoundTag) tag.get(COORDS)));
+        }
         getOverlaps().clear();
         if (tag.contains(OVERLAPS)) {
             ListTag list = tag.getList(OVERLAPS, Tag.TAG_COMPOUND);
@@ -336,6 +558,10 @@ public class FoundationStoneBlockEntity extends BlockEntity {
 
         if (tag.contains(EXPIRE_TIME)) {
             setExpireTime(tag.getLong(EXPIRE_TIME));
+        }
+
+        if (tag.contains(HAS_PARCEL)) {
+            setHasParcel(tag.getBoolean(HAS_PARCEL));
         }
     }
 
@@ -393,6 +619,22 @@ public class FoundationStoneBlockEntity extends BlockEntity {
         this.deedId = deedId;
     }
 
+    public UUID getNationId() {
+        return nationId;
+    }
+
+    public void setNationId(UUID nationId) {
+        this.nationId = nationId;
+    }
+
+    public String getParcelType() {
+        return parcelType;
+    }
+
+    public void setParcelType(String parcelType) {
+        this.parcelType = parcelType;
+    }
+
     public Box getSize() {
         return size;
     }
@@ -407,6 +649,14 @@ public class FoundationStoneBlockEntity extends BlockEntity {
 
     public void setOwnerId(UUID ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public ICoords getCoords() {
+        return coords;
+    }
+
+    public void setCoords(ICoords coords) {
+        this.coords = coords;
     }
 
     //    @Override
@@ -428,5 +678,13 @@ public class FoundationStoneBlockEntity extends BlockEntity {
 
     public void setExpireTime(long expireTime) {
         this.expireTime = expireTime;
+    }
+
+    public boolean hasParcel() {
+        return hasParcel;
+    }
+
+    public void setHasParcel(boolean hasParcel) {
+        this.hasParcel = hasParcel;
     }
 }

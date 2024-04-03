@@ -2,8 +2,6 @@ package mod.gottsch.forge.protectit.core.item;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
-import mod.gottsch.forge.protectit.core.ProtectIt;
-import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
 import mod.gottsch.forge.protectit.core.parcel.ParcelType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
@@ -37,7 +35,7 @@ public class DeedFactory {
         tag.putUUID(Deed.PARCEL_ID, UUID.randomUUID());
         tag.putUUID(Deed.DEED_ID, UUID.randomUUID());
         // add the type
-        tag.putString(Deed.DEED_TYPE, ParcelType.PERSONAL.name());
+        tag.putString(Deed.PARCEL_TYPE, ParcelType.PERSONAL.name());
         // add the size
         CompoundTag sizeTag = new CompoundTag();
         size.save(sizeTag);
@@ -55,10 +53,30 @@ public class DeedFactory {
         return deed;
     }
 
+    public static ItemStack createNationDeed(Box size) {
+        ItemStack deed = createItemStack(ParcelType.NATION);
+        CompoundTag tag = deed.getOrCreateTag();
+        // add the ids
+        tag.putUUID(NationDeed.NATION_ID, UUID.randomUUID());
+        tag.putUUID(Deed.PARCEL_ID, UUID.randomUUID());
+        tag.putUUID(Deed.DEED_ID, UUID.randomUUID());
+        // add the type
+        tag.putString(Deed.PARCEL_TYPE, ParcelType.NATION.name());
+        // add the size
+        CompoundTag sizeTag = new CompoundTag();
+        // modify size to max y limits
+        size.setMinCoords(size.getMinCoords().withY(-64));
+        size.setMaxCoords(size.getMaxCoords().withY(320));
+        size.save(sizeTag);
+        tag.put(Deed.SIZE, sizeTag);
+
+        return deed;
+    }
+
     private static ItemStack createItemStack(ParcelType type) {
         return switch(type) {
             case PERSONAL -> new ItemStack(ProtectItItems.PERSONAL_DEED.get());
-            case NATION -> null;
+            case NATION -> new ItemStack(ProtectItItems.NATION_DEED.get());
             case CITIZEN -> null;
         };
     }

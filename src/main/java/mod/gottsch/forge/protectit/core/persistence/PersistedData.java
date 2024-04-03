@@ -58,7 +58,6 @@ public class PersistedData extends SavedData {
 	@Override
 	public CompoundTag save(CompoundTag tag) {
 		ProtectIt.LOGGER.debug("world data saving...");
-//		tag.put(PARCEL_REGISTRY, ProtectionRegistries.block().save(new CompoundTag()));
 		tag.put(PARCEL_REGISTRY, ParcelRegistry.save(new CompoundTag()));
 		return tag;
 	}

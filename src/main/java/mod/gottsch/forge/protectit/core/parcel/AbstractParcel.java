@@ -23,11 +23,17 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.ProtectIt;
+import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
+import mod.gottsch.forge.protectit.core.util.ModUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -43,7 +49,7 @@ public abstract class AbstractParcel implements Parcel {
 
     public static final String COORDS_KEY = "coords";
     public static final String SIZE_KEY = "size";
-//    public static final String WHITELIST_KEY = "whitelist";
+    public static final String WHITELIST_KEY = "whitelist";
 
     public static final String TYPE = "type";
 
@@ -53,6 +59,56 @@ public abstract class AbstractParcel implements Parcel {
     private String name;
     private ICoords coords;
     private Box size;
+    private List<UUID> whitelist;
+    private ParcelType type;
+
+    @Override
+    public abstract boolean validateData(Parcel parcel);
+
+    @Override
+    public abstract boolean validateData(FoundationStoneBlockEntity blockEntity);
+
+    @Override
+    public boolean isOwner(UUID entityId) {
+        return getOwnerId() == null || getOwnerId().equals(entityId);
+    }
+
+    @Override
+    public boolean hasAccess(UUID entityId) {
+        if (getOwnerId().equals(entityId)) {
+            return true;
+
+        } else {
+            return getWhitelist().stream().anyMatch(uuid -> uuid.equals(entityId));
+
+            // cycle through whitelist
+//            if (!getWhitelist().isEmpty()) {
+//                ProtectIt.LOGGER.debug("hasAccess whitelist is not null");
+//
+//                for (UUID id : getWhitelist()) {
+//                    ProtectIt.LOGGER.debug("hasAccess compare whitelist id -> {} to uuid -> {}", id, entityId);
+//                    if (id.equals(entityId)) {
+//                        return true;
+//                    }
+//                }
+//            }
+        }
+//        return false;
+    }
+
+
+    public boolean hasAccess(UUID entityId, ItemStack stack) {
+        return false;
+    }
+
+    @Override
+    public void populateBlockEntity(FoundationStoneBlockEntity entity) {
+        entity.setParcelId(getId());
+        entity.setDeedId(getDeedId());
+        entity.setOwnerId(getOwnerId());
+        entity.setCoords(getCoords());
+        entity.setSize(getSize());
+    }
 
     @Override
     public void save(CompoundTag tag) {
@@ -81,14 +137,15 @@ public abstract class AbstractParcel implements Parcel {
         getSize().save(sizeTag);
         tag.put(SIZE_KEY, sizeTag);
 
-
-//        ListTag list = new ListTag();
-//        getWhitelist().forEach(data -> {
-//            CompoundTag playerNbt = new CompoundTag();
-//            data.save(playerNbt);
-//            list.add(playerNbt);
-//        });
-//        tag.put(WHITELIST_KEY, list);
+        if (getWhitelist() != null) {
+            ListTag list = new ListTag();
+            getWhitelist().forEach(data -> {
+                CompoundTag uuidTag = new CompoundTag();
+                uuidTag.putUUID(ID_KEY, data);
+                list.add(uuidTag);
+            });
+            tag.put(WHITELIST_KEY, list);
+        }
     }
 
     @Override
@@ -114,21 +171,27 @@ public abstract class AbstractParcel implements Parcel {
         if (tag.contains(SIZE_KEY)) {
             setSize(Box.load(tag.getCompound(SIZE_KEY)));
         }
-//        if (nbt.contains(WHITELIST_KEY)) {
-//            ListTag list = nbt.getList(WHITELIST_KEY, 10);
-//            list.forEach(element -> {
-//                PlayerData playerData = new PlayerData("");
-//                playerData.load((CompoundTag)element);
-//                getWhitelist().add(playerData);
-//            });
-//        }
+        if (tag.contains(WHITELIST_KEY)) {
+            ListTag list = tag.getList(WHITELIST_KEY, Tag.TAG_COMPOUND);
+            list.forEach(element -> {
+                CompoundTag uuidTag = ((CompoundTag)element);
+                if (uuidTag.contains(ID_KEY)) {
+                    getWhitelist().add(uuidTag.getUUID(ID_KEY));
+                }
+            });
+        }
 
         return this;
     }
 
     @Override
+    public Box getBox() {
+        return new Box(getMinCoords(), getMaxCoords());
+    }
+
+    @Override
     public int getArea() {
-        ICoords absoluteSize = getSize().getSize();
+        ICoords absoluteSize = ModUtil.getSize(getSize());
         return absoluteSize.getX() * absoluteSize.getZ() * absoluteSize.getY();
     }
 
@@ -205,6 +268,29 @@ public abstract class AbstractParcel implements Parcel {
     }
 
     @Override
+    public List<UUID> getWhitelist() {
+        if (whitelist == null) {
+            whitelist = new ArrayList<>();
+        }
+        return whitelist;
+    }
+
+    @Override
+    public void setWhitelist(List<UUID> whitelist) {
+        this.whitelist = whitelist;
+    }
+
+    @Override
+    public ParcelType getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(ParcelType type) {
+        this.type = type;
+    }
+
+    @Override
     public String toString() {
         return "AbstractParcel{" +
                 "id=" + id +
@@ -213,6 +299,7 @@ public abstract class AbstractParcel implements Parcel {
                 ", name='" + name + '\'' +
                 ", coords=" + coords +
                 ", size=" + size +
+                ", whitelist=" + whitelist +
                 '}';
     }
 }

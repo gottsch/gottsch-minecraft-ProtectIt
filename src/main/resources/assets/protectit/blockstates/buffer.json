@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "intersects=good": {
+      "model": "protectit:block/good_buffer"
+    },
+    "intersects=bad": {
+      "model": "protectit:block/bad_buffer"
+    }
+  }
+}

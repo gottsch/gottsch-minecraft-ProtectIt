@@ -21,10 +21,12 @@ package mod.gottsch.forge.protectit.core.parcel;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
+import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
 import net.minecraft.nbt.CompoundTag;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -38,8 +40,18 @@ public interface Parcel {
         return StringUtils.capitalize(RandomStringUtils.random(8, true, false));
     }
 
+    boolean validateData(Parcel parcel);
+    boolean validateData(FoundationStoneBlockEntity blockEntity);
+    boolean isOwner(UUID id);
+
+    boolean hasAccess(UUID entityId);
+
     void save(CompoundTag parcelTag);
     Parcel load(CompoundTag tag);
+
+    void populateBlockEntity(FoundationStoneBlockEntity entity);
+
+    Box getBox();
 
     ICoords getMinCoords();
     ICoords getMaxCoords();
@@ -69,4 +81,14 @@ public interface Parcel {
     void setSize(Box size);
 
     int getArea();
+
+    List<UUID> getWhitelist();
+
+    void setWhitelist(List<UUID> whitelist);
+
+    int getBufferSize();
+
+    ParcelType getType();
+
+    void setType(ParcelType type);
 }

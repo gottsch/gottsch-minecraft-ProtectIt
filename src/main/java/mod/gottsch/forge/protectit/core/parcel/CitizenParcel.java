@@ -19,6 +19,8 @@
  */
 package mod.gottsch.forge.protectit.core.parcel;
 
+import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
+import mod.gottsch.forge.protectit.core.config.Config;
 import net.minecraft.nbt.CompoundTag;
 
 /**
@@ -27,6 +29,25 @@ import net.minecraft.nbt.CompoundTag;
  *
  */
 public class CitizenParcel extends AbstractParcel {
+
+    public CitizenParcel() {
+        setType(ParcelType.CITIZEN);
+    }
+
+    @Override
+    public int getBufferSize() {
+        return Config.GENERAL.parcelBufferRadius.get();
+    }
+
+    @Override
+    public boolean validateData(Parcel parcel) {
+        return false;
+    }
+
+    @Override
+    public boolean validateData(FoundationStoneBlockEntity blockEntity) {
+        return false;
+    }
 
     @Override
     public void save(CompoundTag tag) {

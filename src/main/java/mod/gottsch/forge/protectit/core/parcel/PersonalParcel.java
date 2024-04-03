@@ -19,10 +19,10 @@
  */
 package mod.gottsch.forge.protectit.core.parcel;
 
+import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
+import mod.gottsch.forge.protectit.core.config.Config;
 import net.minecraft.nbt.CompoundTag;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import java.util.UUID;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  *
@@ -31,7 +31,32 @@ import java.util.UUID;
  */
 public class PersonalParcel extends AbstractParcel {
 
-    public PersonalParcel() {}
+    public PersonalParcel() {
+        setType(ParcelType.PERSONAL);
+    }
+
+
+    @Override
+    public boolean validateData(Parcel parcel) {
+        if (parcel.getId().equals(getId())
+                && parcel.getDeedId().equals(getDeedId())
+//            && parcel.getOwnerId().equals(blockEntity.getOwnerId())
+        ) {
+            return parcel.getOwnerId() == null || parcel.getOwnerId().equals(getOwnerId());
+        }
+        return false;
+    }
+
+    @Override
+    public boolean validateData(FoundationStoneBlockEntity blockEntity) {
+
+        if (getId().equals(blockEntity.getParcelId())
+                && getDeedId().equals(blockEntity.getDeedId())
+        ) {
+            return blockEntity.getOwnerId() == null || blockEntity.getOwnerId().equals(getOwnerId());
+        }
+        return false;
+    }
 
     @Override
     public void save(CompoundTag tag) {
@@ -43,6 +68,11 @@ public class PersonalParcel extends AbstractParcel {
     public Parcel load(CompoundTag tag) {
         super.load(tag);
         return this;
+    }
+
+    @Override
+    public int getBufferSize() {
+        return Config.GENERAL.parcelBufferRadius.get();
     }
 
     @Override

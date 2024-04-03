@@ -19,19 +19,23 @@
  */
 package mod.gottsch.forge.protectit.core.registry;
 
+import com.google.gson.Gson;
+import com.mojang.authlib.minecraft.client.ObjectMapper;
 import mod.gottsch.forge.gottschcore.bst.CoordsInterval;
 import mod.gottsch.forge.gottschcore.bst.CoordsIntervalTree;
 import mod.gottsch.forge.gottschcore.bst.IInterval;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.ProtectIt;
+import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
 import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
+import mod.gottsch.forge.protectit.core.util.ModUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -45,13 +49,41 @@ public class ParcelRegistry {
     private static final String PARCELS_KEY = "parcels";
 
     private static final CoordsIntervalTree<UUID> TREE = new CoordsIntervalTree<UUID>();
-
+    private static final CoordsIntervalTree<UUID> BUFFER_TREE = new CoordsIntervalTree<UUID>();
     private static final Map<UUID, List<Parcel>> PARCELS_BY_OWNER = new HashMap<>();
     private static final Map<ICoords, Parcel> PARCELS_BY_COORDS = new HashMap<>();
-
+    private static final Map<ICoords, Parcel> BUFFER_PARCELS_BY_COORDS = new HashMap<>();
 
     // singleton
     private ParcelRegistry() {}
+
+    /**
+     * this is a helper method until added to GottschCore CoordsIntervalTree.
+     * this is not really needed by Protect It. if wanting to make a backup/dump, just use BY_COORDS map.
+     * @param interval
+     * @param intervals
+     */
+    public synchronized void list(IInterval<UUID> interval, List<IInterval<UUID>> intervals) {
+        if (interval == null) {
+            return;
+        }
+
+        if (interval.getLeft() != null) {
+            list(interval.getLeft(), intervals);
+        }
+
+        intervals.add(interval);
+
+        if (interval.getRight() != null) {
+            list(interval.getRight(), intervals);
+        }
+    }
+
+    public synchronized List<IInterval<UUID>> list(IInterval<UUID> interval) {
+        List<IInterval<UUID>> intervals = new ArrayList<>();
+        list(TREE.getRoot(), intervals);
+        return intervals;
+    }
 
     /**
      *
@@ -59,7 +91,9 @@ public class ParcelRegistry {
     public static synchronized void clear() {
         PARCELS_BY_OWNER.clear();
         PARCELS_BY_COORDS.clear();
+        BUFFER_PARCELS_BY_COORDS.clear();
         TREE.clear();
+        BUFFER_TREE.clear();
     }
 
     /**
@@ -116,10 +150,27 @@ public class ParcelRegistry {
                     }
 
                     // add to tree
-                    TREE.insert(new CoordsInterval(action.getMinCoords(), action.getMaxCoords(), action.getOwnerId()));
+                    Box box = new Box(action.getMinCoords(), action.getMaxCoords());
+                    TREE.insert(new CoordsInterval<>(box.getMinCoords(), box.getMaxCoords(), action.getOwnerId()));
+
+                    // add to the buffer tree
+                    Box inflatedBox = inflateParcelBox(parcel.get());
+                    BUFFER_TREE.insert(new CoordsInterval<>(inflatedBox.getMinCoords(), inflatedBox.getMaxCoords(), action.getOwnerId()));
+                    // add buffered parcel to byCoords map
+                    BUFFER_PARCELS_BY_COORDS.put(inflatedBox.getMinCoords(), action);
                 });
             });
         }
+    }
+
+    public static String toJson() {
+        Gson gson = new Gson();
+        ObjectMapper mapper = new ObjectMapper(gson);
+        return mapper.writeValueAsString(PARCELS_BY_COORDS);
+    }
+
+    public List<Parcel> fromJson() {
+        return null;
     }
 
     /**
@@ -144,9 +195,49 @@ public class ParcelRegistry {
         PARCELS_BY_COORDS.put(parcel.getMinCoords(), parcel);
 
         // add to BST
-        IInterval<UUID> interval = TREE.insert(new CoordsInterval<UUID>(parcel.getMinCoords(), parcel.getMaxCoords(), parcel.getId()));
+        Box box = new Box(parcel.getMinCoords(), parcel.getMaxCoords());
+        IInterval<UUID> interval = TREE.insert(new CoordsInterval<UUID>(parcel.getMinCoords(), parcel.getMaxCoords(), parcel.getOwnerId()));
+
+        // add to the buffer tree
+        Box inflatedBox = inflateParcelBox(parcel);
+        BUFFER_TREE.insert(new CoordsInterval<>(inflatedBox.getMinCoords(), inflatedBox.getMaxCoords(), parcel.getOwnerId()));
+        BUFFER_PARCELS_BY_COORDS.put(inflatedBox.getMinCoords(), parcel);
 
         return interval != null ? Optional.of(parcel) : Optional.empty();
+    }
+
+    public static void removeParcel(Parcel parcel) {
+        // delete from PARCELS registries
+        List<Parcel> parcels = PARCELS_BY_OWNER.get(parcel.getOwnerId());
+        if (!parcels.isEmpty()) {
+            parcels.removeIf(p -> p.getId().equals(parcel.getId()));
+        }
+        PARCELS_BY_COORDS.remove(parcel.getMinCoords());
+
+        // remove from buffer map
+        Box inflatedBox = inflateParcelBox(parcel);
+        BUFFER_PARCELS_BY_COORDS.remove(inflatedBox.getMinCoords());
+    }
+
+    public static void removeParcel(UUID ownerId) {
+        //delete from PARCELS registries
+        List<Parcel> parcels = PARCELS_BY_OWNER.get(ownerId);
+        if (!parcels.isEmpty()) {
+            for (Parcel p : parcels) {
+                PARCELS_BY_COORDS.remove(p.getMinCoords());
+                // remove from buffer map
+                Box inflatedBox = inflateParcelBox(p);
+                BUFFER_PARCELS_BY_COORDS.remove(inflatedBox.getMinCoords());
+            }
+        }
+        PARCELS_BY_OWNER.remove(ownerId);
+    }
+
+    public static Box inflateParcelBox(Parcel parcel) {
+        return switch(parcel.getType()) {
+            case PERSONAL, CITIZEN -> ModUtil.inflate(parcel.getBox(), Config.GENERAL.parcelBufferRadius.get());
+            case NATION -> ModUtil.inflate(parcel.getBox(), Config.GENERAL.nationParcelBufferRadius.get());
+        };
     }
 
     /**
@@ -204,7 +295,33 @@ public class ParcelRegistry {
     }
 
     public static List<Parcel> find(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
-        List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<UUID>(coords1, coords2), findFast, includeBorder);
+//        List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<UUID>(coords1, coords2), findFast, includeBorder);
+        List<IInterval<UUID>> intervals = findRaw(coords1, coords2, findFast, includeBorder);
+        return getParcels(intervals);
+    }
+
+    public static List<Parcel> findBuffer(ICoords coords) {
+        return findBuffer(coords, coords);
+    }
+
+    public static List<Parcel> findBuffer(Box box) {
+        return findBuffer(box.getMinCoords(), box.getMaxCoords());
+    }
+
+    public static List<Parcel> findBuffer(ICoords coords1, ICoords coords2) {
+        return findBuffer(coords1, coords2, false);
+    }
+
+    public static List<Parcel> findBuffer(ICoords coords1, ICoords coords2, boolean findFast) {
+        return findBuffer(coords1, coords2, findFast, true);
+    }
+
+    public static List<Parcel> findBuffer(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
+        List<IInterval<UUID>> intervals = findBufferRaw(coords1, coords2, findFast, includeBorder);
+        return getBufferParcels(intervals);
+    }
+
+    public static List<Parcel> getParcels(List<IInterval<UUID>> intervals) {
         List<Parcel> parcels = new ArrayList<>();
         intervals.forEach(i -> {
             // find the parcel from the map
@@ -215,7 +332,18 @@ public class ParcelRegistry {
         });
         return parcels;
     }
-    ///////////////////////////////
+
+    public static List<Parcel> getBufferParcels(List<IInterval<UUID>> intervals) {
+        List<Parcel> parcels = new ArrayList<>();
+        intervals.forEach(i -> {
+            // find the parcel from the map
+            Parcel p = BUFFER_PARCELS_BY_COORDS.get(((CoordsInterval<UUID>)i).getCoords1());
+            if (p != null) {
+                parcels.add(p);
+            }
+        });
+        return parcels;
+    }
 
     public static List<Box> findBoxes(ICoords coords) {
         return findBoxes(coords, coords);
@@ -234,12 +362,31 @@ public class ParcelRegistry {
     }
 
     public static List<Box> findBoxes(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
-        List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<UUID>(coords1, coords2), findFast, includeBorder);
+//        List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<UUID>(coords1, coords2), findFast, includeBorder);
+        List<IInterval<UUID>> intervals = findRaw(coords1, coords2, findFast, includeBorder);
         List<Box> boxes = new ArrayList<>();
+//        intervals.forEach(i -> {
+//            boxes.add(new Box(((CoordsInterval<UUID>)i).getCoords1(), ((CoordsInterval<UUID>)i).getCoords2()));
+//        });
+
+        // need to check against the PARCELS_BY_COORDS map to ensure it hasn't been deleted.
         intervals.forEach(i -> {
-            boxes.add(new Box(((CoordsInterval<UUID>)i).getCoords1(), ((CoordsInterval<UUID>)i).getCoords2()));
+            // find the parcel from the map
+            Parcel p = PARCELS_BY_COORDS.get(((CoordsInterval<UUID>)i).getCoords1());
+            if (p != null) {
+                boxes.add(new Box(((CoordsInterval<UUID>)i).getCoords1(), ((CoordsInterval<UUID>)i).getCoords2()));
+            }
         });
+
         return boxes;
+    }
+
+    private static List<IInterval<UUID>> findRaw(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
+        return TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<UUID>(coords1, coords2), findFast, includeBorder);
+    }
+
+    private static List<IInterval<UUID>> findBufferRaw(ICoords coords1, ICoords coords2, boolean findFast, boolean includeBorder) {
+        return BUFFER_TREE.getOverlapping(BUFFER_TREE.getRoot(), new CoordsInterval<UUID>(coords1, coords2), findFast, includeBorder);
     }
 
     public static boolean intersectsParcel(ICoords coords) {
@@ -262,10 +409,78 @@ public class ParcelRegistry {
         return !parcels.isEmpty();
     }
 
+    public static boolean hasAccess(ICoords coords, UUID entityId) {
+        return hasAccess(coords, coords, entityId);
+    }
+
+    public static boolean hasAccess(ICoords coords, UUID entityId, ItemStack itemStack) {
+        // TODO finish ie add itemStack
+        return hasAccess(coords, coords, entityId);
+    }
+
+    public static boolean hasAccess(ICoords coords1, ICoords coords2, UUID entityId) {
+//        List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<>(coords1, coords2));
+        // this is the fastest lookup
+        List<IInterval<UUID>> intervals = findRaw(coords1, coords2, false, true );
+        if (!intervals.isEmpty()) {
+            Parcel parcel;
+            // convert to parcels
+            List<Parcel> parcels = getParcels(intervals);
+
+            if (parcels.isEmpty()) {
+                return true;
+            }
+            if (intervals.size() > 1) {
+                // find the least significant parcel
+                Optional<Parcel> parcelOptional = findLeastSignificant(parcels);
+                if (parcelOptional.isPresent()) {
+                    parcel = parcelOptional.get();
+                } else {
+                    // TODO add chat warning
+                    // TODO add log warning
+                    // TODO maybe do something like labelling as abandoned and has a timer before it is removed from registry.
+                    return true;
+                }
+            } else {
+                parcel = parcels.get(0);
+            }
+
+            // check player's access
+            return parcel.hasAccess(entityId);
+        }
+        return true;
+    }
+
+    public static Optional<Parcel> findLeastSignificant(ICoords coords) {
+        return findLeastSignificant(ParcelRegistry.find(coords));
+    }
+
+    public static Optional<Parcel> findLeastSignificant(List<Parcel> parcels) {
+        Parcel parcel = null;
+        if (parcels.isEmpty()) {
+            return Optional.empty();
+        }
+        else if (parcels.size() == 1) {
+            parcel = parcels.get(0);
+        } else {
+            parcel = parcels.get(0);
+            for (Parcel p : parcels) {
+                if (p != parcel) {
+                    if (p.getArea() < parcel.getArea()) {
+                        parcel = p;
+                    }
+                }
+            }
+        }
+        return Optional.ofNullable(parcel);
+    }
+
+    @Deprecated
     public static boolean isProtectedAgainst(ICoords coords, UUID entityId) {
         return isProtectedAgainst(coords, coords, entityId);
     }
 
+    @Deprecated
     public static boolean isProtectedAgainst(ICoords coords1, ICoords coords2, UUID entityId) {
         List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<>(coords1, coords2));
         if (intervals.isEmpty()) {
@@ -276,6 +491,7 @@ public class ParcelRegistry {
             // interrogate each interval to determine if the uuid is the owner
             for (IInterval<UUID> interval : intervals) {
                 // short circuit if owner or no owner
+                ProtectIt.LOGGER.debug("isProtectedAgainst interval data -> {}", interval.getData());
                 if (interval.getData() == null || interval.getData().equals(entityId)) {
                     break;
                 }
@@ -287,6 +503,8 @@ public class ParcelRegistry {
                 CoordsInterval<UUID> coordsInterval = (CoordsInterval<UUID>)interval;
                 Parcel parcel = PARCELS_BY_COORDS.get(coordsInterval.getCoords1());
                 ProtectIt.LOGGER.debug("isProtectedAgainst.parcelsByCoords -> {}, parcel -> {}", parcel.getMinCoords(), parcel);
+
+
                 // cycle through whitelist
 //                if (!parcel.getWhitelist().isEmpty()) {
 //                    ProtectIt.LOGGER.debug("isProtectedAgainst whitelist is not null");
@@ -302,5 +520,9 @@ public class ParcelRegistry {
             }
         }
         return false;
+    }
+
+    public static List<UUID> getOwnerIds() {
+        return PARCELS_BY_OWNER.keySet().stream().toList();
     }
 }

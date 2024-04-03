@@ -45,6 +45,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 /**
  * 
@@ -52,22 +53,51 @@ import net.minecraft.world.item.ItemStack;
  *
  */
 public class CommandHelper {
-	public static final String BLOCK = "block";
+
+	public static final String PROTECT = "protect-ops";
+	public static final String DEED = "deed";
+	public static final String PARCEL = "parcel";
 	public static final String ADD = "add";
-	public static final String CLEAR = "clear";
+	public static final String REMOVE = "remove";
 	public static final String LIST = "list";
-	public static final String WHITELIST = "whitelist";
-	public static final String REMOVE ="remove";
-	
+	public static final String RENAME = "rename";
+	public static final String TRANSFER = "transfer";
+	public static final String CLEAR = "clear";
+	public static final String GENERATE = "generate";
+	public static final String NEW = "new";
+	public static final String DEED_TYPE = "deed_type";
 	public static final String POS = "pos";
-	public static final String POS2 = "pos2";
-	public static final String TARGET = "target";
-	public static final String TARGETS = "targets";
-	public static final String UUID = "uuid";
-	
-	public static final String GIVE = "give";
-	public static final String GIVE_ITEM = "giveItem";
-	
+	public static final String X_SIZE = "x_size";
+	public static final String Y_SIZE_UP = "y_size_up";
+	public static final String Y_SIZE_DOWN = "y_size_down";
+	public static final String Z_SIZE = "z_size";
+	public static final String OWNER_NAME = "owner_name";
+	public static final String NEW_OWNER_NAME = "new_owner_name";
+	public static final String PARCEL_NAME = "parcel_name";
+	public static final String NEW_NAME = "new_name";
+	public static final String BACKUP = "backup";
+	public static final String RESTORE = "restore";
+	public static final String WHITELIST = "whitelist";
+
+	/**
+	 * marks persistent data as dirty so that minecraft will auto save it.
+	 * @param level
+	 */
+	public static void save(Level level) {
+		PersistedData savedData = PersistedData.get(level);
+		// mark data as dirty
+		if (savedData != null) {
+			savedData.setDirty();
+		}
+	}
+
+	public static void sendNewLineMessage(CommandSourceStack source) {
+		source.sendSuccess(() -> Component.translatable(LangUtil.NEWLINE), false);
+	}
+
+	public static void sendUnableToLocatePlayerMessage(CommandSourceStack source, String name) {
+		source.sendSuccess(() -> Component.translatable(LangUtil.chat("unable_locate_player"), name).withStyle(ChatFormatting.RED), false);
+	}
 	///// SUGGESTIONS /////
 //	static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
 //		// NOTE use to find the player's name by UUID
@@ -239,7 +269,7 @@ public class CommandHelper {
 //		}
 //	}
 //
-//	private static String formatCoords(ICoords coords) {
+//	public static String formatCoords(ICoords coords) {
 //		return String.format("%s, %s, %s", coords.getX(), coords.getY(), coords.getZ());
 //	}
 //

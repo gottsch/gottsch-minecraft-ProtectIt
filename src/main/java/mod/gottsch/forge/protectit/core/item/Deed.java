@@ -4,22 +4,18 @@ import mod.gottsch.forge.gottschcore.block.BlockContext;
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
-import mod.gottsch.forge.protectit.core.ProtectIt;
 import mod.gottsch.forge.protectit.core.block.ProtectItBlocks;
 import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
-import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
-import mod.gottsch.forge.protectit.core.parcel.ParcelUtil;
-import mod.gottsch.forge.protectit.core.parcel.PersonalParcel;
 import mod.gottsch.forge.protectit.core.persistence.PersistedData;
 import mod.gottsch.forge.protectit.core.registry.ParcelRegistry;
 import mod.gottsch.forge.protectit.core.util.LangUtil;
+import mod.gottsch.forge.protectit.core.util.ModUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -28,7 +24,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,8 +31,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
 
 /**
  *
@@ -45,10 +38,11 @@ import java.util.UUID;
  *
  */
 public abstract class Deed extends Item {
+    // TODO these really belong in parcel (or duplicate them)
     public static final String PARCEL_ID = "parcel_id";
     public static final String DEED_ID = "deed_id";
     public static final String OWNER_ID = "owner_id";
-    public static final String DEED_TYPE = "deed_type";
+    public static final String PARCEL_TYPE = "parcel_type";
     public static final String SIZE = "size";
 
     public static final Box DEFAULT_SIZE = new Box(new Coords(0, -15, 0), new Coords(16, 16, 16));
@@ -56,6 +50,40 @@ public abstract class Deed extends Item {
     public Deed(Item.@NotNull Properties properties) {
 
         super(properties.stacksTo(1));
+    }
+
+    public abstract Parcel createParcel();
+
+    public Parcel createParcel(ItemStack deedStack, BlockPos pos, Player player) {
+        // TODO could've determined parcel type by tag variable DEED_TYPE
+        Parcel parcel = createParcel();
+
+        CompoundTag tag = deedStack.getOrCreateTag();
+        if (tag.contains(PARCEL_ID)) {
+            parcel.setId(tag.getUUID(PARCEL_ID));
+        }
+        if (tag.contains(DEED_ID)) {
+            parcel.setDeedId(tag.getUUID(DEED_ID));
+        }
+        if (tag.contains(OWNER_ID)) {
+            parcel.setOwnerId(tag.getUUID(OWNER_ID));
+        } else {
+            parcel.setOwnerId(player.getUUID());
+        }
+
+//        Box size = Box.EMPTY;
+//        if (tag.contains(SIZE)) {
+//            CompoundTag sizeTag = tag.getCompound(SIZE);
+//            size = Box.load(sizeTag);
+//        } else {
+//            size = DEFAULT_SIZE;
+//        }
+        parcel.setSize(getSize(tag));
+
+        parcel.setCoords(new Coords(pos));
+        parcel.setName(parcel.randomName());
+
+        return parcel;
     }
 
     protected boolean placeBlock(@NotNull BlockPlaceContext context, BlockState state) {
@@ -67,16 +95,10 @@ public abstract class Deed extends Item {
         BlockPos targetPos = context.getClickedPos();
         BlockContext blockContext = new BlockContext(context.getLevel(), targetPos);
         if (blockContext.isAir() || blockContext.isReplaceable()) {
-            // TODO make method getSize(ItemStack)
             CompoundTag tag = context.getItemInHand().getOrCreateTag();
+
             // get the size
-            Box size = Box.EMPTY;
-            if (tag.contains(SIZE)) {
-                CompoundTag sizeTag = tag.getCompound(SIZE);
-                size = Box.load(sizeTag);
-            } else {
-                size = DEFAULT_SIZE;
-            }
+            Box size = getSize(tag);
 
             // check if pos + size is within world boundaries
             if (context.getLevel().isOutsideBuildHeight(targetPos.offset(size.getMaxCoords().toPos()))) {
@@ -116,7 +138,9 @@ public abstract class Deed extends Item {
                     // update data from deed.
                     blockEntity.setParcelId(tag.contains(PARCEL_ID) ? tag.getUUID(PARCEL_ID) : null);
                     blockEntity.setDeedId(tag.contains(DEED_ID) ? tag.getUUID(DEED_ID) : null);
-                    blockEntity.setOwnerId(tag.contains(OWNER_ID) ? tag.getUUID(OWNER_ID) : null);
+                    blockEntity.setOwnerId(tag.contains(OWNER_ID) ? tag.getUUID(OWNER_ID) : context.getPlayer().getUUID());
+                    blockEntity.setParcelType(tag.contains(PARCEL_TYPE) ? tag.getString(PARCEL_TYPE) : null);
+                    blockEntity.setCoords(new Coords(context.getClickedPos()));
                     blockEntity.setSize(size);
 
                     //check if there is a stored position of foundation stone.
@@ -149,6 +173,17 @@ public abstract class Deed extends Item {
         return false;
     }
 
+    public Box getSize(CompoundTag tag) {
+        Box size = Box.EMPTY;
+        if (tag.contains(SIZE)) {
+            CompoundTag sizeTag = tag.getCompound(SIZE);
+            size = Box.load(sizeTag);
+        } else {
+            size = DEFAULT_SIZE;
+        }
+        return size;
+    }
+
     @Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
 
@@ -162,7 +197,7 @@ public abstract class Deed extends Item {
         // gather the number of parcels the player has
         List<Parcel> parcels = ParcelRegistry.findByOwner(context.getPlayer().getUUID());
 
-        if (parcels.size() >= Config.GENERAL.propertiesPerPlayer.get()) {
+        if (parcels.size() >= Config.GENERAL.parcelsPerPlayer.get()) {
             // TODO colorize
             // TODO create a class ChatHelper that has premade color formatters
             context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
@@ -176,7 +211,10 @@ public abstract class Deed extends Item {
         Parcel parcel = createParcel(context.getItemInHand(), context.getClickedPos(), context.getPlayer());
 
         // check if parcel has a owner id and if its the player - if not, exit as they can't use it
-        if (parcel.getOwnerId() != null && !parcel.getOwnerId().equals(context.getPlayer().getUUID())) {
+//        if (parcel.getOwnerId() != null && !parcel.getOwnerId().equals(context.getPlayer().getUUID())) {
+//            return InteractionResult.FAIL;
+//        }
+        if (!parcel.isOwner(context.getPlayer().getUUID())) {
             return InteractionResult.FAIL;
         }
 
@@ -192,13 +230,42 @@ public abstract class Deed extends Item {
 
 //            Optional<Parcel> parcelOptional = ParcelUtil.findLeastSignificant(ParcelRegistry.find(new Coords(context.getClickedPos())));
                 Box parcelBox = foundationStoneBlockEntity.getBox(clickedCoords);
-                // TEMP for now use findBoxes() - may upgrade to find()
-                if (!ParcelRegistry.findBoxes(parcelBox).isEmpty()) {
-                    return InteractionResult.FAIL;
+                Box inflatedBox = ModUtil.inflate(parcelBox, parcel.getBufferSize());
+
+                // TODO move the below to parcel.validatePlacement(...)
+                // find overlaps of parcel with buffered registry parcels
+                List<Parcel> overlaps = ParcelRegistry.findBuffer(parcelBox);
+                if (!overlaps.isEmpty()) {
+                    for (Parcel overlapParcel : overlaps) {
+                        // if parcel in hand equals parcel in world then fail
+                        // NOTE this should be moot as the deed shouldn't exist at this point anymore (survival)
+                        if (parcel.getId().equals(overlapParcel.getId())) {
+                            return InteractionResult.FAIL;
+                        }
+
+                        // if parcel in hand has same owner as parcel in world, ignore buffers, but check border overlaps
+                        if (parcel.getOwnerId().equals(overlapParcel.getOwnerId())) {
+                            List<Parcel> ownedOverlaps = ParcelRegistry.find(parcelBox);
+                            if (!ownedOverlaps.isEmpty()) {
+                                return InteractionResult.FAIL;
+                            }
+                        }
+                    }
                 }
 
+
+                // TEMP for now use findBoxes() - may upgrade to find()
+                // TODO this will definitely need to be changed with Nation and Citizen parcels- should be moved into validateParcel
+//                if (!ParcelRegistry.findBoxes(inflatedBox).isEmpty()) {
+//                    return InteractionResult.FAIL;
+//                }
+
+                // TODO need a method that checks if placement is valid
+                // ie Parcel.isPlacementValid(parcel) which checks all overlaps if any are person or citizen, or if nation, then check
+                // 1) does this parcel belong to the nation
+                // 2) is totally within bounds of nation
                 // validate the parcel data itself
-                boolean isValid = validateParcel(foundationStoneBlockEntity, parcel);
+                boolean isValid = parcel.validateData(foundationStoneBlockEntity); //validateParcel(foundationStoneBlockEntity, parcel);
 
                 if (isValid) {
                     // check if there is an existing parcel and update it else add it
@@ -219,6 +286,8 @@ public abstract class Deed extends Item {
                     // consume item
                     context.getItemInHand().shrink(1);
 
+                    // remove the border
+                    ((FoundationStoneBlockEntity) blockEntity).removeParcelBorder();
                     // remove the foundation stone
                     blockEntity.getLevel().setBlock(context.getClickedPos(), Blocks.AIR.defaultBlockState(), 3);
 
@@ -233,7 +302,7 @@ public abstract class Deed extends Item {
 
             // test if a parcel already exists for the parcel id
             boolean canPlace = false;
-            Optional<Parcel> registryParcel = ParcelUtil.findLeastSignificant(ParcelRegistry.find(clickedCoords));
+            Optional<Parcel> registryParcel = ParcelRegistry.findLeastSignificant(clickedCoords);
             /*
              * not inside any parcel.
              */
@@ -254,7 +323,8 @@ public abstract class Deed extends Item {
                  * and therefor can only be placed within the same parcel it is associated with.
                  */
                 // TODO change this to checkAccess()
-                if (validateParcel(registryParcel.get(), parcel)) {
+//                if (validateParcel(registryParcel.get(), parcel)) {
+                if (parcel.validateData(registryParcel.get())) {
                     canPlace = true;
                 }
             }
@@ -268,7 +338,6 @@ public abstract class Deed extends Item {
 
     public abstract boolean validateParcel(FoundationStoneBlockEntity blockEntity, Parcel parcel);
     public abstract boolean validateParcel(Parcel parcel, Parcel parcel2);
-    public abstract Parcel createParcel(ItemStack stack, BlockPos pos, Player player);
 
     @Override
     public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {

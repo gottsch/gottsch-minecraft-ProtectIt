@@ -198,7 +198,8 @@ public class ProtectCommand {
 //			// update property whitelist with player
 //			if (property.getWhitelist().stream().noneMatch(data -> data.getName().equalsIgnoreCase(player.getDisplayName().getString()))) {
 //				property.getWhitelist().add(new PlayerData(player.getStringUUID(), player.getDisplayName().getString()));
-//				CommandHelper.saveData(source.getLevel());
+//				CommandHelper.saveData(source.g
+//				etLevel());
 //			}
 //			//send update to client
 //			if(source.getLevel().getServer().isDedicatedServer()) {
