@@ -16,6 +16,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -52,9 +53,18 @@ public abstract class Deed extends Item {
         super(properties.stacksTo(1));
     }
 
+    // TODO should just use a parcel constructor(deed) instead of this
     public abstract Parcel createParcel();
 
-    public Parcel createParcel(ItemStack deedStack, BlockPos pos, Player player) {
+    /**
+     *
+     * @param deedStack
+     * @param coords
+     * @param player
+     * @return
+     */
+    // TODO update to take ICoords instead of BlockPos
+    public Parcel createParcel(ItemStack deedStack, ICoords coords, Player player) {
         // TODO could've determined parcel type by tag variable DEED_TYPE
         Parcel parcel = createParcel();
 
@@ -71,119 +81,39 @@ public abstract class Deed extends Item {
             parcel.setOwnerId(player.getUUID());
         }
 
-//        Box size = Box.EMPTY;
-//        if (tag.contains(SIZE)) {
-//            CompoundTag sizeTag = tag.getCompound(SIZE);
-//            size = Box.load(sizeTag);
-//        } else {
-//            size = DEFAULT_SIZE;
-//        }
         parcel.setSize(getSize(tag));
-
-        parcel.setCoords(new Coords(pos));
+        parcel.setCoords(coords);
         parcel.setName(parcel.randomName());
 
         return parcel;
     }
 
-    protected boolean placeBlock(@NotNull BlockPlaceContext context, BlockState state) {
-        if (context.getLevel().isClientSide()) {
-            return true;
+    protected boolean validateWorldPlacement(Level level, BlockPos pos, Box size, Player player) {
+        if (level.isOutsideBuildHeight(pos.offset(size.getMaxCoords().toPos()))) {
+            player.sendSystemMessage((Component.translatable(LangUtil.chat("parcel.outside_world_boundaries"))
+                    .withStyle(new ChatFormatting[]{ChatFormatting.DARK_RED, ChatFormatting.ITALIC})));
+            return false;
         }
-
-        // get the target position
-        BlockPos targetPos = context.getClickedPos();
-        BlockContext blockContext = new BlockContext(context.getLevel(), targetPos);
-        if (blockContext.isAir() || blockContext.isReplaceable()) {
-            CompoundTag tag = context.getItemInHand().getOrCreateTag();
-
-            // get the size
-            Box size = getSize(tag);
-
-            // check if pos + size is within world boundaries
-            if (context.getLevel().isOutsideBuildHeight(targetPos.offset(size.getMaxCoords().toPos()))) {
-                context.getPlayer().sendSystemMessage((Component.translatable(LangUtil.chat("parcel.outside_world_boundaries"))
-                        .withStyle(new ChatFormatting[]{ChatFormatting.DARK_RED, ChatFormatting.ITALIC})));
-                return false;
-            }
-
-            ICoords oldFouncationStonePos = Coords.EMPTY;
-            if (tag.contains("pos")) {
-                CompoundTag posTag = tag.getCompound("pos");
-                oldFouncationStonePos = Coords.EMPTY.load(posTag);
-            }
-
-            /*
-             * check if deed has old info. ie foundation stone was destroyed by player
-             * instead of destroy by using the deed somewhere else.
-             */
-            // get the old block entity if exists
-            BlockEntity oldBlockEntity = context.getLevel().getBlockEntity(oldFouncationStonePos.toPos());
-            if (oldBlockEntity == null || !(oldBlockEntity instanceof FoundationStoneBlockEntity)){
-                // clean deed
-                tag.remove("pos");
-                // reset pos to empty ie there isn't an old foundation stone position.
-                oldFouncationStonePos = Coords.EMPTY;
-            }
-
-            /*
-             * add the foundation stone to the world
-             */
-            boolean result = context.getLevel().setBlock(targetPos, state, 26);
-            if (result) {
-                // get the block entity
-                FoundationStoneBlockEntity blockEntity = (FoundationStoneBlockEntity) context.getLevel().getBlockEntity(targetPos);
-                if (blockEntity != null) {
-
-                    // update data from deed.
-                    blockEntity.setParcelId(tag.contains(PARCEL_ID) ? tag.getUUID(PARCEL_ID) : null);
-                    blockEntity.setDeedId(tag.contains(DEED_ID) ? tag.getUUID(DEED_ID) : null);
-                    blockEntity.setOwnerId(tag.contains(OWNER_ID) ? tag.getUUID(OWNER_ID) : context.getPlayer().getUUID());
-                    blockEntity.setParcelType(tag.contains(PARCEL_TYPE) ? tag.getString(PARCEL_TYPE) : null);
-                    blockEntity.setCoords(new Coords(context.getClickedPos()));
-                    blockEntity.setSize(size);
-
-                    //check if there is a stored position of foundation stone.
-                    if (oldFouncationStonePos != Coords.EMPTY) {
-                        if (context.getLevel().getBlockState(oldFouncationStonePos.toPos()).is(ProtectItBlocks.FOUNDATION_STONE.get())) {
-                            /*
-                             * destroy old foundationStone
-                             */
-                            context.getLevel().destroyBlock(oldFouncationStonePos.toPos(), false);
-                            // remove old pos
-                            tag.remove("pos");
-                        }
-                    }
-
-                    // store position of new foundation stone
-                    ICoords foundationStoneCoords = new Coords(targetPos);
-                    CompoundTag posTag = new CompoundTag();
-                    tag.put("pos", foundationStoneCoords.save(posTag));
-
-                    /*
-                     * NOTE foundation stone is non-craftable nor in the crafting tab
-                     * so need to initiate the borders manually.
-                     */
-                    // place border blocks
-                    blockEntity.placeParcelBorder();
-                }
-            }
-            return true;
-        }
-        return false;
+        return true;
     }
 
-    public Box getSize(CompoundTag tag) {
-        Box size = Box.EMPTY;
-        if (tag.contains(SIZE)) {
-            CompoundTag sizeTag = tag.getCompound(SIZE);
-            size = Box.load(sizeTag);
-        } else {
-            size = DEFAULT_SIZE;
+    protected boolean validateParcelThreshold(Player player) {
+        // gather the number of parcels the player has
+        List<Parcel> parcels = ParcelRegistry.findByOwner(player.getUUID());
+        if (parcels.size() >= Config.GENERAL.parcelsPerPlayer.get() && !player.hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
+            // TODO colorize
+            // TODO create a class ChatHelper that has premade color formatters
+            player.sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
+            return false;
         }
-        return size;
+        return true;
     }
 
+    /**
+     *
+     * @param context
+     * @return
+     */
     @Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
 
@@ -194,26 +124,26 @@ public abstract class Deed extends Item {
         /*
          * check if the player has reached there max parcels already
          */
-        // gather the number of parcels the player has
-        List<Parcel> parcels = ParcelRegistry.findByOwner(context.getPlayer().getUUID());
-
-        if (parcels.size() >= Config.GENERAL.parcelsPerPlayer.get()) {
-            // TODO colorize
-            // TODO create a class ChatHelper that has premade color formatters
-            context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
+        boolean isParcelThresholdValid = validateParcelThreshold(context.getPlayer());
+        if (!isParcelThresholdValid) {
             return InteractionResult.FAIL;
         }
-
-        // wrapped BlockPos
-        ICoords clickedCoords = new Coords(context.getClickedPos());
-
-        // create a parcel object from the deed itemstack and context info
-        Parcel parcel = createParcel(context.getItemInHand(), context.getClickedPos(), context.getPlayer());
-
-        // check if parcel has a owner id and if its the player - if not, exit as they can't use it
-//        if (parcel.getOwnerId() != null && !parcel.getOwnerId().equals(context.getPlayer().getUUID())) {
+        //        // gather the number of parcels the player has
+//        List<Parcel> parcels = ParcelRegistry.findByOwner(context.getPlayer().getUUID());
+//        if (parcels.size() >= Config.GENERAL.parcelsPerPlayer.get() && !context.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
+//            // TODO colorize
+//            // TODO create a class ChatHelper that has premade color formatters
+//            context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
 //            return InteractionResult.FAIL;
 //        }
+
+        // wrapped BlockPos
+        ICoords targetCoords = new Coords(context.getClickedPos());
+
+        // create a parcel object from the deed itemstack and context info
+        Parcel parcel = createParcel(context.getItemInHand(), targetCoords, context.getPlayer());
+
+        // check if parcel has a owner id and if its the player - if not, exit as they can't use it
         if (!parcel.isOwner(context.getPlayer().getUUID())) {
             return InteractionResult.FAIL;
         }
@@ -229,10 +159,9 @@ public abstract class Deed extends Item {
             if (blockEntity instanceof FoundationStoneBlockEntity foundationStoneBlockEntity) {
 
 //            Optional<Parcel> parcelOptional = ParcelUtil.findLeastSignificant(ParcelRegistry.find(new Coords(context.getClickedPos())));
-                Box parcelBox = foundationStoneBlockEntity.getBox(clickedCoords);
+                Box parcelBox = foundationStoneBlockEntity.getBox(targetCoords);
                 Box inflatedBox = ModUtil.inflate(parcelBox, parcel.getBufferSize());
 
-                // TODO move the below to parcel.validatePlacement(...)
                 // find overlaps of parcel with buffered registry parcels
                 List<Parcel> overlaps = ParcelRegistry.findBuffer(parcelBox);
                 if (!overlaps.isEmpty()) {
@@ -283,8 +212,13 @@ public abstract class Deed extends Item {
                         savedData.setDirty();
                     }
 
-                    // consume item
-                    context.getItemInHand().shrink(1);
+                    // if creative force removal of item
+                    if (context.getPlayer().isCreative()) {
+                        context.getPlayer().setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                    } else {
+                        // consume item
+                        context.getItemInHand().shrink(1);
+                    }
 
                     // remove the border
                     ((FoundationStoneBlockEntity) blockEntity).removeParcelBorder();
@@ -299,35 +233,36 @@ public abstract class Deed extends Item {
             /*
              * place foundation stone
              */
-
-            // test if a parcel already exists for the parcel id
-            boolean canPlace = false;
-            Optional<Parcel> registryParcel = ParcelRegistry.findLeastSignificant(clickedCoords);
-            /*
-             * not inside any parcel.
-             */
-            if (registryParcel.isEmpty()) {
-                /*
-                 * check if a parcel exists.
-                 * if a parcel does not exist then the deed is used to place a foundation stone
-                 * in this position for the first time.
-                 */
-                registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
-                if (registryParcel.isEmpty()) {
-                    canPlace = true;
-                }
-            } else {
-                /*
-                 * inside a parcel - is it the parcel associated with this deed ?
-                 * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
-                 * and therefor can only be placed within the same parcel it is associated with.
-                 */
-                // TODO change this to checkAccess()
-//                if (validateParcel(registryParcel.get(), parcel)) {
-                if (parcel.validateData(registryParcel.get())) {
-                    canPlace = true;
-                }
-            }
+            // TODO have to turn all this into methods so they can be overridden ie citizen deed
+             boolean canPlace = canPlaceBlock(context.getLevel(), targetCoords, parcel);
+//            // test if a parcel already exists for the parcel id
+//            boolean canPlace = false;
+//            Optional<Parcel> registryParcel = ParcelRegistry.findLeastSignificant(targetCoords);
+//            /*
+//             * not inside any parcel.
+//             */
+//            if (registryParcel.isEmpty()) {
+//                /*
+//                 * check if a parcel exists.
+//                 * if a parcel does not exist then the deed is used to place a foundation stone
+//                 * in this position for the first time.
+//                 */
+//                registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
+//                if (registryParcel.isEmpty()) {
+//                    canPlace = true;
+//                }
+//            } else {
+//                /*
+//                 * inside a parcel - is it the parcel associated with this deed ?
+//                 * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
+//                 * and therefor can only be placed within the same parcel it is associated with.
+//                 */
+//                // TODO change this to checkAccess()
+////                if (validateParcel(registryParcel.get(), parcel)) {
+//                if (parcel.validateData(registryParcel.get())) {
+//                    canPlace = true;
+//                }
+//            }
 
             boolean result = canPlace && this.placeBlock(new BlockPlaceContext(context), ProtectItBlocks.FOUNDATION_STONE.get().defaultBlockState());
             return result ? InteractionResult.SUCCESS : InteractionResult.FAIL;
@@ -336,8 +271,174 @@ public abstract class Deed extends Item {
         return super.useOn(context);
     }
 
-    public abstract boolean validateParcel(FoundationStoneBlockEntity blockEntity, Parcel parcel);
-    public abstract boolean validateParcel(Parcel parcel, Parcel parcel2);
+    protected boolean canPlaceBlock(Level level, ICoords coords, Parcel parcel) {
+        // test if a parcel already exists for the deed id
+        boolean canPlace = false;
+        Optional<Parcel> registryParcel = ParcelRegistry.findLeastSignificant(coords);
+
+        /*
+         * not inside any parcel.
+         */
+        if (registryParcel.isEmpty()) {
+            /*
+             * check if a parcel exists.
+             * if a parcel does not exist then the deed is used to place a foundation stone
+             * in this position for the first time.
+             */
+            registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
+            if (registryParcel.isEmpty()) {
+                canPlace = true;
+            }
+        } else {
+            /*
+             * inside a parcel - is it the parcel associated with this deed ?
+             * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
+             * and therefor can only be placed within the same parcel it is associated with.
+             */
+            // TODO change this to checkAccess()
+//                if (validateParcel(registryParcel.get(), parcel)) {
+            if (parcel.validateData(registryParcel.get())) {
+                canPlace = true;
+            }
+        }
+        return canPlace;
+    }
+
+    /**
+     *
+     * @param context
+     * @param state
+     * @return
+     */
+    protected boolean placeBlock(@NotNull BlockPlaceContext context, BlockState state) {
+        if (context.getLevel().isClientSide()) {
+            return true;
+        }
+
+        // get the target position
+        BlockPos targetPos = context.getClickedPos();
+        BlockContext blockContext = new BlockContext(context.getLevel(), targetPos);
+        if (blockContext.isAir() || blockContext.isReplaceable()) {
+            CompoundTag tag = context.getItemInHand().getOrCreateTag();
+
+            // get the size
+            Box size = getSize(tag);
+
+            if (!validateWorldPlacement(context.getLevel(), targetPos, size, context.getPlayer())) {
+                return false;
+            }
+
+            // get the old stone coords if any
+            ICoords oldFoundationStoneCoords = getPreviousCoords(context.getLevel(), tag);
+
+            /*
+             * add the foundation stone to the world
+             */
+            boolean result = context.getLevel().setBlock(targetPos, state, 26);
+            if (result) {
+                // if successful handle post placement
+                handleBlockPlaced(context.getLevel(), targetPos, context.getPlayer(), context.getItemInHand(), oldFoundationStoneCoords);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @param level
+     * @param pos
+     * @param player
+     * @param deed
+     * @param previousCoords
+     */
+    protected void handleBlockPlaced(Level level, BlockPos pos, Player player, ItemStack deed, ICoords previousCoords) {
+        // get the block entity
+        FoundationStoneBlockEntity blockEntity = (FoundationStoneBlockEntity) level.getBlockEntity(pos);
+        if (blockEntity != null) {
+
+            // update data from deed.
+            populateFoundationStone(blockEntity, deed, pos, player);
+
+            //check if there is a stored position of foundation stone.
+            if (previousCoords != Coords.EMPTY) {
+                removePreviousLocation(level, deed, previousCoords);
+            }
+
+            // store position of new foundation stone
+            storeCurrentLocation(level, deed, new Coords(pos));
+
+            /*
+             * NOTE foundation stone is non-craftable nor in the crafting tab
+             * so need to initiate the borders manually.
+             */
+            // place border blocks
+            blockEntity.placeParcelBorder();
+        }
+    }
+
+    protected ICoords getPreviousCoords(Level level, CompoundTag tag) {
+        // get the previous coords from tag if they exist
+        ICoords coords = Coords.EMPTY;
+        if (tag.contains("pos")) {
+            CompoundTag posTag = tag.getCompound("pos");
+            coords = Coords.EMPTY.load(posTag);
+        }
+
+        /*
+         * check if deed has old info. ie foundation stone was destroyed by player
+         * instead of destroy by using the deed somewhere else.
+         */
+        // get the old block entity if exists
+        BlockEntity oldBlockEntity = level.getBlockEntity(coords.toPos());
+        if (!(oldBlockEntity instanceof FoundationStoneBlockEntity)){
+            // clean deed as a stone doesn't exist at pos
+            tag.remove("pos");
+            // reset pos to empty ie there isn't an old foundation stone position.
+            coords = Coords.EMPTY;
+        }
+
+        return coords;
+    }
+
+    protected void populateFoundationStone(FoundationStoneBlockEntity blockEntity, ItemStack deed, BlockPos pos, Player player) {
+        CompoundTag tag = deed.getOrCreateTag();
+        Box size = getSize(tag);
+
+        blockEntity.setParcelId(tag.contains(PARCEL_ID) ? tag.getUUID(PARCEL_ID) : null);
+        blockEntity.setDeedId(tag.contains(DEED_ID) ? tag.getUUID(DEED_ID) : null);
+        blockEntity.setOwnerId(tag.contains(OWNER_ID) ? tag.getUUID(OWNER_ID) : player.getUUID());
+        blockEntity.setParcelType(tag.contains(PARCEL_TYPE) ? tag.getString(PARCEL_TYPE) : null);
+        blockEntity.setCoords(new Coords(pos));
+        blockEntity.setSize(size);
+    }
+
+    protected void removePreviousLocation(Level level, ItemStack deed, ICoords previousCoords) {
+        if (level.getBlockState(previousCoords.toPos()).is(ProtectItBlocks.FOUNDATION_STONE.get())) {
+            /*
+             * destroy old foundationStone
+             */
+            level.destroyBlock(previousCoords.toPos(), false);
+            // remove old pos
+            deed.getOrCreateTag().remove("pos");
+        }
+    }
+
+    protected void storeCurrentLocation(Level level, ItemStack deed, ICoords coords) {
+        CompoundTag posTag = new CompoundTag();
+        deed.getOrCreateTag().put("pos", coords.save(posTag));
+    }
+
+    public Box getSize(CompoundTag tag) {
+        Box size = Box.EMPTY;
+        if (tag.contains(SIZE)) {
+            CompoundTag sizeTag = tag.getCompound(SIZE);
+            size = Box.load(sizeTag);
+        } else {
+            size = DEFAULT_SIZE;
+        }
+        return size;
+    }
 
     @Override
     public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {

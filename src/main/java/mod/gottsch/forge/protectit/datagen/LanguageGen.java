@@ -23,8 +23,8 @@ public class LanguageGen extends LanguageProvider {
     protected void addTranslations() {
         // deeds
         add(ProtectItItems.PERSONAL_DEED.get(), "Personal Deed");
-//        add(ProtectItItems.NATION_DEED.get(), "Nation Deed");
-
+        add(ProtectItItems.NATION_DEED.get(), "Nation Deed");
+        add(ProtectItItems.CITIZEN_DEED.get(), "Citizen Deed");
         // blocks
         add(ProtectItBlocks.FOUNDATION_STONE.get(), "Foundation Stone");
 

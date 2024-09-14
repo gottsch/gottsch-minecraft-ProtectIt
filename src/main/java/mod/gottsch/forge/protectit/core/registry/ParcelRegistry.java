@@ -19,6 +19,9 @@
  */
 package mod.gottsch.forge.protectit.core.registry;
 
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
 import com.mojang.authlib.minecraft.client.ObjectMapper;
 import mod.gottsch.forge.gottschcore.bst.CoordsInterval;
@@ -28,8 +31,10 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.ProtectIt;
 import mod.gottsch.forge.protectit.core.config.Config;
+import mod.gottsch.forge.protectit.core.parcel.NationParcel;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
 import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
+import mod.gottsch.forge.protectit.core.parcel.ParcelType;
 import mod.gottsch.forge.protectit.core.util.ModUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -53,6 +58,12 @@ public class ParcelRegistry {
     private static final Map<UUID, List<Parcel>> PARCELS_BY_OWNER = new HashMap<>();
     private static final Map<ICoords, Parcel> PARCELS_BY_COORDS = new HashMap<>();
     private static final Map<ICoords, Parcel> BUFFER_PARCELS_BY_COORDS = new HashMap<>();
+
+    /*
+     * nation caches
+     */
+    private static final Multimap<UUID, Parcel> NATIONS_BY_ID = ArrayListMultimap.create();
+
 
     // singleton
     private ParcelRegistry() {}
@@ -94,6 +105,7 @@ public class ParcelRegistry {
         BUFFER_PARCELS_BY_COORDS.clear();
         TREE.clear();
         BUFFER_TREE.clear();
+        NATIONS_BY_ID.clear();
     }
 
     /**
@@ -158,6 +170,10 @@ public class ParcelRegistry {
                     BUFFER_TREE.insert(new CoordsInterval<>(inflatedBox.getMinCoords(), inflatedBox.getMaxCoords(), action.getOwnerId()));
                     // add buffered parcel to byCoords map
                     BUFFER_PARCELS_BY_COORDS.put(inflatedBox.getMinCoords(), action);
+
+                    if (parcel.get().getType() == ParcelType.NATION) {
+                        NATIONS_BY_ID.put(((NationParcel)parcel.get()).getNationId(), parcel.get());
+                    }
                 });
             });
         }
@@ -203,6 +219,10 @@ public class ParcelRegistry {
         BUFFER_TREE.insert(new CoordsInterval<>(inflatedBox.getMinCoords(), inflatedBox.getMaxCoords(), parcel.getOwnerId()));
         BUFFER_PARCELS_BY_COORDS.put(inflatedBox.getMinCoords(), parcel);
 
+        if (parcel.getType() == ParcelType.NATION) {
+            NATIONS_BY_ID.put(((NationParcel)parcel).getNationId(), parcel);
+        }
+
         return interval != null ? Optional.of(parcel) : Optional.empty();
     }
 
@@ -217,6 +237,10 @@ public class ParcelRegistry {
         // remove from buffer map
         Box inflatedBox = inflateParcelBox(parcel);
         BUFFER_PARCELS_BY_COORDS.remove(inflatedBox.getMinCoords());
+
+        if (parcel.getType() == ParcelType.NATION) {
+            NATIONS_BY_ID.remove(((NationParcel)parcel).getNationId(), parcel);
+        }
     }
 
     public static void removeParcel(UUID ownerId) {
@@ -228,6 +252,10 @@ public class ParcelRegistry {
                 // remove from buffer map
                 Box inflatedBox = inflateParcelBox(p);
                 BUFFER_PARCELS_BY_COORDS.remove(inflatedBox.getMinCoords());
+
+                if (p.getType() == ParcelType.NATION) {
+                    NATIONS_BY_ID.remove(((NationParcel)p).getNationId(), p);
+                }
             }
         }
         PARCELS_BY_OWNER.remove(ownerId);
@@ -272,6 +300,21 @@ public class ParcelRegistry {
             }
         });
         return parcels;
+    }
+
+    public static List<Parcel> findByNationId(UUID nationId) {
+        List<Parcel> parcels = new ArrayList<>(1);
+        for (Parcel parcel : PARCELS_BY_COORDS.values()) {
+            if (parcel.getId().equals(nationId)) {
+                parcels.add(parcel);
+                break;
+            }
+        }
+        return parcels;
+    }
+
+    public static List<Parcel> findNationsByOwner(UUID id) {
+        return findByOwner(id).stream().filter(p -> (p instanceof NationParcel)).toList();
     }
 
     //////////////////////////////////
@@ -410,15 +453,14 @@ public class ParcelRegistry {
     }
 
     public static boolean hasAccess(ICoords coords, UUID entityId) {
-        return hasAccess(coords, coords, entityId);
+        return hasAccess(coords, coords, entityId, ItemStack.EMPTY);
     }
 
-    public static boolean hasAccess(ICoords coords, UUID entityId, ItemStack itemStack) {
-        // TODO finish ie add itemStack
-        return hasAccess(coords, coords, entityId);
+    public static boolean hasAccess(ICoords coords, UUID entityId, ItemStack stack) {
+        return hasAccess(coords, coords, entityId, stack);
     }
 
-    public static boolean hasAccess(ICoords coords1, ICoords coords2, UUID entityId) {
+    public static boolean hasAccess(ICoords coords1, ICoords coords2, UUID entityId, ItemStack itemStack) {
 //        List<IInterval<UUID>> intervals = TREE.getOverlapping(TREE.getRoot(), new CoordsInterval<>(coords1, coords2));
         // this is the fastest lookup
         List<IInterval<UUID>> intervals = findRaw(coords1, coords2, false, true );
@@ -439,6 +481,8 @@ public class ParcelRegistry {
                     // TODO add chat warning
                     // TODO add log warning
                     // TODO maybe do something like labelling as abandoned and has a timer before it is removed from registry.
+                    // this is a case where the interval still exists but the parcel has been removed
+                    TREE.delete(intervals.get(0));
                     return true;
                 }
             } else {
@@ -446,7 +490,7 @@ public class ParcelRegistry {
             }
 
             // check player's access
-            return parcel.hasAccess(entityId);
+            return itemStack != ItemStack.EMPTY ? parcel.hasAccess(entityId, itemStack) : parcel.hasAccess(entityId);
         }
         return true;
     }
@@ -524,5 +568,11 @@ public class ParcelRegistry {
 
     public static List<UUID> getOwnerIds() {
         return PARCELS_BY_OWNER.keySet().stream().toList();
+    }
+
+    public static List<Parcel> getNations() {
+        List<Parcel> parcels = new ArrayList<>();
+        NATIONS_BY_ID.entries().forEach(e -> parcels.add(e.getValue()));
+        return parcels;
     }
 }

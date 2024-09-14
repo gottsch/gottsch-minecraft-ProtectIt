@@ -37,7 +37,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -45,9 +44,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.codehaus.plexus.util.StringUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -365,9 +363,13 @@ public class FoundationStoneBlockEntity extends BlockEntity {
         // compare against the buffer registry
         List<Parcel> overlaps = ParcelRegistry.findBuffer(box).stream().filter(p -> !p.getId().equals(getParcelId())).toList();
         // TODO turn this check into a method
+        // TODO this totally doesn't work for Citizen deeds
         if (!overlaps.isEmpty()) {
             // interrogate each parcel and determine if it is the same parcel ie placing a foundation stone within a parcel
             for (Parcel parcel : overlaps) {
+                // TODO this works fine for overlaps of non-nation parcels.
+                // TODO but for nation parcel, need to check that this deed is totally within it.
+                // TODO so need different checks depending on the parcelType of BE.
                 if (parcel.getOwnerId().equals(getOwnerId())) {
                     // the parcels are owned by the same person. they can be closer or touching,
                     // ie. ignore buffers, only the parcels themselves can't overlap

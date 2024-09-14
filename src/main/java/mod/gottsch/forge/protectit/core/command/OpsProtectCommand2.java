@@ -11,6 +11,7 @@ import mod.gottsch.forge.protectit.core.ProtectIt;
 import mod.gottsch.forge.protectit.core.config.Config;
 import mod.gottsch.forge.protectit.core.item.Deed;
 import mod.gottsch.forge.protectit.core.item.DeedFactory;
+import mod.gottsch.forge.protectit.core.parcel.NationParcel;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
 import mod.gottsch.forge.protectit.core.parcel.ParcelFactory;
 import mod.gottsch.forge.protectit.core.parcel.ParcelType;
@@ -46,7 +47,7 @@ public class OpsProtectCommand2 {
 
 
     private static final SuggestionProvider<CommandSourceStack> DEED_TYPES = (source, builder) -> {
-        return SharedSuggestionProvider.suggest(ParcelType.getNames(), builder);
+        return SharedSuggestionProvider.suggest(ParcelType.getNames().stream().filter(p -> !p.equalsIgnoreCase("citizen")), builder);
     };
 
     private static final SuggestionProvider<CommandSourceStack> PARCEL_NAMES = (source, builder) -> {
@@ -70,6 +71,14 @@ public class OpsProtectCommand2 {
         return SharedSuggestionProvider.suggest(names, builder);
     };
 
+    private static final SuggestionProvider<CommandSourceStack> NATION_NAMES = (source, builder) -> {
+        List<String> names = ParcelRegistry.getNations().stream().map((Parcel::getName)).toList();
+        return SharedSuggestionProvider.suggest(names, builder);
+    };
+
+    private static final SuggestionProvider<CommandSourceStack> NATION_DEED_TYPES = (source, builder) -> {
+        return SharedSuggestionProvider.suggest(ParcelType.getNames().stream().filter(p -> !p.equalsIgnoreCase("personal")), builder);
+    };
 
     /*
      * protect [deed [generate | ] | parcel [generate | remove] ] //give | list | rename | whitelist [add | remove | clear | list]]
@@ -85,7 +94,9 @@ public class OpsProtectCommand2 {
                                                 })
                                                 ///// GENERATE OPTION /////
                                                 .then(Commands.literal(CommandHelper.GENERATE)
+                                                        ///// NEW DEED /////
                                                         .then(Commands.literal(CommandHelper.NEW)
+                                                                // TODO somehow this has to change because a CITIZEN deed requires a nation id
                                                                 .then(Commands.argument(CommandHelper.DEED_TYPE, StringArgumentType.string())
                                                                         .suggests(DEED_TYPES)
                                                                         .then(Commands.argument(CommandHelper.X_SIZE, IntegerArgumentType.integer())
@@ -121,24 +132,48 @@ public class OpsProtectCommand2 {
                                                         )
                                                         ///// FROM PARCEL /////
                                                         .then(Commands.literal(CommandHelper.PARCEL)
-                                                                .then(Commands.argument(CommandHelper.OWNER_NAME, StringArgumentType.string())
-                                                                        .suggests(OWNER_NAMES)
-                                                                        .then(Commands.argument(CommandHelper.PARCEL_NAME, StringArgumentType.string())
-                                                                                .suggests(PARCEL_NAMES)
-                                                                                .executes(source -> {
-                                                                                    return generateDeedFromParcel(source.getSource(),
-                                                                                            StringArgumentType.getString(source, CommandHelper.OWNER_NAME),
-                                                                                            StringArgumentType.getString(source, CommandHelper.PARCEL_NAME),
-                                                                                            "");
-                                                                                })
-                                                                                .then(Commands.argument(CommandHelper.NEW_OWNER_NAME, StringArgumentType.string())
-                                                                                        .suggests(OWNER_NAMES)
+                                                                .then(Commands.literal(CommandHelper.BY_OWNER)
+                                                                        .then(Commands.argument(CommandHelper.OWNER_NAME, StringArgumentType.string())
+                                                                                .suggests(OWNER_NAMES)
+                                                                                .then(Commands.argument(CommandHelper.PARCEL_NAME, StringArgumentType.string())
+                                                                                        .suggests(PARCEL_NAMES)
                                                                                         .executes(source -> {
                                                                                             return generateDeedFromParcel(source.getSource(),
                                                                                                     StringArgumentType.getString(source, CommandHelper.OWNER_NAME),
                                                                                                     StringArgumentType.getString(source, CommandHelper.PARCEL_NAME),
-                                                                                                    StringArgumentType.getString(source, CommandHelper.NEW_OWNER_NAME));
+                                                                                                    "");
                                                                                         })
+                                                                                        .then(Commands.argument(CommandHelper.NEW_OWNER_NAME, StringArgumentType.string())
+                                                                                                .suggests(OWNER_NAMES)
+                                                                                                .executes(source -> {
+                                                                                                    return generateDeedFromParcel(source.getSource(),
+                                                                                                            StringArgumentType.getString(source, CommandHelper.OWNER_NAME),
+                                                                                                            StringArgumentType.getString(source, CommandHelper.PARCEL_NAME),
+                                                                                                            StringArgumentType.getString(source, CommandHelper.NEW_OWNER_NAME));
+                                                                                                })
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                        .then(Commands.literal("citizen_of_nation")
+                                                                .then(Commands.argument(CommandHelper.NATION_NAME, StringArgumentType.string())
+                                                                        .suggests(NATION_NAMES)
+                                                                        .then(Commands.argument(CommandHelper.X_SIZE, IntegerArgumentType.integer())
+                                                                                .then(Commands.argument(CommandHelper.Y_SIZE_UP, IntegerArgumentType.integer())
+                                                                                        .then(Commands.argument(CommandHelper.Y_SIZE_DOWN, IntegerArgumentType.integer())
+                                                                                                .then(Commands.argument(CommandHelper.Z_SIZE, IntegerArgumentType.integer())
+                                                                                                        .executes(source -> {
+                                                                                                            return generateDeedFromNation(source.getSource(),
+                                                                                                                    StringArgumentType.getString(source, CommandHelper.NATION_NAME),
+                                                                                                                    IntegerArgumentType.getInteger(source, CommandHelper.X_SIZE),
+                                                                                                                    IntegerArgumentType.getInteger(source, CommandHelper.Y_SIZE_UP),
+                                                                                                                    IntegerArgumentType.getInteger(source, CommandHelper.Y_SIZE_DOWN),
+                                                                                                                    IntegerArgumentType.getInteger(source, CommandHelper.Z_SIZE)
+                                                                                                                    );
+                                                                                                         })
+                                                                                                )
+                                                                                        )
                                                                                 )
                                                                         )
                                                                 )
@@ -279,11 +314,11 @@ public class OpsProtectCommand2 {
                                                 )
 
 
-                                        .then(Commands.literal(CommandHelper.BACKUP)
-                                                .executes(source -> {
-                                                    return ParcelCommandDelegate.backupParcels(source.getSource());
-                                                })
-                                        )
+                                                .then(Commands.literal(CommandHelper.BACKUP)
+                                                        .executes(source -> {
+                                                            return ParcelCommandDelegate.backupParcels(source.getSource());
+                                                        })
+                                                )
                                 )
                 );
 
@@ -306,24 +341,21 @@ public class OpsProtectCommand2 {
 
         // create a deed item
         ItemStack deed = switch (ParcelType.valueOf(deedType)) {
-            case PERSONAL -> {
-                yield DeedFactory.createPersonalDeed(size);
-            }
-            case NATION -> {
-                yield DeedFactory.createNationDeed(size);
-            }
-            case CITIZEN -> null;
+            case PERSONAL -> DeedFactory.createPersonalDeed(size);
+            case NATION -> DeedFactory.createNationDeed(size);
+            // TODO requires the NATION_ID
+            case CITIZEN -> DeedFactory.createCitizenDeed(size, null);
         };
 
         // attempt to add the deed item to the player inventory
         try {
-            if (deed != null && deed != ItemStack.EMPTY) {
+            if (deed != ItemStack.EMPTY) {
                 source.getPlayerOrException().getInventory().add(deed);
             }
         } catch (Exception e) {
             ProtectIt.LOGGER.error("error on give -> ", e);
             source.sendSuccess(() -> Component.translatable(LangUtil.chat(" deed.generate.failure")).withStyle(ChatFormatting.RED), false);
-       }
+        }
 
         return 1;
     }
@@ -370,6 +402,30 @@ public class OpsProtectCommand2 {
             CommandHelper.sendUnableToLocatePlayerMessage(source, ownerName);
         }
 
+        return 1;
+    }
+
+    private static int generateDeedFromNation(CommandSourceStack source, String nationName, int xSize, int ySizeUp, int ySizeDown, int zSize) {
+        // create a relative sized Box
+        Box size = new Box(new Coords(0, -ySizeDown, 0), new Coords(xSize-1, ySizeUp-1, zSize-1));
+
+        Optional<Parcel> parcel = ParcelRegistry.getNations().stream().filter(p -> p.getName().equalsIgnoreCase(nationName)).findFirst();
+        if (parcel.isPresent()) {
+            ItemStack deed = DeedFactory.createCitizenDeed(size, ((NationParcel)parcel.get()).getNationId());
+            CompoundTag tag = deed.getOrCreateTag();
+
+            // attempt to add the deed item to the player inventory
+            try {
+                if (deed != ItemStack.EMPTY) {
+                    source.getPlayerOrException().getInventory().add(deed);
+                }
+            } catch (Exception e) {
+                ProtectIt.LOGGER.error("error on give -> ", e);
+                CommandHelper.sendUnableToGenerateDeedMessage(source, nationName);
+             }
+        } else {
+            // TODO can't find nation
+        }
         return 1;
     }
 }

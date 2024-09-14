@@ -2,6 +2,7 @@ package mod.gottsch.forge.protectit.core.item;
 
 import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
+import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
 import mod.gottsch.forge.protectit.core.parcel.NationParcel;
 import mod.gottsch.forge.protectit.core.parcel.Parcel;
@@ -25,16 +26,18 @@ public class NationDeed extends Deed {
         super(properties);
     }
 
+    @Override
     public Parcel createParcel() {
         return new NationParcel();
     }
 
-    public Parcel createParcel(ItemStack deedStack, BlockPos pos, Player player) {
-        NationParcel parcel = (NationParcel)super.createParcel(deedStack, pos, player);
+    @Override
+    public Parcel createParcel(ItemStack deedStack, ICoords coords, Player player) {
+        NationParcel parcel = (NationParcel)super.createParcel(deedStack, coords, player);
 
         CompoundTag tag = deedStack.getOrCreateTag();
 
-        // add nation deed
+        // add nation id
         if (tag.contains(NATION_ID)) {
             parcel.setNationId(tag.getUUID(NATION_ID));
         }

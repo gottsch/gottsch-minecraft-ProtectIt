@@ -179,7 +179,7 @@ public class ProtectIt {
 
 		// prevent protected blocks from placing
 		if (event.getEntity() instanceof Player) {
-			if (!ParcelRegistry.hasAccess(new Coords(event.getPos()), event.getEntity().getUUID())) {
+			if (!ParcelRegistry.hasAccess(new Coords(event.getPos()), event.getEntity().getUUID(), ((Player) event.getEntity()).getItemInHand(InteractionHand.MAIN_HAND))) {
 				event.setCanceled(true);
 				LOGGER.debug("denied block place -> {} @ {}", event.getEntity().getDisplayName().getString(), new Coords(event.getPos()).toShortString());
 				if (!event.getLevel().isClientSide()) {

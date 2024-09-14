@@ -42,7 +42,7 @@ public class ProtectItItems {
 	// items
 	public static RegistryObject<Item> PERSONAL_DEED = Registration.ITEMS.register("personal_deed", () -> new PersonalDeed(new Item.Properties()));
 	public static RegistryObject<Item> NATION_DEED = Registration.ITEMS.register("nation_deed", () -> new NationDeed(new Item.Properties()));
-	public static RegistryObject<Item> CITIZEN_DEED = Registration.ITEMS.register("citizen_deed", () -> new PersonalDeed(new Item.Properties()));
+	public static RegistryObject<Item> CITIZEN_DEED = Registration.ITEMS.register("citizen_deed", () -> new CitizenDeed(new Item.Properties()));
 
 	public static RegistryObject<Item> FOUNDATION_STONE_ITEM = Registration.ITEMS.register("foundation_stone", () -> new FoundationStoneItem(ProtectItBlocks.FOUNDATION_STONE.get(), new Item.Properties()));
 

@@ -23,6 +23,7 @@ import mod.gottsch.forge.gottschcore.spatial.Box;
 import mod.gottsch.forge.gottschcore.spatial.ICoords;
 import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -35,6 +36,11 @@ import java.util.UUID;
  *
  */
 public interface Parcel {
+    public static final String PARCEL_ID = "parcel_id";
+    public static final String DEED_ID = "deed_id";
+    public static final String OWNER_ID = "owner_id";
+    public static final String PARCEL_TYPE = "parcel_type";
+    public static final String SIZE = "size";
 
     default String randomName() {
         return StringUtils.capitalize(RandomStringUtils.random(8, true, false));
@@ -45,6 +51,7 @@ public interface Parcel {
     boolean isOwner(UUID id);
 
     boolean hasAccess(UUID entityId);
+    boolean hasAccess(UUID entityId, ItemStack stack);
 
     void save(CompoundTag parcelTag);
     Parcel load(CompoundTag tag);

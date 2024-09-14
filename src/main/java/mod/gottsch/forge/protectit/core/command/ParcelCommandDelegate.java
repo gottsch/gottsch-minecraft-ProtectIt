@@ -152,6 +152,7 @@ public class ParcelCommandDelegate {
             List<Parcel> parcels = ParcelRegistry.findByOwner(player.getUUID());
             Optional<Parcel> parcel = parcels.stream().filter(p -> p.getName().equalsIgnoreCase(parcelName)).findFirst();
             if (parcel.isPresent()) {
+                // TODO ensure that the new name is unique across ALL parcels
                 parcel.get().setName(newName);
                 source.sendSuccess(() -> Component.translatable(LangUtil.chat("parcel.rename.success")).withStyle(ChatFormatting.GREEN), false);
                 CommandHelper.save(source.getLevel());

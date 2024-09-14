@@ -35,7 +35,6 @@ public class PersonalParcel extends AbstractParcel {
         setType(ParcelType.PERSONAL);
     }
 
-
     @Override
     public boolean validateData(Parcel parcel) {
         if (parcel.getId().equals(getId())
@@ -50,7 +49,7 @@ public class PersonalParcel extends AbstractParcel {
     @Override
     public boolean validateData(FoundationStoneBlockEntity blockEntity) {
 
-        if (getId().equals(blockEntity.getParcelId())
+        if ((blockEntity.getParcelId() == null || getId().equals(blockEntity.getParcelId()))
                 && getDeedId().equals(blockEntity.getDeedId())
         ) {
             return blockEntity.getOwnerId() == null || blockEntity.getOwnerId().equals(getOwnerId());

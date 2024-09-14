@@ -32,7 +32,7 @@ public class DeedFactory {
         ItemStack deed = createItemStack(ParcelType.PERSONAL);
         CompoundTag tag = deed.getOrCreateTag();
         // add the ids
-        tag.putUUID(Deed.PARCEL_ID, UUID.randomUUID());
+//        tag.putUUID(Deed.PARCEL_ID, UUID.randomUUID());
         tag.putUUID(Deed.DEED_ID, UUID.randomUUID());
         // add the type
         tag.putString(Deed.PARCEL_TYPE, ParcelType.PERSONAL.name());
@@ -58,7 +58,7 @@ public class DeedFactory {
         CompoundTag tag = deed.getOrCreateTag();
         // add the ids
         tag.putUUID(NationDeed.NATION_ID, UUID.randomUUID());
-        tag.putUUID(Deed.PARCEL_ID, UUID.randomUUID());
+//        tag.putUUID(Deed.PARCEL_ID, UUID.randomUUID());
         tag.putUUID(Deed.DEED_ID, UUID.randomUUID());
         // add the type
         tag.putString(Deed.PARCEL_TYPE, ParcelType.NATION.name());
@@ -73,11 +73,28 @@ public class DeedFactory {
         return deed;
     }
 
+    public static ItemStack createCitizenDeed(Box size, UUID nationId) {
+        ItemStack deed = createItemStack(ParcelType.CITIZEN);
+        CompoundTag tag = deed.getOrCreateTag();
+        // add the ids
+        tag.putUUID(NationDeed.NATION_ID, nationId);
+        tag.putUUID(Deed.DEED_ID, UUID.randomUUID());
+        // add the type
+        tag.putString(Deed.PARCEL_TYPE, ParcelType.CITIZEN.name());
+        // add the size
+        CompoundTag sizeTag = new CompoundTag();
+        size.save(sizeTag);
+        tag.put(Deed.SIZE, sizeTag);
+
+        return deed;
+    }
+
     private static ItemStack createItemStack(ParcelType type) {
         return switch(type) {
             case PERSONAL -> new ItemStack(ProtectItItems.PERSONAL_DEED.get());
             case NATION -> new ItemStack(ProtectItItems.NATION_DEED.get());
-            case CITIZEN -> null;
+            case CITIZEN -> new ItemStack((ProtectItItems.CITIZEN_DEED.get()));
         };
     }
+
 }

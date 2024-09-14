@@ -1,5 +1,6 @@
 {
   "block.protectit.foundation_stone": "Foundation Stone",
+  "chat.protectit.deed.generate.failure": "Unable to generate deed.",
   "chat.protectit.parcel.add.failure": "Unable to add the parcel.",
   "chat.protectit.parcel.add.success": "The parcel has been added.",
   "chat.protectit.parcel.block_protected": "Block is protected.",
@@ -18,6 +19,8 @@
   "chat.protectit.parcel.whitelist.list": "Whitelist for property ",
   "chat.protectit.unable_locate_player": "Unable to locate the player -> %s",
   "chat.protectit.unexpected_error": "An unexpected error occurred.",
+  "item.protectit.citizen_deed": "Citizen Deed",
+  "item.protectit.nation_deed": "Nation Deed",
   "item.protectit.personal_deed": "Personal Deed",
   "tooltip.protectit.hold_shift": "Hold [SHIFT] to expand",
   "tooltip.protectit.parcel.howto.remove": "Place cornerstone block inside parcel boundaries.\\nUse cornerstone block to open GUI.\nClick Remove button."

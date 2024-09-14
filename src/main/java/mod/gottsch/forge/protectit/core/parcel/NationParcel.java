@@ -22,7 +22,9 @@ package mod.gottsch.forge.protectit.core.parcel;
 import mod.gottsch.forge.gottschcore.spatial.Coords;
 import mod.gottsch.forge.protectit.core.block.entity.FoundationStoneBlockEntity;
 import mod.gottsch.forge.protectit.core.config.Config;
+import mod.gottsch.forge.protectit.core.item.CitizenDeed;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.UUID;
@@ -33,9 +35,13 @@ import java.util.UUID;
  *
  */
 public class NationParcel extends AbstractParcel {
+    // TODO resolve _ID and _KEY constants - only need 1 set.
+    public static final String NATION_ID = "nation_id";
     private static final String NATION_KEY = "nation";
 
     private UUID nationId;
+    // TODO add getter/setter etc
+    private String nationName;
 
     public NationParcel() {
         setType(ParcelType.NATION);
@@ -47,8 +53,22 @@ public class NationParcel extends AbstractParcel {
     }
 
     @Override
+    public boolean hasAccess(UUID entityId, ItemStack stack) {
+        if (hasAccess(entityId)) return true;
+
+        if (stack.getItem() instanceof CitizenDeed) {
+            CitizenParcel parcel = new CitizenParcel(stack);
+            if (parcel.getNationId().equals(getNationId())) {
+                // TODO add check against nation blacklist
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean validateData(Parcel parcel) {
-        if (parcel.getId().equals(getId())
+        if (( parcel.getId() == null || parcel.getId().equals(getId()))
                 && parcel.getDeedId().equals(getDeedId())
         ) {
             return parcel.getOwnerId() == null || parcel.getOwnerId().equals(getOwnerId());
@@ -58,7 +78,7 @@ public class NationParcel extends AbstractParcel {
 
     @Override
     public boolean validateData(FoundationStoneBlockEntity blockEntity) {
-        if (getId().equals(blockEntity.getParcelId())
+        if ((blockEntity.getParcelId() == null || getId().equals(blockEntity.getParcelId()))
                 && getDeedId().equals(blockEntity.getDeedId())
         ) {
             return blockEntity.getOwnerId() == null || blockEntity.getOwnerId().equals(getOwnerId());
@@ -82,7 +102,7 @@ public class NationParcel extends AbstractParcel {
         super.save(tag);
         tag.putString(TYPE, "nation");
         if (ObjectUtils.isNotEmpty(getNationId())) {
-            tag.putUUID(NATION_KEY, getDeedId());
+            tag.putUUID(NATION_KEY, getNationId());
         }
     }
 

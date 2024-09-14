@@ -62,6 +62,10 @@ public abstract class AbstractParcel implements Parcel {
     private List<UUID> whitelist;
     private ParcelType type;
 
+    public AbstractParcel() {
+        setId(UUID.randomUUID());
+    }
+
     @Override
     public abstract boolean validateData(Parcel parcel);
 
@@ -81,6 +85,8 @@ public abstract class AbstractParcel implements Parcel {
         } else {
             return getWhitelist().stream().anyMatch(uuid -> uuid.equals(entityId));
 
+            // TODO need a blacklist and need to check it
+
             // cycle through whitelist
 //            if (!getWhitelist().isEmpty()) {
 //                ProtectIt.LOGGER.debug("hasAccess whitelist is not null");
@@ -96,9 +102,9 @@ public abstract class AbstractParcel implements Parcel {
 //        return false;
     }
 
-
+    @Override
     public boolean hasAccess(UUID entityId, ItemStack stack) {
-        return false;
+        return hasAccess(entityId);
     }
 
     @Override

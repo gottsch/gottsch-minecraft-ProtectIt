@@ -78,6 +78,9 @@ public class CommandHelper {
 	public static final String BACKUP = "backup";
 	public static final String RESTORE = "restore";
 	public static final String WHITELIST = "whitelist";
+	public static final String BY_OWNER = "by_owner";
+	public static final String BY_NATION = "by_nation";
+	public static final String NATION_NAME = "nation_name";
 
 	/**
 	 * marks persistent data as dirty so that minecraft will auto save it.
@@ -98,6 +101,11 @@ public class CommandHelper {
 	public static void sendUnableToLocatePlayerMessage(CommandSourceStack source, String name) {
 		source.sendSuccess(() -> Component.translatable(LangUtil.chat("unable_locate_player"), name).withStyle(ChatFormatting.RED), false);
 	}
+
+	public static void sendUnableToGenerateDeedMessage(CommandSourceStack source, String nationName) {
+		source.sendSuccess(() -> Component.translatable(LangUtil.chat(" deed.generate.failure")).withStyle(ChatFormatting.RED), false);
+	}
+
 	///// SUGGESTIONS /////
 //	static final SuggestionProvider<CommandSourceStack> SUGGEST_UUID = (source, builder) -> {
 //		// NOTE use to find the player's name by UUID
