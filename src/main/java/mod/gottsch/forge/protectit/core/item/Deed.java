@@ -128,22 +128,14 @@ public abstract class Deed extends Item {
         if (!isParcelThresholdValid) {
             return InteractionResult.FAIL;
         }
-        //        // gather the number of parcels the player has
-//        List<Parcel> parcels = ParcelRegistry.findByOwner(context.getPlayer().getUUID());
-//        if (parcels.size() >= Config.GENERAL.parcelsPerPlayer.get() && !context.getPlayer().hasPermissions(Config.GENERAL.opsPermissionLevel.get())) {
-//            // TODO colorize
-//            // TODO create a class ChatHelper that has premade color formatters
-//            context.getPlayer().sendSystemMessage(Component.translatable(LangUtil.chat("parcel.max_reached")));
-//            return InteractionResult.FAIL;
-//        }
 
         // wrapped BlockPos
         ICoords targetCoords = new Coords(context.getClickedPos());
 
-        // create a parcel object from the deed itemstack and context info
+        // create a parcel object from the deed itemStack and context info
         Parcel parcel = createParcel(context.getItemInHand(), targetCoords, context.getPlayer());
 
-        // check if parcel has a owner id and if its the player - if not, exit as they can't use it
+        // validate that the parcel's owner id == player id
         if (!parcel.isOwner(context.getPlayer().getUUID())) {
             return InteractionResult.FAIL;
         }
@@ -194,7 +186,7 @@ public abstract class Deed extends Item {
                 // 1) does this parcel belong to the nation
                 // 2) is totally within bounds of nation
                 // validate the parcel data itself
-                boolean isValid = parcel.validateData(foundationStoneBlockEntity); //validateParcel(foundationStoneBlockEntity, parcel);
+                boolean isValid = parcel.validateData(foundationStoneBlockEntity);
 
                 if (isValid) {
                     // check if there is an existing parcel and update it else add it
@@ -233,36 +225,7 @@ public abstract class Deed extends Item {
             /*
              * place foundation stone
              */
-            // TODO have to turn all this into methods so they can be overridden ie citizen deed
-             boolean canPlace = canPlaceBlock(context.getLevel(), targetCoords, parcel);
-//            // test if a parcel already exists for the parcel id
-//            boolean canPlace = false;
-//            Optional<Parcel> registryParcel = ParcelRegistry.findLeastSignificant(targetCoords);
-//            /*
-//             * not inside any parcel.
-//             */
-//            if (registryParcel.isEmpty()) {
-//                /*
-//                 * check if a parcel exists.
-//                 * if a parcel does not exist then the deed is used to place a foundation stone
-//                 * in this position for the first time.
-//                 */
-//                registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
-//                if (registryParcel.isEmpty()) {
-//                    canPlace = true;
-//                }
-//            } else {
-//                /*
-//                 * inside a parcel - is it the parcel associated with this deed ?
-//                 * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
-//                 * and therefor can only be placed within the same parcel it is associated with.
-//                 */
-//                // TODO change this to checkAccess()
-////                if (validateParcel(registryParcel.get(), parcel)) {
-//                if (parcel.validateData(registryParcel.get())) {
-//                    canPlace = true;
-//                }
-//            }
+            boolean canPlace = canPlaceBlock(context.getLevel(), targetCoords, parcel);
 
             boolean result = canPlace && this.placeBlock(new BlockPlaceContext(context), ProtectItBlocks.FOUNDATION_STONE.get().defaultBlockState());
             return result ? InteractionResult.SUCCESS : InteractionResult.FAIL;
@@ -272,18 +235,21 @@ public abstract class Deed extends Item {
     }
 
     protected boolean canPlaceBlock(Level level, ICoords coords, Parcel parcel) {
-        // test if a parcel already exists for the deed id
         boolean canPlace = false;
+
+        /*
+         * check if parcel is within another existing parcel
+         */
         Optional<Parcel> registryParcel = ParcelRegistry.findLeastSignificant(coords);
 
         /*
-         * not inside any parcel.
+         * not inside another parcel.
          */
         if (registryParcel.isEmpty()) {
             /*
              * check if a parcel exists.
-             * if a parcel does not exist then the deed is used to place a foundation stone
-             * in this position for the first time.
+             * if a parcel does not exist then the deed is used to place a foundation stone.
+             * NOTE parcels can exist for non-consumed deeds if it is a transfer/sale.
              */
             registryParcel = ParcelRegistry.findByParcelId(parcel.getId());
             if (registryParcel.isEmpty()) {
@@ -295,8 +261,6 @@ public abstract class Deed extends Item {
              * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
              * and therefor can only be placed within the same parcel it is associated with.
              */
-            // TODO change this to checkAccess()
-//                if (validateParcel(registryParcel.get(), parcel)) {
             if (parcel.validateData(registryParcel.get())) {
                 canPlace = true;
             }
