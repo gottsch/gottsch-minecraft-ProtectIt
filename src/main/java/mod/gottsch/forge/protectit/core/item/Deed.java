@@ -261,6 +261,7 @@ public abstract class Deed extends Item {
              * if a parcel does exist, then this deed may be associated with it. ie transfer/sale,
              * and therefor can only be placed within the same parcel it is associated with.
              */
+            // TODO this validate also need to check if the parent is a nation and you can claim the parcel as a citizen.
             if (parcel.validateData(registryParcel.get())) {
                 canPlace = true;
             }

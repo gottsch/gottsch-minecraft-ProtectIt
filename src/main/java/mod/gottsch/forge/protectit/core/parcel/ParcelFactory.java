@@ -49,7 +49,7 @@ public class ParcelFactory {
     }
 
     /**
-     *
+     * deed-less parcel creation. called from commands.
      * @param type
      * @return
      */
